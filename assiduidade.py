@@ -25,5 +25,14 @@ janela.title("Gestão de Assiduidade")
 janela.geometry("800x800")
 
 
+titulo = tk.Label(
+    janela,
+    text="RELÓGIO DE PONTO",
+    font=("Arial", 20)
+)
+
+titulo.pack(pady=20)
+
+
 
 janela.mainloop()
