@@ -38,3 +38,10 @@ aprovado_por VARCHAR(100),
 foreign key(id_funcionario) references funcionarios(id_funcionario)
 );
 
+ALTER TABLE FUNCIONARIOS
+ADD COLUMN senha VARCHAR(255) AFTER nome;
+
+INSERT INTO FUNCIONARIOS (nome, senha, tipo) VALUES 
+('Diogo', SHA2('1234', 256), 'Colaborador'),
+('Elayne', SHA2('teste1234', 256), 'Colaborador'),
+('Margarida',SHA2('guidaboss', 256), 'Colaborador');
