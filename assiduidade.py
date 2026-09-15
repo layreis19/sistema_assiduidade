@@ -47,6 +47,7 @@ relogio = tk.Label(
 
 relogio.pack(pady=20)
 
+
 def atualizar_relogio():
 
     hora = datetime.now().strftime("%H:%M:%S")
@@ -56,44 +57,30 @@ def atualizar_relogio():
     # Atualiza novamente daqui a 1 segundo
     janela.after(1000, atualizar_relogio)
 
-
 atualizar_relogio()
+
+#funcao para carregar os funcionarios   MYSQL 
+def carregar_funcionarios():
+    cursor.execute("SELECT nome FROM FUNCIONARIOS")
+    funcionarios = [row[0] for row in cursor.fetchall()]
+    combo_funcionarios['values'] = funcionarios
 
 
 # ENTRADA DO NOME
-nome_label = tk.Label(
-    janela,
-    text="Funcionário: ",
-    font=("Arial", 14)
-)
+nome_label = tk.Label(janela,text="Funcionário: ",font=("Arial", 14))
 nome_label.pack(pady=10)
 
-
-
-entrada_nome = tk.Entry(
-    janela,
-    font=("Arial", 14)
-)
-
-entrada_nome.pack(pady=10)
-
+combo_funcionarios = ttk.Combobox(janela,font=("Arial"))
+combo_funcionarios.pack(pady=10)
+carregar_funcionarios()
 
 # ENTRADA_PASSWORD
 
-password_label = tk.Label(
-    janela,
-    text="Password:",
-    font=("Arial", 14)
+password_label = tk.Label(janela, text="Password:",font=("Arial", 14)
 )
 password_label.pack(pady=10)
 
-
-
-entrada_password = tk.Entry(
-    janela,
-    font=("Arial", 14),
-    show="*"
-)
+entrada_password = tk.Entry(janela, font=("Arial", 14),show="*")
 entrada_password.pack(pady=10)  
 
 
