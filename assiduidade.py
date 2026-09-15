@@ -22,8 +22,14 @@ cursor = conn.cursor()
 
 print("Ligação bem sucedida!")
 
+#funcao para carregar os funcionarios   MYSQL 
+def carregar_funcionarios():
+    cursor.execute("SELECT nome FROM FUNCIONARIOS")
+    funcionarios = [row[0] for row in cursor.fetchall()]
+    combo_funcionarios['values'] = funcionarios
+    
 def registar_picagem():
-    nome = entrada_nome.get().strip()
+    nome = combo_funcionarios.get().strip()
     senha = entrada_password.get().strip()
 
     #Aviso caso falte preencher algum campo
@@ -71,10 +77,10 @@ def registar_picagem():
         ultima_picagem = cursor.fetchone()
 
         # 3. Determinar se é entrada ou saída
-        if ultima_picagem is None or ultima_picagem[0] == "saida":
-            tipo = "entrada"
+        if ultima_picagem is None or ultima_picagem[0] == "SAIDA":
+            tipo = "ENTRADA"
         else:
-            tipo = "saida"
+            tipo = "SAIDA"
 
         # 4. Inserir a nova picagem
         cursor.execute(
@@ -94,7 +100,7 @@ def registar_picagem():
         )
 
         # 5. Limpar os campos
-        entrada_nome.delete(0, tk.END)
+        combo_funcionarios.set("")
         entrada_password.delete(0, tk.END)
 
     except mysql.connector.Error as erro:
@@ -143,21 +149,15 @@ atualizar_relogio()
 
 
 # ENTRADA DO NOME
-nome_label = tk.Label(
-    janela,
-    text="Funcionário: ",
-    font=("Arial", 14)
-)
+nome_label = tk.Label(janela,text="Funcionário: ",font=("Arial", 14))
 nome_label.pack(pady=10)
 
 
 
-entrada_nome = tk.Entry(
-    janela,
-    font=("Arial", 14)
-)
+combo_funcionarios = ttk.Combobox(janela,font=("Arial"))
+combo_funcionarios.pack(pady=10)
+carregar_funcionarios()
 
-entrada_nome.pack(pady=10)
 
 
 # ENTRADA_PASSWORD
