@@ -1,8 +1,10 @@
+import datetime
 import os
 from dotenv import load_dotenv
 import mysql.connector
 import tkinter as tk
 from tkinter import ttk, messagebox
+from datetime import datetime  
 
 load_dotenv()  
 
@@ -20,6 +22,9 @@ cursor = conn.cursor()
 
 print("Ligação bem sucedida!")
 
+
+#JANELA
+
 janela = tk.Tk()
 janela.title("Gestão de Assiduidade")
 janela.geometry("800x800")
@@ -33,6 +38,72 @@ titulo = tk.Label(
 
 titulo.pack(pady=20)
 
+#RELOGIO
 
+relogio = tk.Label(
+    janela,
+    font=("Arial", 20)
+)
+
+relogio.pack(pady=20)
+
+def atualizar_relogio():
+
+    hora = datetime.now().strftime("%H:%M:%S")
+
+    relogio.config(text=hora)
+
+    # Atualiza novamente daqui a 1 segundo
+    janela.after(1000, atualizar_relogio)
+
+
+atualizar_relogio()
+
+
+
+
+
+
+# ENTRADA DO NOME
+nome_label = tk.Label(
+    janela,
+    text="Funcionário: ",
+    font=("Arial", 14)
+)
+nome_label.pack(pady=10)
+
+
+
+entrada_nome = tk.Entry(
+    janela,
+    font=("Arial", 14)
+)
+
+entrada_nome.pack(pady=10)
+
+
+# ENTRADA_PASSWORD
+
+password_label = tk.Label(
+    janela,
+    text="Password:",
+    font=("Arial", 14)
+)
+password_label.pack(pady=10)
+
+
+
+entrada_password = tk.Entry(
+    janela,
+    font=("Arial", 14),
+    show="*"
+)
+entrada_password.pack(pady=10)  
+
+
+
+
+
+#RODAR JANELA
 
 janela.mainloop()
