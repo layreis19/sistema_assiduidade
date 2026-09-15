@@ -27,7 +27,9 @@ def carregar_funcionarios():
     cursor.execute("SELECT nome FROM FUNCIONARIOS")
     funcionarios = [row[0] for row in cursor.fetchall()]
     combo_funcionarios['values'] = funcionarios
+
     
+#função  para registar a picagem do funcionário
 def registar_picagem():
     nome = combo_funcionarios.get().strip()
     senha = entrada_password.get().strip()
@@ -91,8 +93,11 @@ def registar_picagem():
             """,
             (funcionario_id, datetime.now(), tipo)
         )
+     
 
         conn.commit()
+        atualizar_tabela()
+
 
         messagebox.showinfo(
             "Picagem registada",
@@ -110,6 +115,25 @@ def registar_picagem():
             "Erro na base de dados",
             f"Ocorreu um erro:\n{erro}"
         )
+
+
+#funcao para atualizar a tabela de picagens
+def atualizar_tabela():
+    for i in tabela.get_children():
+        tabela.delete(i)
+
+    cursor.execute("""
+        SELECT funcionarios.nome, picagem.data, picagem.tipo
+        FROM picagem, funcionarios 
+        WHERE funcionarios.id_funcionario = picagem.id_funcionario
+    """)
+
+    resultados = cursor.fetchall()
+
+    for linha in resultados:
+        tabela.insert("", tk.END, values=linha)
+
+
 
 #JANELA
 
@@ -210,8 +234,22 @@ cursor.execute("""
 
 resultados = cursor.fetchall()
 
+
 for linha in resultados:
     tabela.insert("", tk.END, values=linha)
+    
+    
+#chamada da função para atualizar a tabela de picagens
+atualizar_tabela()
+
+
+
+
+
+
+
+
+
 
 #RODAR JANELA
 
