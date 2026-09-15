@@ -46,7 +46,7 @@ def registar_picagem():
             """
             SELECT id_funcionario
             FROM funcionarios
-            WHERE nome = %s AND senha = %s
+            WHERE nome = %s AND senha = SHA2(%s, 256)
             """,
             (nome, senha)
         )
@@ -189,7 +189,29 @@ registo = tk.Button(
 
 registo.pack(padx=10)
 
+#lista de picagens
 
+tabela = ttk.Treeview(
+    janela,
+    columns=("nome", "data", "tipo"),
+    show="headings"
+)
+
+tabela.heading("nome", text="Funcionário")
+tabela.heading("data", text="Data/Hora")
+tabela.heading("tipo", text="Tipo")
+
+tabela.pack(pady=20)
+
+cursor.execute("""
+    SELECT funcionarios.nome, picagem.data, picagem.tipo
+    FROM picagem, funcionarios where funcionarios.id_funcionario = picagem.id_funcionario
+""")
+
+resultados = cursor.fetchall()
+
+for linha in resultados:
+    tabela.insert("", tk.END, values=linha)
 
 #RODAR JANELA
 
