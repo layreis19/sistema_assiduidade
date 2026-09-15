@@ -243,13 +243,51 @@ for linha in resultados:
 atualizar_tabela()
 
 
+cursor.execute("""
+    SELECT picagem.id_funcionario, funcionarios.nome, 
+           DATE_FORMAT(picagem.data, '%d/%m/%Y %H:%i:%s') AS data,
+           picagem.tipo
+    FROM picagem
+    JOIN FUNCIONARIOS 
+    ON funcionarios.id_funcionario = picagem.id_funcionario
+    ORDER BY picagem.id_funcionario, picagem.data
+""")
+
+picagens = cursor.fetchall()
 
 
+# Criar um dicionário 
+dicionario_funcionarios = {}
+
+# listas que guardam quais funcionários estão ou não na empresa
+a_trabalhar = []
+a_descansar = []
+
+# percorrer a lista das picagens 
+for picagem in picagens:
+    id_funcionario = picagem[0]
+    nome = picagem[1]
+    data = picagem[2]
+    tipo = picagem[3]
+
+    dicionario_funcionarios[id_funcionario] = {
+        "nome": nome,
+        "tipo": tipo
+    }
 
 
+for id_funcionario in dicionario_funcionarios:
 
+    nome = dicionario_funcionarios[id_funcionario]["nome"]
+    tipo = dicionario_funcionarios[id_funcionario]["tipo"]
 
-
+    if tipo == "ENTRADA":
+        a_trabalhar.append(nome) # adicionar à lista a_trabalhar 
+        print(f"{nome}, está na empresa")
+    else:
+        a_descansar.append(nome) # adicionar à lista a_descansar
+        print(f"{nome}, não está na empresa")
+        
 
 #RODAR JANELA
 
