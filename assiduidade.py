@@ -6,7 +6,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime  
 
-load_dotenv()  
+load_dotenv()  # load significa carregar e dotenv é o ficheiro .env
 
 
 
@@ -25,9 +25,9 @@ print("Ligação bem sucedida!")
 
 #JANELA
 
-janela = tk.Tk()
-janela.title("Gestão de Assiduidade")
-janela.geometry("800x800")
+janela = tk.Tk() # criar o site 
+janela.title("Gestão de Assiduidade") # título da janela 
+janela.geometry("800x800") # tamanho da janela
 
 
 titulo = tk.Label(
@@ -58,10 +58,6 @@ def atualizar_relogio():
 
 
 atualizar_relogio()
-
-
-
-
 
 
 # ENTRADA DO NOME
@@ -101,6 +97,14 @@ entrada_password = tk.Entry(
 entrada_password.pack(pady=10)  
 
 
+# 
+registo = tk.Button(
+    janela,
+    text="Confirmar",
+    font=("Arial",14)
+)
+
+registo.pack(padx=10)
 
 
 
