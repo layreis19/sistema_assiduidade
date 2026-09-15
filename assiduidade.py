@@ -126,6 +126,7 @@ def atualizar_tabela():
         SELECT funcionarios.nome, picagem.data, picagem.tipo
         FROM picagem, funcionarios 
         WHERE funcionarios.id_funcionario = picagem.id_funcionario
+        ORDER BY picagem.data DESC
     """)
 
     resultados = cursor.fetchall()
@@ -227,17 +228,6 @@ tabela.heading("tipo", text="Tipo")
 
 tabela.pack(pady=20)
 
-cursor.execute("""
-    SELECT funcionarios.nome, picagem.data, picagem.tipo
-    FROM picagem, funcionarios where funcionarios.id_funcionario = picagem.id_funcionario
-""")
-
-resultados = cursor.fetchall()
-
-
-for linha in resultados:
-    tabela.insert("", tk.END, values=linha)
-    
     
 #chamada da função para atualizar a tabela de picagens
 atualizar_tabela()
