@@ -22,6 +22,88 @@ cursor = conn.cursor()
 
 print("Ligação bem sucedida!")
 
+def registar_picagem():
+    nome = entrada_nome.get().strip()
+    senha = entrada_password.get().strip()
+
+    #Aviso caso falte preencher algum campo
+    if not nome or not senha:
+        messagebox.showwarning(
+            "Campos em falta",
+            "Preencha o nome e a senha."
+        )
+        return
+
+    try:
+        # 1. Procurar o funcionário
+        cursor.execute(
+            """
+            SELECT id_funcionario
+            FROM funcionarios
+            WHERE nome = %s AND senha = %s
+            """,
+            (nome, senha)
+        )
+
+        funcionario = cursor.fetchone()
+
+        if funcionario is None:
+            messagebox.showerror(
+                "Erro",
+                "Funcionário ou senha incorretos."
+            )
+            return
+
+        funcionario_id = funcionario[0]
+
+        # 2. Obter a última picagem deste funcionário
+        cursor.execute(
+            """
+            SELECT tipo
+            FROM picagem
+            WHERE id_funcionario = %s
+            ORDER BY data DESC
+            LIMIT 1
+            """,
+            (funcionario_id,)
+        )
+
+        ultima_picagem = cursor.fetchone()
+
+        # 3. Determinar se é entrada ou saída
+        if ultima_picagem is None or ultima_picagem[0] == "saida":
+            tipo = "entrada"
+        else:
+            tipo = "saida"
+
+        # 4. Inserir a nova picagem
+        cursor.execute(
+            """
+            INSERT INTO picagem
+            (id_funcionario, data, tipo)
+            VALUES (%s, %s, %s)
+            """,
+            (funcionario_id, datetime.now(), tipo)
+        )
+
+        conn.commit()
+
+        messagebox.showinfo(
+            "Picagem registada",
+            f"{tipo.capitalize()} registada com sucesso!"
+        )
+
+        # 5. Limpar os campos
+        entrada_nome.delete(0, tk.END)
+        entrada_password.delete(0, tk.END)
+
+    except mysql.connector.Error as erro:
+        conn.rollback()
+
+        messagebox.showerror(
+            "Erro na base de dados",
+            f"Ocorreu um erro:\n{erro}"
+        )
 
 #JANELA
 
@@ -82,7 +164,7 @@ entrada_nome.pack(pady=10)
 
 password_label = tk.Label(
     janela,
-    text="Password:",
+    text="Senha:",
     font=("Arial", 14)
 )
 password_label.pack(pady=10)
@@ -101,7 +183,8 @@ entrada_password.pack(pady=10)
 registo = tk.Button(
     janela,
     text="Confirmar",
-    font=("Arial",14)
+    font=("Arial",14),
+    command=registar_picagem
 )
 
 registo.pack(padx=10)
