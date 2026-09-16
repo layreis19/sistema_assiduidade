@@ -5,6 +5,7 @@ from funcionarios import PaginaFuncionarios
 from ctrl_presencas import PaginaPresencas
 from ligacao import conn
 
+
 janela = tk.Tk()
 
 janela.title("Gestão de Assiduidade")
@@ -41,17 +42,31 @@ pagina_ponto = PaginaPonto(conteudo)
 pagina_funcionarios = PaginaFuncionarios(conteudo)
 pagina_presencas = PaginaPresencas(conteudo)
 
-
+#mostrar a página inicial (página de ponto) e esconder as outras páginas
 def mostrar_pagina(pagina):
 
     pagina_ponto.pack_forget()
     pagina_funcionarios.pack_forget()
     pagina_presencas.pack_forget()
 
+  # mostrar a página selecionada
     pagina.pack(
         fill="both",
         expand=True
     )
+
+
+    # Se a página atual for a página de ponto, carregar os funcionários no combobox
+    if pagina == pagina_ponto:
+        pagina_ponto.carregar_funcionarios()
+
+   
+
+  
+        
+
+
+
 
 
 # BOTÕES DO MENU

@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
 
+import bcrypt
+
 from ligacao import conn
 
 
@@ -161,6 +163,10 @@ class PaginaPonto(tk.Frame):
 
         nome = self.combo_funcionarios.get().strip()
         senha = self.entrada_password.get().strip()
+        senha_hash = bcrypt.hashpw(
+                                    senha.encode("utf-8"),
+                                    bcrypt.gensalt()
+                                )
 
 
         if not nome or not senha:
@@ -178,15 +184,16 @@ class PaginaPonto(tk.Frame):
             # --------------------------------
             # VERIFICAR FUNCIONÁRIO E PASSWORD
             # --------------------------------
+           
 
             self.cursor.execute(
                 """
                 SELECT id_funcionario
                 FROM funcionarios
                 WHERE nome = %s
-                AND senha = SHA2(%s, 256)
+                AND senha = %s
                 """,
-                (nome, senha)
+                (nome, senha_hash)
             )
 
             funcionario = self.cursor.fetchone()
