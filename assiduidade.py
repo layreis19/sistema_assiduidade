@@ -273,11 +273,9 @@ for id_funcionario in dicionario_funcionarios:
 
     if tipo == "ENTRADA":
         a_trabalhar.append(nome) # adicionar à lista a_trabalhar 
-        print(f"{nome}, está na empresa")
     else:
         a_descansar.append(nome) # adicionar à lista a_descansar
-        print(f"{nome}, não está na empresa")
-        
+
 
 #RODAR JANELA
 
