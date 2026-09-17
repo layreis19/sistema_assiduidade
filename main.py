@@ -60,6 +60,8 @@ def mostrar_pagina(pagina):
     if pagina == pagina_ponto:
         pagina_ponto.carregar_funcionarios()
 
+    elif pagina == pagina_presencas:
+        pagina_presencas.atualizar_presenca()
    
 
   
