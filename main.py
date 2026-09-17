@@ -1,5 +1,5 @@
-import tkinter as tk
 
+import tkinter as tk
 from relogio_ponto import PaginaPonto
 from funcionarios import PaginaFuncionarios
 from ctrl_presencas import PaginaPresencas
@@ -12,8 +12,11 @@ janela.title("Gestão de Assiduidade")
 janela.geometry("900x600")
 
 
-# MENU
 
+
+
+
+# MENU
 menu = tk.Frame(
     janela,
     bg="lightgray"
