@@ -140,6 +140,28 @@ class PaginaFuncionarios(tk.Frame):
 
             )
 
+
+        # Atualizar a tabela de funcionários
+        self.atualizar_funcionarios()
+    
+
+    def atualizar_funcionarios(self):
+        # Limpar a tabela
+        for linha in self.tabela.get_children():
+            self.tabela.delete(linha)
+
+        # Consultar os funcionários na base de dados
+        funcionarios = self.consultar_funcionarios()
+
+        # Adicionar os funcionários à tabela
+        for funcionario in funcionarios:
+            self.tabela.insert(
+                "",
+                "end",
+                values=funcionario
+            )
+
+
     #CONSULTAR FUNCIONÁRIOS
 
     def consultar_funcionarios(self):
@@ -192,7 +214,7 @@ class PaginaFuncionarios(tk.Frame):
         senha_label.pack(pady=5)
         entry_senha = tk.Entry(janela_alterar, show="*")
         entry_senha.pack(pady=5)
-        
+
 
 
 
