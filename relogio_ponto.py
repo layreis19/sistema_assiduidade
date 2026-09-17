@@ -163,10 +163,7 @@ class PaginaPonto(tk.Frame):
 
         nome = self.combo_funcionarios.get().strip()
         senha = self.entrada_password.get().strip()
-        senha_hash = bcrypt.hashpw(
-                                    senha.encode("utf-8"),
-                                    bcrypt.gensalt()
-                                )
+        
 
 
         if not nome or not senha:
@@ -188,12 +185,11 @@ class PaginaPonto(tk.Frame):
 
             self.cursor.execute(
                 """
-                SELECT id_funcionario
+                SELECT id_funcionario, senha
                 FROM funcionarios
                 WHERE nome = %s
-                AND senha = %s
                 """,
-                (nome, senha_hash)
+                (nome,)
             )
 
             funcionario = self.cursor.fetchone()
@@ -210,6 +206,19 @@ class PaginaPonto(tk.Frame):
 
 
             funcionario_id = funcionario[0]
+            senha_hash = funcionario[1]
+
+            if not bcrypt.checkpw(
+                senha.encode("utf-8"),
+                senha_hash.encode("utf-8")
+            ):
+
+                messagebox.showerror(
+                    "Erro",
+                    "Funcionário ou senha incorretos."
+                )
+
+                return
 
 
             # --------------------------------
