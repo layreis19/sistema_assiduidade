@@ -10,18 +10,19 @@ class PaginaPresencas(tk.Frame):
     def atualizar_presenca(self):
 
         # Vou buscar todas as linhas que existem na tabela
+
         for linha in self.tabela.get_children():
             # Apago os dados que já estão na tabela 
             self.tabela.delete(linha)
 
         self.cursor.execute("""
-        SELECT picagem.id_funcionario,
+        SELECT funcionarios.id_funcionario,
                funcionarios.nome,
                picagem.tipo
-        FROM picagem
-        JOIN funcionarios
+        FROM funcionarios
+        LEFT JOIN picagem
             ON funcionarios.id_funcionario = picagem.id_funcionario
-        ORDER BY picagem.id_funcionario, picagem.data
+        ORDER BY funcionarios.id_funcionario, picagem.data
     """)
 
         picagens = self.cursor.fetchall()
@@ -55,7 +56,7 @@ class PaginaPresencas(tk.Frame):
                 estado = "AUSENTE"
                 tag = "ausente"
 
-            elif tipo == "PRESENTE":
+            elif tipo == "ENTRADA":
                 estado = "PRESENTE"
                 tag = "presente"
 
