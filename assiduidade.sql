@@ -1,47 +1,81 @@
 CREATE DATABASE ASSIDUIDADE;
+
 USE ASSIDUIDADE;
 
 CREATE TABLE FUNCIONARIOS (
-id_funcionario INT auto_increment primary key,
-nome VARCHAR(100) NOT NULL,
-tipo ENUM("ADMIN", "COLABORADOR") NOT NULL
+
+    id_funcionario INT AUTO_INCREMENT PRIMARY KEY,
+
+    nome VARCHAR(100) NOT NULL,
+
+    tipo ENUM("ADMIN", "COLABORADOR") NOT NULL,
+
+    senha VARCHAR(255)
+
 );
 
-CREATE TABLE  PICAGEM(
-id_picagem INT AUTO_INCREMENT primary KEY,
-id_funcionario INT,
-data datetime NOT NULL,
-tipo ENUM("ENTRADA", "SAIDA") NOT NULL,
-FOREIGN KEY(id_funcionario) REFERENCES funcionarios(id_funcionario)
+
+CREATE TABLE PICAGEM (
+
+    id_picagem INT AUTO_INCREMENT PRIMARY KEY,
+
+    id_funcionario INT,
+
+    data DATETIME NOT NULL,
+
+    tipo ENUM("ENTRADA", "SAIDA") NOT NULL,
+
+    FOREIGN KEY(id_funcionario)
+        REFERENCES FUNCIONARIOS(id_funcionario)
+        ON DELETE CASCADE
+
 );
+
 
 CREATE TABLE HORAS_EXTRA (
-id INT AUTO_INCREMENT primary key,
-id_funcionario INT,
-min_extra INT,
-FOREIGN KEY(id_funcionario) REFERENCES funcionarios(id_funcionario)
+
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    id_funcionario INT,
+
+    min_extra INT,
+
+    FOREIGN KEY(id_funcionario)
+        REFERENCES FUNCIONARIOS(id_funcionario)
+        ON DELETE CASCADE
+
 );
+
 
 CREATE TABLE TURNO (
-id_turno INT auto_increment primary KEY,
-entrada TIME,
-saida time,
-tolerancia int,
-pausa int);
 
-CREATE TABLE AUSENCIAS (
-id INT auto_increment primary key,
-id_funcionario int,
-data_inicio date,
-data_fim date,
-aprovado_por VARCHAR(100),
-foreign key(id_funcionario) references funcionarios(id_funcionario)
+    id_turno INT AUTO_INCREMENT PRIMARY KEY,
+
+    entrada TIME,
+
+    saida TIME,
+
+    tolerancia INT,
+
+    pausa INT
+
 );
 
-ALTER TABLE FUNCIONARIOS
-ADD COLUMN senha VARCHAR(255) AFTER nome;
 
-INSERT INTO FUNCIONARIOS (nome, senha, tipo) VALUES 
-('Diogo', SHA2('1234', 256), 'Colaborador'),
-('Elayne', SHA2('teste1234', 256), 'Colaborador'),
-('Margarida',SHA2('guidaboss', 256), 'Colaborador');
+CREATE TABLE AUSENCIAS (
+
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    id_funcionario INT,
+
+    data_inicio DATE,
+
+    data_fim DATE,
+
+    aprovado_por VARCHAR(100),
+
+    FOREIGN KEY(id_funcionario)
+        REFERENCES FUNCIONARIOS(id_funcionario)
+        ON DELETE CASCADE
+
+);
