@@ -12,19 +12,17 @@ import mysql.connector
 from ligacao import conn 
 
 
-
-
-
-
-
-
 class PaginaFuncionarios(tk.Frame):
     
 
     def __init__(self, parent):
         super().__init__(parent)
 
-        self.cursor = conn.cursor()
+
+        #buffered=True para evitar problemas de cursor fechado
+        #varias consultas podem ser feitas com o mesmo cursor
+        #sem buffered=True, o cursor fecha após a primeira consulta, impedindo consultas subsequentes
+        self.cursor = conn.cursor(buffered=True)
 
         titulo = tk.Label(
             self,
@@ -78,24 +76,26 @@ class PaginaFuncionarios(tk.Frame):
 
      
 
-       
-
+       # Tabela para exibir os funcionários
         self.tabela = ttk.Treeview( self, columns=("id_funcionario", "nome", "tipo", "estado"), show="headings")
         self.tabela.heading("id_funcionario", text="ID")
         self.tabela.heading("nome", text="Funcionário")
         self.tabela.heading("tipo", text="Tipo")
         self.tabela.heading("estado", text="Estado")
-        
+ 
         self.tabela.pack( fill="both",expand=True, padx=30, pady=20 )
 
-
-
+        # Atualizar a tabela com os funcionários existentes
+        self.atualizar_funcionarios() 
+       
+        
     # CRIAR UM FUNCIONÁRIO
     def adicionar_funcionario(self):
 
         nome = self.entry_nome.get().strip().capitalize()
         senha = self.entry_senha.get().strip()
-        tipo = self.combo_tipo.get().strip() 
+        tipo = self.combo_tipo.get().strip().upper()
+
         if not nome or not senha or not tipo:
             messagebox.showerror(
                 "Erro",
@@ -121,6 +121,7 @@ class PaginaFuncionarios(tk.Frame):
             
 
             conn.commit()
+       
            
 
             messagebox.showinfo(
@@ -131,7 +132,12 @@ class PaginaFuncionarios(tk.Frame):
             # Limpar campos
             self.entry_nome.delete(0, tk.END)
             self.entry_senha.delete(0, tk.END)
-            self.combo_tipo.set("")
+            self.combo_tipo.set("") 
+
+
+            #atualizar tabela para o novo funcionario aparecer
+            self.atualizar_funcionarios()
+            
 
         except mysql.connector.IntegrityError:
             messagebox.showerror(
@@ -141,10 +147,7 @@ class PaginaFuncionarios(tk.Frame):
             )
 
 
-        # Atualizar a tabela de funcionários
-        self.atualizar_funcionarios()
-    
-
+            
     def atualizar_funcionarios(self):
         # Limpar a tabela
         for linha in self.tabela.get_children():
@@ -165,13 +168,24 @@ class PaginaFuncionarios(tk.Frame):
     #CONSULTAR FUNCIONÁRIOS
 
     def consultar_funcionarios(self):
-        self.cursor.execute(
-            """
-            SELECT id_funcionario, nome, tipo, estado
-            FROM funcionarios
-            """
-        )
-        return self.cursor.fetchall()
+        try:
+            self.cursor.execute(
+                """
+                SELECT id_funcionario, nome, tipo, estado
+                FROM funcionarios
+                """
+            )
+            return self.cursor.fetchall()
+
+        except mysql.connector.Error as erro:
+
+            messagebox.showerror(
+                "Erro", 
+                f"Erro ao consultar funcionário: {erro}"
+            )
+
+
+            return []
 
 
     def alterar_funcionario(self):
@@ -187,39 +201,103 @@ class PaginaFuncionarios(tk.Frame):
 
         # Obter os dados do funcionário selecionado
         item = self.tabela.item(item_selecionado[0])
-        id_funcionario = item["values"][0]
+        self.id_funcionario_alterar = item["values"][0]
         nome_atual = item["values"][1]
         tipo_atual = item["values"][2]
 
         # Criar uma nova janela para alterar os dados do funcionário
-        janela_alterar = tk.Toplevel(self)
-        janela_alterar.title("Alterar Funcionário")
+        self.janela_alterar = tk.Toplevel(self)
+        self.janela_alterar.title("Alterar Funcionário")
 
         # Nome
-        nome_label = tk.Label(janela_alterar, text="Nome:")
+        nome_label = tk.Label(self.janela_alterar, text="Nome:")
         nome_label.pack(pady=5)
-        entry_nome = tk.Entry(janela_alterar)
-        entry_nome.insert(0, nome_atual)
-        entry_nome.pack(pady=5)
+        self.entry_nome_alterar = tk.Entry(self.janela_alterar)
+        self.entry_nome_alterar.insert(0, nome_atual)
+        self.entry_nome_alterar.pack(pady=5)
 
         # Tipo
-        tipo_label = tk.Label(janela_alterar, text="Tipo:")
+        tipo_label = tk.Label(self.janela_alterar, text="Tipo:")
         tipo_label.pack(pady=5)
-        combo_tipo = ttk.Combobox(janela_alterar, values=["Admin", "Colaborador"])
-        combo_tipo.set(tipo_atual)
-        combo_tipo.pack(pady=5)
+        self.combo_tipo_alterar = ttk.Combobox(self.janela_alterar, values=["Admin", "Colaborador"])
+        self.combo_tipo_alterar.set(tipo_atual)
+        self.combo_tipo_alterar.pack(pady=5)
 
-        #senha
-        senha_label = tk.Label(janela_alterar, text="Senha:")
+        # Senha
+        senha_label = tk.Label(self.janela_alterar, text="Senha:")
         senha_label.pack(pady=5)
-        entry_senha = tk.Entry(janela_alterar, show="*")
-        entry_senha.pack(pady=5)
+        self.entry_senha_alterar = tk.Entry(self.janela_alterar, show="*")
+        self.entry_senha_alterar.pack(pady=5)
+
+        # Botão para guardar as alterações
+        btn_guardar = tk.Button(
+            self.janela_alterar,
+            text="Guardar",
+            command=self.guardar_alteracoes
+        )
+        btn_guardar.pack(pady=10)
 
 
+    # função para guardar alterações na base de dados
+    def guardar_alteracoes(self):
 
+            novo_nome = self.entry_nome_alterar.get().strip().capitalize()
+            novo_tipo = self.combo_tipo_alterar.get().strip().upper()
+            nova_senha = self.entry_senha_alterar.get().strip()
 
+            if not novo_nome or not novo_tipo or not nova_senha:
+                messagebox.showerror(
+                    "Erro",
+                    "Nome, Tipo e Senha são obrigatórios!"
+                )
+                return
 
-   #ativaou desativar funcionário
+            try:
+
+                senha_hash = bcrypt.hashpw(
+                    nova_senha.encode("utf-8"),
+                    bcrypt.gensalt()
+                )
+
+                self.cursor.execute(
+                    """
+                    UPDATE funcionarios
+                    SET nome = %s,
+                        tipo = %s,
+                        senha = %s
+                    WHERE id_funcionario = %s
+                    """,
+                    (
+                        novo_nome,
+                        novo_tipo,
+                        senha_hash,
+                        self.id_funcionario_alterar
+                    )
+                )
+
+                conn.commit()
+
+                messagebox.showinfo(
+                    "Sucesso",
+                    f"Funcionário {novo_nome} alterado com sucesso!"
+                )
+
+                self.atualizar_funcionarios()
+                self.janela_alterar.destroy()
+
+            except mysql.connector.Error as erro:
+
+                conn.rollback()
+
+                messagebox.showerror(
+                    "Erro",
+                    f"Erro ao alterar funcionário:\n{erro}"
+                )
+                    
+        
+    
+        
+      #ativaou desativar funcionário
     def ativar_desativar_funcionario(self):
 
         # Obter o funcionário selecionado na tabela
@@ -238,12 +316,13 @@ class PaginaFuncionarios(tk.Frame):
         estado_atual = item["values"][3]
 
         try:
-            if estado_atual == "Ativo":
 
-                novo_estado = "Desativado"
+            if estado_atual.upper() == "ATIVO":
+
+                novo_estado = "INATIVO"
             else:
 
-                novo_estado="Ativo"
+                novo_estado="ATIVO"
 
 
             self.cursor.execute(
@@ -255,15 +334,15 @@ class PaginaFuncionarios(tk.Frame):
                 (novo_estado, id_funcionario)
             )
 
+            conn.commit()
+
             
             messagebox.showinfo(
                 "Sucesso",
                 f"Funcionário '{nome}' ativado/desativado!")
 
+            self.atualizar_funcionarios()
 
-
-            
-            conn.commit()
 
 
         except mysql.connector.Error as err:
@@ -271,4 +350,6 @@ class PaginaFuncionarios(tk.Frame):
                 "Erro",
                 f"Erro ao ativar/desativar funcionário: {err}"
             )
+
+      
 
