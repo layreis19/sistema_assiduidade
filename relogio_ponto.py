@@ -185,7 +185,7 @@ class PaginaPonto(tk.Frame):
 
             self.cursor.execute(
                 """
-                SELECT id_funcionario, senha
+                SELECT id_funcionario, senha, estado
                 FROM funcionarios
                 WHERE nome = %s
                 """,
@@ -203,11 +203,21 @@ class PaginaPonto(tk.Frame):
                 )
 
                 return
-
+            
 
             funcionario_id = funcionario[0]
             senha_hash = funcionario[1]
+            estado = funcionario[2]
 
+            if estado != "ATIVO":
+
+                messagebox.showerror(
+                    "Erro",
+                    "Funcionário inativo."
+                )
+
+                return
+            
             if not bcrypt.checkpw(
                 senha.encode("utf-8"),
                 senha_hash.encode("utf-8")
