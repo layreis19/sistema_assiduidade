@@ -3,9 +3,9 @@ import tkinter as tk
 from relogio_ponto import PaginaPonto
 from funcionarios import PaginaFuncionarios
 from ctrl_presencas import PaginaPresencas
+from administrador import PaginaAdministrador
+
 from ligacao import conn
-
-
 janela = tk.Tk()
 
 janela.title("Gestão de Assiduidade")
@@ -44,6 +44,7 @@ conteudo.pack(
 pagina_ponto = PaginaPonto(conteudo)
 pagina_funcionarios = PaginaFuncionarios(conteudo)
 pagina_presencas = PaginaPresencas(conteudo)
+pagina_administrador = PaginaAdministrador(conteudo)
 
 #mostrar a página inicial (página de ponto) e esconder as outras páginas
 def mostrar_pagina(pagina):
@@ -51,6 +52,7 @@ def mostrar_pagina(pagina):
     pagina_ponto.pack_forget()
     pagina_funcionarios.pack_forget()
     pagina_presencas.pack_forget()
+    pagina_administrador.pack_forget()
 
   # mostrar a página selecionada
     pagina.pack(
@@ -96,6 +98,11 @@ tk.Button(
     command=lambda: mostrar_pagina(pagina_presencas)
 ).pack(side="left", padx=10, pady=10)
 
+tk.Button(
+    menu,
+    text="Administrador",
+    command=lambda:  mostrar_pagina(pagina_administrador)
+).pack(side="left", padx=10, pady=10)
 
 # PÁGINA INICIAL
 
