@@ -10,7 +10,6 @@ class PaginaPresencas(tk.Frame):
     def atualizar_presenca(self):
 
         # Vou buscar todas as linhas que existem na tabela
-
         for linha in self.tabela.get_children():
             # Apago os dados que já estão na tabela 
             self.tabela.delete(linha)
@@ -28,7 +27,8 @@ class PaginaPresencas(tk.Frame):
         picagens = self.cursor.fetchall()
 
 
-        # Para cada funcionário vai-se guardar o nome e a última picagem encontrada
+        # Para cada funcionário vai-se guardar 
+        # o nome e a última picagem encontrada
         dicionario_funcionarios = {}
 
         for picagem in picagens:
@@ -64,6 +64,15 @@ class PaginaPresencas(tk.Frame):
                 estado = "AUSENTE"
                 tag = "ausente"
 
+
+            # filtrar por estado
+
+            if self.filtro.get() =="Presentes" and estado != "PRESENTE":
+                continue
+
+            if self.filtro.get() == "Ausentes" and estado != "AUSENTE":
+                continue
+
             self.tabela.insert(
                 "",
                 "end",
@@ -73,6 +82,7 @@ class PaginaPresencas(tk.Frame):
 
     def __init__(self, parent):
         super().__init__(parent)
+
         titulo = tk.Label(
             self,
             text="CONTROLO DE PRESENÇAS",
@@ -81,6 +91,38 @@ class PaginaPresencas(tk.Frame):
 
         titulo.pack(pady=50)
 
+        # Onde vão ficar os filtros
+        self.frame_filtros = tk.Frame(self)
+        self.frame_filtros.pack(padx=10)
+        
+        # Variável que guarda o filtro escolhido 
+        self.filtro = tk.StringVar(value="Todos")
+
+
+        # Texto: Estado
+        tk.Label(self.frame_filtros,
+                 text="Estado:"
+        ).pack(side="left",padx=5)
+
+
+        # Caixa para escolher o filtro 
+        combo_filtro = ttk.Combobox(
+            self.frame_filtros,
+            textvariable=self.filtro,
+            values=("Todos", "Presentes", "Ausentes"),
+            state="readonly",
+            width=12
+        )
+        combo_filtro.pack(side="left",padx=5)
+
+        # Quando escolher uma opção,
+        # Atualizar a tabela 
+        combo_filtro.bind(
+            "<<ComboboxSelected>>",
+            lambda atualizar : self.atualizar_presenca()
+        )
+
+        # Criar a tabela
         self.tabela = ttk.Treeview(
             self, 
             columns=("nome", "estado"),
@@ -92,6 +134,12 @@ class PaginaPresencas(tk.Frame):
         self.tabela.pack(pady=10)
            
 
+        # Cursos da base de dados 
         self.cursor = conn.cursor()
 
+
+        # Atualizar a tabela 
         self.atualizar_presenca()
+
+        
+        
