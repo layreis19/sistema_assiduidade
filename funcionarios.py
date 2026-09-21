@@ -17,6 +17,7 @@ class PaginaFuncionarios(tk.Frame):
 
     def __init__(self, parent):
         super().__init__(parent)
+        self.parent = parent
 
 
         #buffered=True para evitar problemas de cursor fechado
@@ -73,6 +74,13 @@ class PaginaFuncionarios(tk.Frame):
         # Botão ativar/desativar funcionário
         btn_ativar_desativar = tk.Button( frame_botoes, text="Ativar/Desativar", command= self.ativar_desativar_funcionario )
         btn_ativar_desativar.pack(side=tk.LEFT, padx=10, pady=10)
+        
+        #botão sair 
+        btn_sair= tk.Button(frame_botoes, text="Sair", command= self.sair)
+        btn_sair.pack(side=tk.LEFT, padx=10, pady=10)
+        
+        
+        
 
      
 
@@ -88,7 +96,12 @@ class PaginaFuncionarios(tk.Frame):
         # Atualizar a tabela com os funcionários existentes
         self.atualizar_funcionarios() 
        
-        
+    #Sair pagina
+    def sair(self):
+        self.destroy()
+        self.parent.tela_login()  
+      
+      
     # CRIAR UM FUNCIONÁRIO
     def adicionar_funcionario(self):
 
@@ -108,7 +121,7 @@ class PaginaFuncionarios(tk.Frame):
             senha_hash = bcrypt.hashpw(
                 senha.encode("utf-8"),
                 bcrypt.gensalt()
-            )
+            ).decode("utf-8")
 
             # Inserir o funcionário na base de dados
             self.cursor.execute(
@@ -228,6 +241,8 @@ class PaginaFuncionarios(tk.Frame):
         senha_label.pack(pady=5)
         self.entry_senha_alterar = tk.Entry(self.janela_alterar, show="*")
         self.entry_senha_alterar.pack(pady=5)
+        
+        
 
         # Botão para guardar as alterações
         btn_guardar = tk.Button(
@@ -257,7 +272,7 @@ class PaginaFuncionarios(tk.Frame):
                 senha_hash = bcrypt.hashpw(
                     nova_senha.encode("utf-8"),
                     bcrypt.gensalt()
-                )
+                ).decode("utf-8")
 
                 self.cursor.execute(
                     """
