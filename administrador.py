@@ -1,17 +1,176 @@
-import tkinter as tk 
-from ligacao import conn 
+import tkinter as tk
+from tkinter import messagebox
+from tkinter import ttk
+import bcrypt
+import mysql.connector
+from ligacao import conn
+from funcionarios import PaginaFuncionarios
+
+
+
+
+BG = "#EAF6FF"             # Fundo principal
+PRIMARY = "#3F8FC1"        # Azul principal
+PRIMARY_DARK = "#2F78A8"   # Azul mais escuro
+BLUE_LIGHT = "#B5D9EA"     # Azul claro
+BLUE_VERY_LIGHT = "#D9EDF7"
+CARD = "#FFFFFF"           # Branco
+TEXT = "#1E3A52"           # Texto principal
+TEXT_SECONDARY = "#6B879C" # Texto secundário
+BORDER = "#C7E3F2"
 
 
 class PaginaAdministrador(tk.Frame):
+    def __init__(self,parent):
+        super().__init__(parent, bg= BG)
+        self.parent = parent
+        self.cursor = conn.cursor(buffered=True)
 
-    def __init__(self, parent):
-        super().__init__(parent)
 
-        self.cursor = conn.cursor()
-        titulo = tk.Label(
-            self,
-            text= "ADMINISTRADOR",
-            font=("Arial",24))
+       #mostrar a tela login
+        self.tela_login()
 
-        titulo.pack(pady=50)
+ # Função  Login
+
+    def tela_login(self):
+        #cria um sub-fram
+        self.frame_login = tk.Frame(self,bg=CARD, highlightbackground=BORDER,highlightthickness=1)
+
+        self.frame_login.pack(expand=True,padx=40,ipadx=30,ipady=30)
+
+        titulo = tk.Label(self.frame_login, text= "ÁREA ADMINISTRATIVA", font= ("Arial",16,"bold"),bg=CARD, fg=TEXT)
+        titulo.pack(pady=(10, 20))
+
+        nome_login = tk.Label(self.frame_login, text= "Nome:",font=( "Arial",10,"bold"), bg= CARD,fg= TEXT_SECONDARY)
+        nome_login.pack(anchor="w", padx=20, pady=(5,2))
+
+       #caixa de entrada nome
+        self.ent_nome = tk.Entry(
+            self.frame_login,
+            font= ("Arial",11),
+            width=25,
+            bg=BLUE_VERY_LIGHT,
+            fg= TEXT,
+            bd= 0,
+            highlightbackground= BORDER,
+            highlightthickness=1
+            )
+        self.ent_nome.pack(padx=20, pady=(0,15), ipady=4)
+
+        senha_login= tk.Label(
+            self.frame_login,
+            text= "Senha:",
+            font=("Arial", 10, "bold"),
+            bg= CARD,
+            fg=TEXT_SECONDARY
+        )
+        senha_login.pack(anchor="w",padx=20,pady=(5,2))
+
+        self.ent_senha = tk.Entry(
+            self.frame_login,
+            show="*",
+            font=("Arial,11"),
+            width=25,
+            bg=BLUE_VERY_LIGHT,
+            fg=TEXT,
+            bd=0,
+            highlightbackground=BORDER,
+            highlightthickness=1
+        )
+        self.ent_senha.pack(padx=20, pady=(0,20), ipady=4)
+
+        #botao autenticar 
+
+        btn_entrar = tk.Button(
+            self.frame_login,
+            text= "Autenticar",
+            font=("Arial", 11, "bold"),
+            bg= PRIMARY,
+            fg="white",
+            activebackground= PRIMARY_DARK,
+            activeforeground="white",
+            bd=0,
+            cursor="hand2",
+            width=15,
+            command=self.autenticar_admin
+        )
+        btn_entrar.pack(pady=(10,10), ipady=5)
+
+        #função autenticar
+
+    def autenticar_admin(self):
+        usuario = self.ent_nome.get().strip().capitalize()
+        senha_digitada = self.ent_senha.get().strip()
+
+        if not usuario or not senha_digitada:
+            messagebox.showwarning("Aviso", "Por favor, preencha todos os campos!")
+            return
+
+        try:
+            self.cursor.execute(
+                "SELECT senha, tipo, estado FROM funcionarios WHERE nome = %s",
+                (usuario,)
+            )
+            resultado = self.cursor.fetchone()
+
+            if resultado:
+                senha, tipo_funcionario, estado = resultado
+                tipo_funcionario = tipo_funcionario.upper()
+
+                if estado =="Inativo":
+                    messagebox.showerror("Acesso Negado", "Esta conta está desativada.")
+                    return
+
+                if tipo_funcionario != "ADMIN":
+                    messagebox.showerror("Acesso Recusado", "Apenas Administradores")
+                    return
+
+                if bcrypt.checkpw(senha_digitada.encode('utf-8'), senha.encode('utf-8')):
+                    messagebox.showinfo("Sucesso", f"Bem-Vindo,{usuario}!")
+
+                    self.frame_login.destroy()
+                    self.gestao_funcionarios()
+                else:
+                    messagebox.showerror("Erro", "Senha incorreta!")
+
+            else:
+                messagebox.showerror("Erro", "Funcionario não encontrado!")
+
+        except mysql.connector.Error as erro:
+            messagebox.showerror("Erro", f"Erro na base de dados: {erro}")
+
+    def gestao_funcionarios(self):
+        self.pagina_gestao = PaginaFuncionarios(self)
+        self.pagina_gestao.pack(fill="both", expand= True)
+
+
+
+
+
+
+
+
+
+                    
+
+                  
+
+            
+                  
+
+                
+            
+
+            
         
+
+
+
+
+
+
+
+
+
+
+
