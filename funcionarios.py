@@ -10,6 +10,7 @@ from tkinter import ttk
 import bcrypt
 import mysql.connector
 from ligacao import conn 
+from relatorios import PaginaRelatorios
 
 
 class PaginaFuncionarios(tk.Frame):
@@ -79,6 +80,11 @@ class PaginaFuncionarios(tk.Frame):
         btn_sair= tk.Button(frame_botoes, text="Sair", command= self.sair)
         btn_sair.pack(side=tk.LEFT, padx=10, pady=10)
         
+        #botão relatorios
+        btn_relatorio = tk.Button(frame_botoes,text="Relatorios", command=self.relatorios)
+        btn_relatorio.pack(side=tk.LEFT, padx=10, pady=10)
+        
+        
         
         
 
@@ -100,6 +106,14 @@ class PaginaFuncionarios(tk.Frame):
     def sair(self):
         self.destroy()
         self.parent.tela_login()  
+        
+    # Pagina Relatorios
+    
+    def relatorios(self):
+        self.pagina_gestao = PaginaRelatorios(self)
+        self.pagina_gestao.pack(fill= "both", expand= True)
+    
+    
       
       
     # CRIAR UM FUNCIONÁRIO
