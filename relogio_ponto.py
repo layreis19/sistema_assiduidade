@@ -13,7 +13,7 @@ class PaginaPonto(tk.Frame):
 
         super().__init__(parent)
 
-        self.cursor = conn.cursor()
+        self.cursor = conn.cursor(buffered=True)
 
         # -------------------------
         # TÍTULO

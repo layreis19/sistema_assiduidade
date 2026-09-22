@@ -137,7 +137,7 @@ class PaginaPresencas(tk.Frame):
            
 
         # Cursos da base de dados 
-        self.cursor = conn.cursor()
+        self.cursor = conn.cursor(buffered=True)
 
 
         # Atualizar a tabela 
