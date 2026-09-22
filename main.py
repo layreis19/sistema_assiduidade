@@ -4,6 +4,7 @@ from relogio_ponto import PaginaPonto
 from funcionarios import PaginaFuncionarios
 from ctrl_presencas import PaginaPresencas
 from administrador import PaginaAdministrador
+from relatorios import PaginaRelatorios
 
 from ligacao import conn
 janela = tk.Tk()
@@ -45,14 +46,15 @@ pagina_ponto = PaginaPonto(conteudo)
 pagina_funcionarios = PaginaFuncionarios(conteudo)
 pagina_presencas = PaginaPresencas(conteudo)
 pagina_administrador = PaginaAdministrador(conteudo)
+pagina_relatorios = PaginaRelatorios(conteudo)
 
 #mostrar a página inicial (página de ponto) e esconder as outras páginas
 def mostrar_pagina(pagina):
 
     pagina_ponto.pack_forget()
-    pagina_funcionarios.pack_forget()
     pagina_presencas.pack_forget()
     pagina_administrador.pack_forget()
+    pagina_relatorios.pack_forget()
 
   # mostrar a página selecionada
     pagina.pack(
@@ -84,12 +86,6 @@ tk.Button(
     command=lambda: mostrar_pagina(pagina_ponto)
 ).pack(side="left", padx=10, pady=10)
 
-
-tk.Button(
-    menu,
-    text="Funcionários",
-    command=lambda: mostrar_pagina(pagina_funcionarios)
-).pack(side="left", padx=10, pady=10)
 
 
 tk.Button(
