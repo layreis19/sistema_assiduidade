@@ -148,12 +148,15 @@ class PaginaPonto(tk.Frame):
     def carregar_funcionarios(self):
 
         self.cursor.execute(
-            "SELECT nome FROM funcionarios"
+            "SELECT id_funcionario, nome FROM funcionarios"
         )
 
+
+        resultados = self.cursor.fetchall()
+
         funcionarios = [
-            row[0]
-            for row in self.cursor.fetchall()
+            f"{id_funcionario} - {nome}"
+            for id_funcionario, nome in resultados 
         ]
 
         self.combo_funcionarios["values"] = funcionarios
@@ -161,12 +164,12 @@ class PaginaPonto(tk.Frame):
 
     def registar_picagem(self):
 
-        nome = self.combo_funcionarios.get().strip()
+        funcionarios = self.combo_funcionarios.get().strip()
         senha = self.entrada_password.get().strip()
         
 
 
-        if not nome or not senha:
+        if not funcionarios or not senha:
 
             messagebox.showwarning(
                 "Campos em falta",
@@ -174,6 +177,8 @@ class PaginaPonto(tk.Frame):
             )
 
             return
+
+        id_funcionario = int(funcionarios.split(" - ")[0])
 
 
         try:
@@ -187,9 +192,9 @@ class PaginaPonto(tk.Frame):
                 """
                 SELECT id_funcionario, senha, estado
                 FROM funcionarios
-                WHERE nome = %s
+                WHERE id_funcionario = %s
                 """,
-                (nome,)
+                (id_funcionario,)
             )
 
             funcionario = self.cursor.fetchone()
