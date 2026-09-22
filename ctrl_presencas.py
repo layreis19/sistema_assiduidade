@@ -78,7 +78,7 @@ class PaginaPresencas(tk.Frame):
             self.tabela.insert(
                 "",
                 "end",
-                values=(nome, estado),
+                values=(id_funcionario,nome, estado),
                 tags=(tag,)
             )
 
@@ -127,9 +127,10 @@ class PaginaPresencas(tk.Frame):
         # Criar a tabela
         self.tabela = ttk.Treeview(
             self, 
-            columns=("nome", "estado"),
+            columns=("id_funcionario", "nome", "estado"),
             show="headings")
-                        
+
+        self.tabela.heading("id_funcionario", text="ID_Funcionário")
         self.tabela.heading("nome", text="Funcionário")
         self.tabela.heading("estado", text="Estado")
 

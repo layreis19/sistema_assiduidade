@@ -332,6 +332,7 @@ class PaginaPonto(tk.Frame):
         self.cursor.execute(
             """
             SELECT
+                funcionarios.id_funcionario,
                 funcionarios.nome,
                 picagem.data,
                 picagem.tipo
