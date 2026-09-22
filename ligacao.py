@@ -13,6 +13,6 @@ conn = mysql.connector.connect(
     database=os.getenv("DB_NAME")
 )
 
-cursor = conn.cursor()
+cursor = conn.cursor(buffered=True)
 
 print("Ligação bem sucedida!")

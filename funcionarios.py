@@ -166,11 +166,10 @@ class PaginaFuncionarios(tk.Frame):
             self.atualizar_funcionarios()
             
 
-        except mysql.connector.IntegrityError:
+        except mysql.connector.Error as erro:
             messagebox.showerror(
                 "Erro",
-                "Funcionário já existe!"
-
+                f"Erro ao adicionar funcionário: {erro}"
             )
 
 
