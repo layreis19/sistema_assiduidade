@@ -108,10 +108,13 @@ class PaginaFuncionarios(tk.Frame):
         self.parent.tela_login()  
         
     # Pagina Relatorios
-    
     def relatorios(self):
-        self.pagina_gestao = PaginaRelatorios(self)
-        self.pagina_gestao.pack(fill= "both", expand= True)
+        # 1. Limpa a página de funcionários atual da tela
+        self.destroy()
+        
+        # 2. Cria os relatórios no nível correto usando o PAI (self.parent)
+        self.pagina_relatorios = PaginaRelatorios(self.parent)
+        self.pagina_relatorios.pack(fill="both", expand=True)
     
     
       
