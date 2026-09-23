@@ -100,7 +100,7 @@ class PaginaAdministrador(tk.Frame):
         #função autenticar
 
     def autenticar_admin(self):
-        usuario = self.ent_nome.get().strip().capitalize()
+        usuario = self.ent_nome.get().strip()
         senha_digitada = self.ent_senha.get().strip()
 
         if not usuario or not senha_digitada:
@@ -108,34 +108,45 @@ class PaginaAdministrador(tk.Frame):
             return
 
         try:
+            # Comparação de nome sem distinção de maiúsculas/minúsculas
+            # (LOWER dos dois lados), em vez de tentar adivinhar a
+            # capitalização certa no lado do Python — "ana costa",
+            # "Ana Costa" e "ANA COSTA" devem encontrar a mesma pessoa.
+            #
+            # "AND tipo = 'ADMIN'" já filtra aqui: um colaborador com o
+            # mesmo nome de um admin nunca é confundido com ele nesta
+            # consulta, porque só candidatos a admin são considerados.
             self.cursor.execute(
-                "SELECT senha, tipo, estado FROM funcionarios WHERE nome = %s",
+                """
+                SELECT nome, senha, estado
+                FROM funcionarios
+                WHERE LOWER(nome) = LOWER(%s)
+                  AND tipo = 'ADMIN'
+                """,
                 (usuario,)
             )
             resultado = self.cursor.fetchone()
 
-            if resultado:
-                senha, tipo_funcionario, estado = resultado
-                tipo_funcionario = tipo_funcionario.upper()
-
-                if estado =="Inativo":
-                    messagebox.showerror("Acesso Negado", "Esta conta está desativada.")
-                    return
-
-                if tipo_funcionario != "ADMIN":
-                    messagebox.showerror("Acesso Recusado", "Apenas Administradores")
-                    return
-
-                if bcrypt.checkpw(senha_digitada.encode('utf-8'), senha.encode('utf-8')):
-                    messagebox.showinfo("Sucesso", f"Bem-Vindo,{usuario}!")
-
-                    self.frame_login.destroy()
-                    self.gestao_funcionarios()
-                else:
-                    messagebox.showerror("Erro", "Senha incorreta!")
-
-            else:
+            if resultado is None:
                 messagebox.showerror("Erro", "Funcionario não encontrado!")
+                return
+
+            nome_real, senha, estado = resultado
+
+            # Comparar sempre com o valor real do ENUM ("ATIVO"/"INATIVO"),
+            # nunca com "Inativo" — a comparação anterior nunca disparava
+            # porque a base de dados guarda sempre em maiúsculas.
+            if estado != "ATIVO":
+                messagebox.showerror("Acesso Negado", "Esta conta está desativada.")
+                return
+
+            if bcrypt.checkpw(senha_digitada.encode('utf-8'), senha.encode('utf-8')):
+                messagebox.showinfo("Sucesso", f"Bem-Vindo, {nome_real}!")
+
+                self.frame_login.destroy()
+                self.gestao_funcionarios()
+            else:
+                messagebox.showerror("Erro", "Senha incorreta!")
 
         except mysql.connector.Error as erro:
             messagebox.showerror("Erro", f"Erro na base de dados: {erro}")
@@ -143,35 +154,3 @@ class PaginaAdministrador(tk.Frame):
     def gestao_funcionarios(self):
         self.pagina_gestao = PaginaFuncionarios(self)
         self.pagina_gestao.pack(fill="both", expand= True)
-
-
-
-
-
-
-
-
-
-                    
-
-                  
-
-            
-                  
-
-                
-            
-
-            
-        
-
-
-
-
-
-
-
-
-
-
-
