@@ -148,71 +148,153 @@ class PaginaPonto(tk.Frame):
     def carregar_funcionarios(self):
 
         self.cursor.execute(
-            "SELECT id_funcionario, nome FROM funcionarios"
+            """
+            SELECT id_funcionario, nome
+            FROM funcionarios
+            WHERE estado = 'ATIVO'
+            ORDER BY nome
+            """
         )
 
+        # Mapa "Nome (#id)" -> id_funcionario.
+        # Nunca identificamos o funcionário pelo nome sozinho: dois funcionários
+        # podem ter o mesmo nome, e o nome não tem UNIQUE na base de dados.
+        self.funcionarios_map = {
+            f"{nome} (#{id_})": id_
+            for id_, nome in self.cursor.fetchall()
+        }
 
-        resultados = self.cursor.fetchall()
+        self.combo_funcionarios["values"] = list(self.funcionarios_map.keys())
 
-        funcionarios = [
-            f"{id_funcionario} - {nome}"
-            for id_funcionario, nome in resultados 
-        ]
 
-        self.combo_funcionarios["values"] = funcionarios
+    def obter_horario_do_dia(self, id_funcionario, data_hoje):
+        """
+        Devolve (tipo_horario, inicio_almoco, fim_almoco) para o horário
+        atribuído a este funcionário nesta data, ou None se não houver
+        nenhum horário atribuído para hoje.
+        """
+
+        self.cursor.execute(
+            """
+            SELECT h.tipo, h.inicio_almoco, h.fim_almoco
+            FROM funcionario_horario fh
+            JOIN horario h ON h.id_horario = fh.id_horario
+            WHERE fh.id_funcionario = %s
+              AND fh.data = %s
+            """,
+            (id_funcionario, data_hoje)
+        )
+
+        return self.cursor.fetchone()
+
+
+    def determinar_tipo_picagem(self, id_funcionario, data_hoje):
+        """
+        Decide qual o próximo tipo de picagem para este funcionário hoje,
+        com base na última picagem válida do dia e em o horário atribuído
+        ter (ou não) pausa de almoço configurada.
+
+        Devolve None se o ciclo do dia já estiver completo (já houve a
+        SAIDA final) — nesse caso, não deve ser registada mais nenhuma
+        picagem automática; só o admin pode corrigir/adicionar.
+
+        Sem almoço configurado (ou sem horário atribuído): ENTRADA -> SAIDA.
+        Com almoço configurado: ENTRADA -> SAIDA_ALMOCO -> VOLTA_ALMOCO -> SAIDA.
+        """
+
+        horario_hoje = self.obter_horario_do_dia(id_funcionario, data_hoje)
+        tem_almoco = bool(
+            horario_hoje and horario_hoje[1] is not None and horario_hoje[2] is not None
+        )
+
+        self.cursor.execute(
+            """
+            SELECT tipo
+            FROM picagem
+            WHERE id_funcionario = %s
+              AND DATE(data) = %s
+              AND anulada = 0
+            ORDER BY data DESC
+            LIMIT 1
+            """,
+            (id_funcionario, data_hoje)
+        )
+
+        ultima_picagem = self.cursor.fetchone()
+
+        if ultima_picagem is None:
+            return "ENTRADA"
+
+        tipo_anterior = ultima_picagem[0]
+
+        if not tem_almoco:
+            # Sem pausa: só um par ENTRADA -> SAIDA por dia.
+            if tipo_anterior == "ENTRADA":
+                return "SAIDA"
+            return None  # já saiu hoje, ciclo completo
+
+        sequencia = {
+            "ENTRADA": "SAIDA_ALMOCO",
+            "SAIDA_ALMOCO": "VOLTA_ALMOCO",
+            "VOLTA_ALMOCO": "SAIDA",
+            "SAIDA": None,  # já completou o dia todo, ciclo completo
+        }
+
+        return sequencia[tipo_anterior]
 
 
     def registar_picagem(self):
 
-        funcionarios = self.combo_funcionarios.get().strip()
+        selecao = self.combo_funcionarios.get().strip()
         senha = self.entrada_password.get().strip()
-        
 
-
-        if not funcionarios or not senha:
+        if not selecao or not senha:
 
             messagebox.showwarning(
                 "Campos em falta",
-                "Preencha o nome e a senha."
+                "Selecione o funcionário e preencha a senha."
             )
 
             return
 
-        id_funcionario = int(funcionarios.split(" - ")[0])
+        funcionario_id = self.funcionarios_map.get(selecao)
 
+        if funcionario_id is None:
+
+            messagebox.showerror(
+                "Erro",
+                "Selecione um funcionário válido na lista."
+            )
+
+            return
 
         try:
 
             # --------------------------------
             # VERIFICAR FUNCIONÁRIO E PASSWORD
             # --------------------------------
-           
 
             self.cursor.execute(
                 """
-                SELECT id_funcionario, senha, estado
+                SELECT senha, estado
                 FROM funcionarios
                 WHERE id_funcionario = %s
                 """,
-                (id_funcionario,)
+                (funcionario_id,)
             )
 
             funcionario = self.cursor.fetchone()
-
 
             if funcionario is None:
 
                 messagebox.showerror(
                     "Erro",
-                    "Funcionário ou senha incorretos."
+                    "Funcionário não encontrado."
                 )
 
                 return
-            
 
-            funcionario_id = funcionario[0]
-            senha_hash = funcionario[1]
-            estado = funcionario[2]
+            senha_hash, estado = funcionario
 
             if estado != "ATIVO":
 
@@ -222,7 +304,7 @@ class PaginaPonto(tk.Frame):
                 )
 
                 return
-            
+
             if not bcrypt.checkpw(
                 senha.encode("utf-8"),
                 senha_hash.encode("utf-8")
@@ -237,35 +319,40 @@ class PaginaPonto(tk.Frame):
 
 
             # --------------------------------
-            # VER ÚLTIMA PICAGEM
+            # AVISAR SE ESTIVER DE FOLGA HOJE
             # --------------------------------
 
-            self.cursor.execute(
-                """
-                SELECT tipo
-                FROM picagem
-                WHERE id_funcionario = %s
-                ORDER BY data DESC
-                LIMIT 1
-                """,
-                (funcionario_id,)
-            )
+            agora = datetime.now()
+            data_hoje = agora.date()
 
-            ultima_picagem = self.cursor.fetchone()
+            horario_hoje = self.obter_horario_do_dia(funcionario_id, data_hoje)
+
+            if horario_hoje and horario_hoje[0] == "FOLGA":
+
+                continuar = messagebox.askyesno(
+                    "Funcionário de folga",
+                    "Este funcionário está de folga hoje. Registar a picagem mesmo assim?"
+                )
+
+                if not continuar:
+                    return
 
 
             # --------------------------------
-            # DETERMINAR ENTRADA OU SAÍDA
+            # DETERMINAR O TIPO DE PICAGEM
             # --------------------------------
 
-            if (
-                ultima_picagem is None
-                or ultima_picagem[0] == "SAIDA"
-            ):
-                tipo = "ENTRADA"
+            tipo = self.determinar_tipo_picagem(funcionario_id, data_hoje)
 
-            else:
-                tipo = "SAIDA"
+            if tipo is None:
+
+                messagebox.showerror(
+                    "Ciclo do dia concluído",
+                    "Este funcionário já completou o horário de hoje.\n"
+                    "Qualquer correção deve ser feita pelo administrador."
+                )
+
+                return
 
 
             # --------------------------------
@@ -280,7 +367,7 @@ class PaginaPonto(tk.Frame):
                 """,
                 (
                     funcionario_id,
-                    datetime.now(),
+                    agora,
                     tipo
                 )
             )
@@ -298,7 +385,7 @@ class PaginaPonto(tk.Frame):
 
             messagebox.showinfo(
                 "Picagem registada",
-                f"{tipo.capitalize()} registada com sucesso!"
+                f"{tipo.replace('_', ' ').capitalize()} registada com sucesso!"
             )
 
 
@@ -311,10 +398,11 @@ class PaginaPonto(tk.Frame):
         except Exception as erro:
 
             conn.rollback()
+            print(erro)  # visibilidade no terminal durante o desenvolvimento
 
             messagebox.showerror(
                 "Erro",
-                f"Ocorreu um erro:\n{erro}"
+                "Ocorreu um erro ao registar a picagem. Tente novamente!"
             )
 
 
@@ -327,12 +415,11 @@ class PaginaPonto(tk.Frame):
             self.tabela.delete(item)
 
 
-        # Buscar picagens
+        # Buscar picagens (só as válidas, não anuladas)
 
         self.cursor.execute(
             """
             SELECT
-                funcionarios.id_funcionario,
                 funcionarios.nome,
                 picagem.data,
                 picagem.tipo
@@ -340,6 +427,7 @@ class PaginaPonto(tk.Frame):
             JOIN funcionarios
                 ON funcionarios.id_funcionario =
                    picagem.id_funcionario
+            WHERE picagem.anulada = 0
             ORDER BY picagem.data DESC
             """
         )

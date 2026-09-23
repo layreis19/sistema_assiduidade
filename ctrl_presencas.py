@@ -1,5 +1,3 @@
-
-
 import tkinter as tk
 from tkinter import ttk
 from ligacao import conn
@@ -16,6 +14,10 @@ class PaginaPresencas(tk.Frame):
             # Apago os dados que já estão na tabela 
             self.tabela.delete(linha)
 
+        # A condição "picagem.anulada = 0" está no ON, não no WHERE, para
+        # continuar a ser um LEFT JOIN de verdade: um funcionário cujas
+        # únicas picagens estejam anuladas deve continuar a aparecer como
+        # AUSENTE (tipo = NULL), em vez de desaparecer da lista por completo.
         self.cursor.execute("""
         SELECT funcionarios.id_funcionario,
                funcionarios.nome,
@@ -23,6 +25,7 @@ class PaginaPresencas(tk.Frame):
         FROM funcionarios
         LEFT JOIN picagem
             ON funcionarios.id_funcionario = picagem.id_funcionario
+           AND picagem.anulada = 0
         ORDER BY funcionarios.id_funcionario, picagem.data
     """)
 
@@ -47,6 +50,7 @@ class PaginaPresencas(tk.Frame):
         # Definir as cores
         self.tabela.tag_configure("presente", foreground="green")
         self.tabela.tag_configure("ausente", foreground="red")
+        self.tabela.tag_configure("pausa", foreground="orange")
 
         # Percorrer os funcionários e obter o nome e o tipo
         for id_funcionario, dados in dicionario_funcionarios.items():
@@ -54,31 +58,38 @@ class PaginaPresencas(tk.Frame):
             nome = dados["nome"]
             tipo = dados["tipo"]
 
-            if tipo is None:
-                estado = "AUSENTE"
-                tag = "ausente"
-
-            elif tipo == "ENTRADA":
+            # ENTRADA e VOLTA_ALMOCO significam que a pessoa está a trabalhar
+            # neste momento; SAIDA_ALMOCO é um estado próprio (em pausa), não
+            # ausência nem presença; SAIDA e "sem picagem nenhuma" (None)
+            # contam como ausente.
+            if tipo in ("ENTRADA", "VOLTA_ALMOCO"):
                 estado = "PRESENTE"
                 tag = "presente"
 
-            elif tipo == "SAIDA":
+            elif tipo == "SAIDA_ALMOCO":
+                estado = "EM PAUSA"
+                tag = "pausa"
+
+            else:  # tipo == "SAIDA" ou tipo is None
                 estado = "AUSENTE"
                 tag = "ausente"
 
 
             # filtrar por estado
 
-            if self.filtro.get() =="Presentes" and estado != "PRESENTE":
+            if self.filtro.get() == "Presentes" and estado != "PRESENTE":
                 continue
 
             if self.filtro.get() == "Ausentes" and estado != "AUSENTE":
                 continue
 
+            if self.filtro.get() == "Em Pausa" and estado != "EM PAUSA":
+                continue
+
             self.tabela.insert(
                 "",
                 "end",
-                values=(id_funcionario,nome, estado),
+                values=(id_funcionario, nome, estado),
                 tags=(tag,)
             )
 
@@ -111,7 +122,7 @@ class PaginaPresencas(tk.Frame):
         combo_filtro = ttk.Combobox(
             self.frame_filtros,
             textvariable=self.filtro,
-            values=("Todos", "Presentes", "Ausentes"),
+            values=("Todos", "Presentes", "Ausentes", "Em Pausa"),
             state="readonly",
             width=12
         )
@@ -143,6 +154,3 @@ class PaginaPresencas(tk.Frame):
 
         # Atualizar a tabela 
         self.atualizar_presenca()
-
-        
-        
