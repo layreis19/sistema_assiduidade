@@ -13,11 +13,24 @@ from ligacao import conn
 from relatorios import PaginaRelatorios
 
 
+
+
+BG = "#EAF6FF"             # Fundo principal
+PRIMARY = "#3F8FC1"        # Azul principal
+PRIMARY_DARK = "#2F78A8"   # Azul mais escuro
+BLUE_LIGHT = "#B5D9EA"     # Azul claro
+BLUE_VERY_LIGHT = "#D9EDF7"
+CARD = "#FFFFFF"           # Branco
+TEXT = "#1E3A52"           # Texto principal
+TEXT_SECONDARY = "#6B879C" # Texto secundário
+BORDER = "#C7E3F2"
+
+
 class PaginaFuncionarios(tk.Frame):
     
 
     def __init__(self, parent):
-        super().__init__(parent)
+        super().__init__(parent,bg= CARD)
         self.parent = parent
 
 

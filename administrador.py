@@ -22,9 +22,10 @@ BORDER = "#C7E3F2"
 
 
 class PaginaAdministrador(tk.Frame):
-    def __init__(self,parent):
+    def __init__(self,parent, mostrar_botoes_admin):
         super().__init__(parent, bg= BG)
         self.parent = parent
+        self.mostrar_botoes_admin= mostrar_botoes_admin
         self.cursor = conn.cursor(buffered=True)
 
 
@@ -144,7 +145,10 @@ class PaginaAdministrador(tk.Frame):
                 messagebox.showinfo("Sucesso", f"Bem-Vindo, {nome_real}!")
 
                 self.frame_login.destroy()
+                
+                self.mostrar_botoes_admin()
                 self.gestao_funcionarios()
+              
             else:
                 messagebox.showerror("Erro", "Senha incorreta!")
 
