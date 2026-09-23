@@ -6,7 +6,6 @@ from ctrl_presencas import PaginaPresencas
 from administrador import PaginaAdministrador
 from relatorios import PaginaRelatorios
 from atribuicao_horario import PaginaAtribuicaoHorarios
-
 from ligacao import conn
 janela = tk.Tk()
 
@@ -46,9 +45,66 @@ conteudo.pack(
 pagina_ponto = PaginaPonto(conteudo)
 pagina_funcionarios = PaginaFuncionarios(conteudo)
 pagina_presencas = PaginaPresencas(conteudo)
-pagina_administrador = PaginaAdministrador(conteudo)
 pagina_relatorios = PaginaRelatorios(conteudo)
 pagina_atribuicao_horarios = PaginaAtribuicaoHorarios(conteudo)
+
+
+
+
+
+
+#BOTÕES ADMIN
+btn_funcionarios = tk.Button(
+    menu,
+    text="Funcionários",
+    command=lambda: mostrar_pagina(pagina_funcionarios)
+)
+
+btn_horarios = tk.Button(
+    menu,
+    text="Horários",
+    command=lambda: mostrar_pagina(pagina_atribuicao_horarios)
+)
+
+btn_relatorios = tk.Button(
+    menu,
+    text="Relatórios",
+    command=lambda: mostrar_pagina(pagina_relatorios)
+)
+
+def mostrar_botoes_admin():
+    btn_funcionarios.pack(
+        side="left",
+        padx=10,
+        pady=10
+    )
+
+    btn_horarios.pack(
+        side="left",
+        padx=10,
+        pady=10
+    )
+
+    btn_relatorios.pack(
+        side="left",
+        padx=10,
+        pady=10
+    )
+    
+    
+    btn_funcionarios.pack(
+            side="left",
+            padx=10,
+            pady=10
+        )
+    
+pagina_administrador = PaginaAdministrador(conteudo, mostrar_botoes_admin)
+
+
+
+
+
+
 
 #mostrar a página inicial (página de ponto) e esconder as outras páginas
 def mostrar_pagina(pagina):
@@ -58,6 +114,7 @@ def mostrar_pagina(pagina):
     pagina_administrador.pack_forget()
     pagina_relatorios.pack_forget()
     pagina_atribuicao_horarios.pack_forget()
+    pagina_funcionarios.pack_forget()
 
   # mostrar a página selecionada
     pagina.pack(
@@ -108,11 +165,9 @@ tk.Button(
     command=lambda:  mostrar_pagina(pagina_administrador)
 ).pack(side="left", padx=10, pady=10)
 
-tk.Button(
-    menu,
-    text="Horários",
-    command=lambda: mostrar_pagina(pagina_atribuicao_horarios)
-).pack(side="left", padx=10, pady=10)
+
+
+
 
 # PÁGINA INICIAL
 

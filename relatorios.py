@@ -23,7 +23,7 @@ BORDER = "#C7E3F2"
 
 class PaginaRelatorios(tk.Frame):
     def __init__(self,parent):
-        super().__init__(parent, bg= BG)
+        super().__init__(parent, bg= CARD)
         self.parent= parent
         self.cursor = conn.cursor(buffered=True)
         
