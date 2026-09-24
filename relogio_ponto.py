@@ -1,3 +1,15 @@
+"""
+O QUE ESTE FICHEIRO FAZ?
+É a página onde os funcionários picam o ponto.
+- Mostra um relógio e a lista de funcionários ativos.
+- O funcionário escolhe o nome, escreve a senha e clica em Fazer Picagem.
+- O programa descobre sozinho o tipo de picagem: Entrada, Saída Almoço,
+  Volta Almoço ou Saída (depende do horário e da última picagem).
+- Avisa se o funcionário está de folga e impede picagens a mais no mesmo dia.
+- Grava a picagem na tabela PICAGEM e recalcula os resultados do dia
+  (atrasos, horas extra, total trabalhado).
+- Mostra numa tabela todas as picagens registadas.
+"""
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime, timedelta
