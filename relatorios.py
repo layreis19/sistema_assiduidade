@@ -11,54 +11,49 @@ from tkinter import messagebox, ttk, filedialog
 from ligacao import conn
 from ttkbootstrap.widgets import DateEntry
 from datetime import datetime
-
-BG = "#EAF6FF"
-PRIMARY = "#3F8FC1"
-PRIMARY_DARK = "#2F78A8"
-CARD = "#FFFFFF"
-TEXT = "#1E3A52"
+import cores
 
 
 class PaginaRelatorios(tk.Frame):
     def __init__(self, parent):
-        super().__init__(parent, bg=CARD)
+        super().__init__(parent, bg=cores.CARD)
         self.cursor = conn.cursor(buffered=True)
 
        
-        frame_topo = tk.Frame(self, bg=BG)
+        frame_topo = tk.Frame(self, bg=cores.BG)
         frame_topo.pack(fill="x", padx=30, pady=10)
         tk.Label(frame_topo, text="RELATÓRIOS DE ASSIDUIDADE",
-                 font=("Arial", 22, "bold"), bg=BG, fg=TEXT).pack(pady=50)
+                 font=("Arial", 22, "bold"), bg=cores.BG, fg=cores.TEXT).pack(pady=50)
 
         #Filtros 
-        frame_filtros = tk.Frame(self, bg=BG)
+        frame_filtros = tk.Frame(self, bg=cores.BG)
         frame_filtros.pack(pady=10)
 
         tk.Label(frame_filtros, text="ID do Funcionário:",
-                 font=("Arial", 12), bg=BG, fg=TEXT).pack(side=tk.LEFT, padx=5)
+                 font=("Arial", 12), bg=cores.BG, fg=cores.TEXT).pack(side=tk.LEFT, padx=5)
         self.entry_id = tk.Entry(frame_filtros)
         self.entry_id.pack(side=tk.LEFT, padx=(0, 20))
 
         tk.Label(frame_filtros, text="Data de Início:",
-                 font=("Arial", 12), bg=BG, fg=TEXT).pack(side=tk.LEFT, padx=5)
+                 font=("Arial", 12), bg=cores.BG, fg=cores.TEXT).pack(side=tk.LEFT, padx=5)
         self.calendario_inicio = DateEntry(frame_filtros, dateformat="%d/%m/%Y",
                                            width=15, bootstyle="info")
         self.calendario_inicio.pack(side=tk.LEFT, padx=(0, 20))
 
         tk.Label(frame_filtros, text="Data de Fim:",
-                 font=("Arial", 12), bg=BG, fg=TEXT).pack(side=tk.LEFT, padx=5)
+                 font=("Arial", 12), bg=cores.BG, fg=cores.TEXT).pack(side=tk.LEFT, padx=5)
         self.calendario_fim = DateEntry(frame_filtros, dateformat="%d/%m/%Y",
                                         width=15, bootstyle="info")
         self.calendario_fim.pack(side=tk.LEFT)
 
         # Botões 
         tk.Button(frame_filtros, text="Filtrar", font=("Arial", 11, "bold"),
-                  bg=PRIMARY, fg="white", activebackground=PRIMARY_DARK,
+                  bg=cores.PRIMARY, fg="white", activebackground=cores.PRIMARY_DARK,
                   activeforeground="white", bd=0, cursor="hand2",
                   command=self.filtrar_relatorio).pack(side=tk.LEFT, padx=10, ipady=10)
 
         tk.Button(frame_filtros, text="Gerar Relatório", font=("Arial", 11, "bold"),
-                  bg=PRIMARY, fg="white", activebackground=PRIMARY_DARK,
+                  bg=cores.PRIMARY, fg="white", activebackground=cores.PRIMARY_DARK,
                   activeforeground="white", bd=0, cursor="hand2",
                   command=self.gerar_relatorio_txt).pack(side=tk.LEFT, padx=10, ipady=10)
 

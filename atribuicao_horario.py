@@ -14,9 +14,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
-
 import mysql.connector
-import ttkbootstrap
 from ttkbootstrap.widgets import DateEntry
 from ligacao import conn
 
@@ -31,7 +29,8 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         titulo = tk.Label(
             self,
             text="ATRIBUIÇÃO DE HORÁRIOS",
-            font=("Arial", 24)
+            font=("Arial", 24),
+            background=bo
         )
         titulo.pack(pady=30)
 
@@ -47,15 +46,15 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             frame_formulario,
             text="Funcionário:",
             font=("Arial", 12)
-        ).grid(row=0, column=0, padx=10, pady=5, sticky="e")
+        ).grid(row=0, column=0, padx=(10,5), pady=5, sticky="e")
 
         self.combo_funcionario = ttk.Combobox(
             frame_formulario,
             font=("Arial", 12),
             state="readonly",
-            width=30
+            width=16
         )
-        self.combo_funcionario.grid(row=0, column=1, padx=10, pady=5)
+        self.combo_funcionario.grid(row=0, column=1, padx=(0,20), pady=5)
 
         self.combo_funcionario.bind(
             "<<ComboboxSelected>>",
@@ -67,29 +66,30 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             frame_formulario,
             text="Data:",
             font=("Arial", 12)
-        ).grid(row=1, column=0, padx=10, pady=5, sticky="e")
+        ).grid(row=0, column=2, padx=(10,5), pady=5, sticky="e")
 
         self.entry_data = DateEntry(
             frame_formulario,
             dateformat="%Y-%m-%d",
-            width=30
+            width=12,
+            bootstyle=PRIMARY_DARK
         )
-        self.entry_data.grid(row=1, column=1, padx=10, pady=5)
+        self.entry_data.grid(row=0, column=3, padx=(0,20), pady=5)
 
         # Horário
         tk.Label(
             frame_formulario,
             text="Horário:",
             font=("Arial", 12)
-        ).grid(row=2, column=0, padx=10, pady=5, sticky="e")
+        ).grid(row=0, column=4, padx=(10,5), pady=5, sticky="e")
 
         self.combo_horario = ttk.Combobox(
             frame_formulario,
             font=("Arial", 12),
             state="readonly",
-            width=30
+            width=16
         )
-        self.combo_horario.grid(row=2, column=1, padx=10, pady=5)
+        self.combo_horario.grid(row=0, column=5, padx=(0,10), pady=5)
 
         # Botão atribuir
         btn_atribuir = tk.Button(
@@ -97,8 +97,9 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             text="Atribuir Horário",
             font=("Arial", 12),
             command=self.atribuir_horario
+            
         )
-        btn_atribuir.pack(pady=15)
+        btn_atribuir.pack(expand=True, pady=15)
 
         # -------------------------
         # TABELA DE ATRIBUIÇÕES
