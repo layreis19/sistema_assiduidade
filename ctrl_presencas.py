@@ -3,7 +3,7 @@ from tkinter import ttk
 from ligacao import conn
 from datetime import date
 from tkinter import messagebox
-
+import cores
 # Criar a classe chamada PaginaPresencas
 # Herda o tk.Frame(janela/área dentro da aplicação)
 class PaginaPresencas(tk.Frame):

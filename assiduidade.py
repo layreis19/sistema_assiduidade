@@ -5,6 +5,7 @@ import mysql.connector
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime  
+import cores
 
 load_dotenv()  # load significa carregar e dotenv é o ficheiro .env
 

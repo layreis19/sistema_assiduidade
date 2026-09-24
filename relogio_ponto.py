@@ -15,7 +15,7 @@ from tkinter import ttk, messagebox
 from datetime import datetime, timedelta
 
 import bcrypt
-
+import cores
 from ligacao import conn
 from calculo_assiduidade import combinar_data_hora, calcular_e_guardar_dia, _para_time
 from rotulos import rotulo_tipo_picagem
