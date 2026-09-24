@@ -76,14 +76,7 @@ class PaginaFuncionarios(tk.Frame):
         # Botão ativar/desativar funcionário
         btn_ativar_desativar = tk.Button( frame_botoes, text="Ativar/Desativar", command= self.ativar_desativar_funcionario )
         btn_ativar_desativar.pack(side=tk.LEFT, padx=10, pady=10)
-        
-        #botão sair 
-        btn_sair= tk.Button(frame_botoes, text="Sair", command= self.sair)
-        btn_sair.pack(side=tk.LEFT, padx=10, pady=10)
-        
-        #botão relatorios
-        btn_relatorio = tk.Button(frame_botoes,text="Relatorios", command=self.relatorios)
-        btn_relatorio.pack(side=tk.LEFT, padx=10, pady=10)
+
         
         
         
@@ -101,22 +94,7 @@ class PaginaFuncionarios(tk.Frame):
         self.tabela.pack( fill="both",expand=True, padx=30, pady=20 )
 
         # Atualizar a tabela com os funcionários existentes
-        self.atualizar_funcionarios() 
-       
-    #Sair pagina
-    def sair(self):
-        self.destroy()
-        self.parent.tela_login()  
-        
-    # Pagina Relatorios
-    def relatorios(self):
-        # 1. Limpa a página de funcionários atual da tela
-        self.destroy()
-        
-        # 2. Cria os relatórios no nível correto usando o PAI (self.parent)
-        self.pagina_relatorios = PaginaRelatorios(self.parent)
-        self.pagina_relatorios.pack(fill="both", expand=True)
-    
+        self.atualizar_funcionarios()   
     
       
       

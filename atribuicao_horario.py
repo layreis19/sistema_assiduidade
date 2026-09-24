@@ -19,6 +19,8 @@ from ttkbootstrap.widgets import DateEntry
 from ligacao import conn
 import cores
 
+
+
 class PaginaAtribuicaoHorarios(tk.Frame):
 
     def __init__(self, parent):
@@ -30,8 +32,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             self,
             text="ATRIBUIÇÃO DE HORÁRIOS",
             font=("Arial", 24),
-            background=cores.BG,
-            foreground=cores.TEXT
+            background=cores.BG
         )
         titulo.pack(pady=(30,20))
 

@@ -10,7 +10,7 @@ import cores
 
 class PaginaAdministrador(tk.Frame):
     def __init__(self,parent, mostrar_botoes_admin):
-        super().__init__(parent, bg= BG)
+        super().__init__(parent, bg= cores.BG)
         self.parent = parent
         self.mostrar_botoes_admin= mostrar_botoes_admin
         self.cursor = conn.cursor(buffered=True)
