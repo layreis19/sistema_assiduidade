@@ -34,7 +34,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             font=("Arial", 24),
             background=cores.BG
         )
-        titulo.pack(pady=30)
+        titulo.pack(pady=(30,20))
 
         # -------------------------
         # FORMULÁRIO
