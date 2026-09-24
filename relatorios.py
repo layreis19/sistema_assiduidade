@@ -1,3 +1,11 @@
+"""
+O QUE ESTE FICHEIRO FAZ?
+É a página de relatórios de assiduidade (só para administradores).
+- Filtra por ID do funcionário (opcional) e por período (data de início e de fim).
+- Mostra numa tabela os atrasos, horas extra e total de horas, lidos da tabela RESULTADOS.
+- O botão Gerar Relatório guarda o que está na tabela num ficheiro .txt.
+"""
+
 import tkinter as tk
 from tkinter import messagebox, ttk, filedialog
 from ligacao import conn
@@ -22,7 +30,7 @@ class PaginaRelatorios(tk.Frame):
         tk.Label(frame_topo, text="RELATÓRIOS DE ASSIDUIDADE",
                  font=("Arial", 22, "bold"), bg=BG, fg=TEXT).pack(pady=50)
 
-        # ----- Filtros -----
+        #Filtros 
         frame_filtros = tk.Frame(self, bg=BG)
         frame_filtros.pack(pady=10)
 
@@ -43,7 +51,7 @@ class PaginaRelatorios(tk.Frame):
                                         width=15, bootstyle="info")
         self.calendario_fim.pack(side=tk.LEFT)
 
-        # ----- Botões -----
+        # Botões 
         tk.Button(frame_filtros, text="Filtrar", font=("Arial", 11, "bold"),
                   bg=PRIMARY, fg="white", activebackground=PRIMARY_DARK,
                   activeforeground="white", bd=0, cursor="hand2",
@@ -54,7 +62,7 @@ class PaginaRelatorios(tk.Frame):
                   activeforeground="white", bd=0, cursor="hand2",
                   command=self.gerar_relatorio_txt).pack(side=tk.LEFT, padx=10, ipady=10)
 
-        # ----- Tabela -----
+        #Tabela 
         self.tabela = ttk.Treeview(
             self,
             columns=("id", "nome", "data", "atrasos", "extras", "total"),
