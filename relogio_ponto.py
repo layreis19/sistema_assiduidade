@@ -28,6 +28,21 @@ from rotulos import rotulo_tipo_picagem
 # interpretada como se fosse a saída em falta de ontem. A margem existe
 # para não penalizar quem faz umas horas extra a mais sem ser um
 # esquecimento genuíno.
+
+BG = "#EAF6FF"             # Fundo principal
+PRIMARY = "#3F8FC1"        # Azul principal
+PRIMARY_DARK = "#2F78A8"   # Azul mais escuro
+BLUE_LIGHT = "#B5D9EA"     # Azul claro
+BLUE_VERY_LIGHT = "#D9EDF7"
+CARD = "#FFFFFF"           # Branco
+TEXT = "#1E3A52"           # Texto principal
+TEXT_SECONDARY = "#6B879C" # Texto secundário
+BORDER = "#C7E3F2"
+
+
+
+
+
 MARGEM_ABANDONO_TURNO = timedelta(hours=4)
 
 

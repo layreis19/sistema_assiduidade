@@ -21,6 +21,7 @@ from ttkbootstrap.widgets import DateEntry
 from ligacao import conn
 
 
+
 class PaginaAtribuicaoHorarios(tk.Frame):
 
     def __init__(self, parent):
