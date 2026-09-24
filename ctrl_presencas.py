@@ -81,7 +81,7 @@ class PaginaPresencas(tk.Frame):
 
         tk.Label(
             self.presentes_kpi,
-            text="TOTAL DE FUNCIONÁRIOS PRESENTES",
+            text="PRESENTES",
             font=("Arial", 11)).pack(
                 pady=(15,5)
             )
@@ -94,6 +94,38 @@ class PaginaPresencas(tk.Frame):
         )
 
         self.label_presentes.pack()
+
+
+        # KPI funcionários em pausa
+
+        self.pausa_kpi = tk.Frame(
+            self.frame_kpis,
+            width=220,
+            height=110,
+            relief="solid",
+            borderwidth=1
+        )
+
+        self.pausa_kpi.pack(side="left",
+                             padx=10)
+
+        self.pausa_kpi.pack_propagate(False)
+
+        tk.Label(
+            self.pausa_kpi,
+            text="EM PAUSA",
+            font=("Arial", 11)).pack(
+                pady=(15,5)
+        )
+
+        self.label_pausa = tk.Label(
+            self.pausa_kpi,
+            text="0",
+            font=("Arial", 26, "bold"),
+            fg="orange"
+        )
+
+        self.label_pausa.pack()
 
 
         # KPI funcionários ausentes
@@ -113,7 +145,7 @@ class PaginaPresencas(tk.Frame):
 
         tk.Label(
             self.ausentes_kpi,
-            text="TOTAL DE FUNCIONÁRIOS AUSENTES",
+            text="AUSENTES",
             font=("Arial", 11)).pack(
                 pady=(15,5)
         )
@@ -137,10 +169,6 @@ class PaginaPresencas(tk.Frame):
             padx=10,
             pady=20
         )
-
-        # pesquisa por id 
-
-
 
         # pesquisa por id 
 
@@ -190,6 +218,8 @@ class PaginaPresencas(tk.Frame):
 
 
         # Caixa para escolher o filtro
+        # ("Em Pausa" reposto: sem esta opção, quem está em pausa não
+        # aparecia em nenhum filtro específico, só em "Todos".)
 
         combo_filtro = ttk.Combobox(
             self.frame_filtros,
@@ -197,6 +227,7 @@ class PaginaPresencas(tk.Frame):
             values=(
                 "Todos",
                 "Presentes",
+                "Em Pausa",
                 "Ausentes"),
                 state="readonly",
                 width=12
@@ -284,6 +315,13 @@ class PaginaPresencas(tk.Frame):
             foreground="red"
         )
 
+        # Reposto: sem esta tag, quem estava em pausa ficava sem cor
+        # própria (ou rebentava, consoante a versão).
+        self.tabela.tag_configure(
+            "pausa",
+            foreground="orange"
+        )
+
         self.atualizar_presenca()
 
     def atualizar_presenca(self):
@@ -297,6 +335,10 @@ class PaginaPresencas(tk.Frame):
 
 
         # procurar na base de dados
+        # (picagem.anulada = 0 no ON, não no WHERE, para continuar a ser um
+        # LEFT JOIN de verdade: um funcionário cujas únicas picagens de hoje
+        # estejam anuladas continua a aparecer, como AUSENTE, em vez de
+        # desaparecer da lista.)
 
         self.cursor.execute("""
         SELECT 
@@ -309,6 +351,7 @@ class PaginaPresencas(tk.Frame):
         LEFT JOIN picagem
         ON funcionarios.id_funcionario = picagem.id_funcionario 
         AND DATE(picagem.data) = %s
+        AND picagem.anulada = 0
             
         ORDER BY 
         funcionarios.id_funcionario,
@@ -324,6 +367,9 @@ class PaginaPresencas(tk.Frame):
         dicionario_funcionarios = {}
 
         # percorrer todas as picagens
+        # (como a query está ordenada por picagem.data crescente, a última
+        # picagem de cada funcionário sobrescreve as anteriores no
+        # dicionário — fica sempre a mais recente do dia.)
 
         for picagem in picagens:
             id_funcionario = picagem[0]
@@ -361,17 +407,19 @@ class PaginaPresencas(tk.Frame):
 
 
             # determinar o estado
+            # ENTRADA e VOLTA_ALMOCO: a trabalhar agora (PRESENTE).
+            # SAIDA_ALMOCO: em pausa — nem presente nem ausente.
+            # SAIDA ou nenhuma picagem hoje (None): AUSENTE.
 
-            if tipo is None:
-                estado = "AUSENTE"
-                tag = "ausente"
-
-
-            elif tipo == "ENTRADA":
+            if tipo in ("ENTRADA", "VOLTA_ALMOCO"):
                 estado = "PRESENTE"
                 tag = "presente"
 
-            elif tipo == "SAIDA":
+            elif tipo == "SAIDA_ALMOCO":
+                estado = "EM PAUSA"
+                tag = "pausa"
+
+            else:  # tipo == "SAIDA" ou tipo is None
                 estado = "AUSENTE"
                 tag = "ausente"
 
@@ -382,6 +430,11 @@ class PaginaPresencas(tk.Frame):
                 self.filtro.get() == "Presentes"
                 and estado != "PRESENTE"
                 ):
+
+                continue
+
+            if (self.filtro.get() == "Em Pausa"
+                and estado != "EM PAUSA"):
 
                 continue
 
@@ -418,6 +471,7 @@ class PaginaPresencas(tk.Frame):
 
 
         presentes = 0 
+        em_pausa = 0
         ausentes = 0
 
         # percorrer os dados dos funcionários
@@ -425,9 +479,11 @@ class PaginaPresencas(tk.Frame):
         for dados in dicionario_funcionarios.values():
             tipo = dados["tipo"]
 
-
-            if tipo == "ENTRADA":
+            if tipo in ("ENTRADA", "VOLTA_ALMOCO"):
                 presentes += 1
+
+            elif tipo == "SAIDA_ALMOCO":
+                em_pausa += 1
 
             else:
 
@@ -444,9 +500,10 @@ class PaginaPresencas(tk.Frame):
             text=str(presentes)
         )
 
+        self.label_pausa.config(
+            text=str(em_pausa)
+        )
+
         self.label_ausentes.config(
             text=str(ausentes)
         )
-
-
-

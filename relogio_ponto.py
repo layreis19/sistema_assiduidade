@@ -5,7 +5,8 @@ from datetime import datetime, timedelta
 import bcrypt
 
 from ligacao import conn
-from calculo_assiduidade import combinar_data_hora
+from calculo_assiduidade import combinar_data_hora, calcular_e_guardar_dia, _para_time
+from rotulos import rotulo_tipo_picagem
 
 
 # Depois de passar da hora de saída esperada de um turno + esta margem,
@@ -200,7 +201,24 @@ class PaginaPonto(tk.Frame):
             (id_funcionario, data)
         )
 
-        return self.cursor.fetchone()
+        horario = self.cursor.fetchone()
+
+        if horario is None:
+            return None
+
+        # Colunas TIME vêm da BD como timedelta — converter antes de usar
+        # em combinar_data_hora()/datetime.combine() mais à frente.
+        tipo, entrada_h, saida_h, inicio_almoco_h, fim_almoco_h, tolerancia, janela_fim_h = horario
+
+        return (
+            tipo,
+            _para_time(entrada_h),
+            _para_time(saida_h),
+            _para_time(inicio_almoco_h),
+            _para_time(fim_almoco_h),
+            tolerancia,
+            _para_time(janela_fim_h),
+        )
 
 
     def _turno_ainda_em_curso(self, data_turno, horario_turno, agora):
@@ -497,6 +515,23 @@ class PaginaPonto(tk.Frame):
 
 
             # --------------------------------
+            # ATUALIZAR RESULTADOS (atraso/horas extra/horas trabalhadas)
+            # --------------------------------
+            # Isolado num try/except próprio: um erro aqui não deve impedir
+            # a confirmação da picagem, que já está gravada com sucesso.
+            # Recalcula sempre o turno todo (não só a picagem de agora),
+            # porque só no fim do turno é que "horas_trabalhadas" e
+            # "horas_extra_min" ficam completos — chamar isto a cada
+            # picagem mantém RESULTADOS sempre atualizado com o que já é
+            # possível saber até ao momento.
+
+            try:
+                calcular_e_guardar_dia(self.cursor, conn, funcionario_id, data_turno)
+            except Exception as erro_resultados:
+                print(erro_resultados)
+
+
+            # --------------------------------
             # ATUALIZAR TABELA
             # --------------------------------
 
@@ -505,7 +540,7 @@ class PaginaPonto(tk.Frame):
 
             messagebox.showinfo(
                 "Picagem registada",
-                f"{tipo.replace('_', ' ').capitalize()} registada com sucesso!"
+                f"{rotulo_tipo_picagem(tipo)} registada com sucesso!"
             )
 
 
@@ -555,12 +590,13 @@ class PaginaPonto(tk.Frame):
         resultados = self.cursor.fetchall()
 
 
-        # Inserir na tabela
+        # Inserir na tabela (com o nome bonito do tipo, não o valor em
+        # bruto da BD)
 
-        for linha in resultados:
+        for nome, data_picagem, tipo in resultados:
 
             self.tabela.insert(
                 "",
                 tk.END,
-                values=linha
+                values=(nome, data_picagem, rotulo_tipo_picagem(tipo))
             )
