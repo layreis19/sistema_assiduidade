@@ -1,10 +1,17 @@
+"""
+O QUE ESTE FICHEIRO FAZ?
+Mostra o formulário de login do administrador (nome e senha).
+- Procura o nome na tabela FUNCIONARIOS (só tipo ADMIN).
+- Verifica se a conta está ativa e se a senha está certa (bcrypt).
+- Se estiver tudo bem, avisa o main.py para mostrar os botões de admin.
+- Tem a função reiniciar_login(), usada pelo botão Sair.
+"""
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import ttk
 import bcrypt
 import mysql.connector
 from ligacao import conn
-from funcionarios import PaginaFuncionarios
 import cores
 
 
@@ -84,6 +91,15 @@ class PaginaAdministrador(tk.Frame):
             command=self.autenticar_admin
         )
         btn_entrar.pack(pady=(10,10), ipady=5)
+        
+        
+        
+        #botao sair
+    def reiniciar_login(self):
+        
+        if self.frame_login is not None and self.frame_login.winfo_exists():
+            self.frame_login.destroy()
+        self.tela_login()
 
         #função autenticar
 
@@ -134,7 +150,7 @@ class PaginaAdministrador(tk.Frame):
                 self.frame_login.destroy()
                 
                 self.mostrar_botoes_admin()
-                self.gestao_funcionarios()
+                
               
             else:
                 messagebox.showerror("Erro", "Senha incorreta!")
@@ -142,6 +158,4 @@ class PaginaAdministrador(tk.Frame):
         except mysql.connector.Error as erro:
             messagebox.showerror("Erro", f"Erro na base de dados: {erro}")
 
-    def gestao_funcionarios(self):
-        self.pagina_gestao = PaginaFuncionarios(self)
-        self.pagina_gestao.pack(fill="both", expand= True)
+    
