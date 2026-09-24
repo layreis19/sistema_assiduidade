@@ -137,50 +137,85 @@ class PaginaRelatorios(tk.Frame):
         self.tabela.pack(fill="both", expand=True, padx=30, pady=20)
         
     def filtrar_relatorio(self):
-        
-        id_funcionario= self.entry_id_funcionario.get().strip()
-        data_inicio=self.calendario_inicio.get().strip()
-        data_fim= self.calendario_fim.get().strip()
-        
-        
+
+        id_funcionario = self.entry_id.get().strip()
+        data_inicio = self.calendario_inicio.entry.get().strip()
+        data_fim = self.calendario_fim.entry.get().strip()
+
+
         # as duas datasd são obrigatórias
         if not data_inicio or not data_fim:
             messagebox.showwarning("Aviso", "Por favor, escolhe a data de início e a data de fim!")
             return
-        
+
         try:
-            data_inicio= datetime.strptime(data_inicio,"%d/%m/%Y").date()
-            data_fim= datetime.strftime(data_fim,"%d/%m/%Y").date()
+            data_inicio = datetime.strptime(data_inicio, "%d/%m/%Y").date()
+            data_fim = datetime.strptime(data_fim, "%d/%m/%Y").date()
         except ValueError:
             messagebox.showerror("Erro","Data inválida!  Usa o formato dd/mm/aaaa.")
             return
-        
-        
+
+
         # a data de início nao pode ser depois da data de fim
         if data_inicio > data_fim:
             messagebox.showerror("Erro", "A data de início não pode ser depois da data de fim!")
             return
-        
+
         # Se o ID foi preenchido, tem de ser um número válido
         if id_funcionario and not id_funcionario.isdigit():
             messagebox.showerror("Erro", "O ID do funcionário deve ser um número!")
             return
-        
 
-        
-            
-        
-        
-        
-            
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-  
+        # --------------------------------
+        # LIMPAR TABELA
+        # --------------------------------
+
+        for linha in self.tabela.get_children():
+            self.tabela.delete(linha)
+
+        # --------------------------------
+        # CONSULTAR RESULTADOS
+        # --------------------------------
+        # Junta com funcionarios só para ter o nome a mostrar; o cálculo
+        # em si já está feito (é lido de RESULTADOS, não recalculado aqui).
+
+        query = """
+            SELECT r.id_funcionario, f.nome, r.data,
+                   r.atraso_minutos, r.horas_extra_minutos, r.total_minutos_trabalhados
+            FROM resultados r
+            JOIN funcionarios f ON f.id_funcionario = r.id_funcionario
+            WHERE r.data BETWEEN %s AND %s
+        """
+        parametros = [data_inicio, data_fim]
+
+        if id_funcionario:
+            query += " AND r.id_funcionario = %s"
+            parametros.append(int(id_funcionario))
+
+        query += " ORDER BY r.data DESC, f.nome"
+
+        self.cursor.execute(query, parametros)
+
+        def formatar_minutos(minutos):
+            horas, mins = divmod(minutos, 60)
+            return f"{horas}h{mins:02d}"
+
+        for id_f, nome, data, atraso_min, extra_min, total_min in self.cursor.fetchall():
+            self.tabela.insert(
+                "",
+                tk.END,
+                values=(
+                    id_f,
+                    nome,
+                    data.strftime("%d/%m/%Y"),
+                    f"{atraso_min} min" if atraso_min else "-",
+                    f"{extra_min} min" if extra_min else "-",
+                    formatar_minutos(total_min),
+                )
+            )
+
+        if not self.tabela.get_children():
+            messagebox.showinfo(
+                "Sem resultados",
+                "Não há dados calculados para este período/funcionário."
+            )
