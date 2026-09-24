@@ -20,6 +20,7 @@ from ligacao import conn
 import cores
 
 
+
 class PaginaAtribuicaoHorarios(tk.Frame):
 
     def __init__(self, parent):
