@@ -156,6 +156,23 @@ CREATE TABLE HORAS_EXTRA (
         ON DELETE CASCADE
 );
 
+
+CREATE TABLE RESULTADOS (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_funcionario INT NOT NULL,
+    data DATE NOT NULL,
+    atraso_minutos INT NOT NULL DEFAULT 0,
+    horas_extra_minutos INT NOT NULL DEFAULT 0,
+    total_minutos_trabalhados INT NOT NULL DEFAULT 0,
+    calculado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (id_funcionario)
+        REFERENCES FUNCIONARIOS(id_funcionario)
+        ON DELETE CASCADE,
+
+    UNIQUE (id_funcionario, data)
+);
+
 -- ============================================================
 -- ÍNDICES ADICIONAIS ÚTEIS
 -- (id_funcionario, data) em FUNCIONARIO_HORARIO já fica coberto
