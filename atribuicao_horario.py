@@ -17,6 +17,7 @@ from datetime import datetime
 import mysql.connector
 from ttkbootstrap.widgets import DateEntry
 from ligacao import conn
+import cores
 
 
 class PaginaAtribuicaoHorarios(tk.Frame):
@@ -30,7 +31,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             self,
             text="ATRIBUIÇÃO DE HORÁRIOS",
             font=("Arial", 24),
-            background=bo
+            background=cores.BG
         )
         titulo.pack(pady=30)
 
@@ -72,7 +73,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             frame_formulario,
             dateformat="%Y-%m-%d",
             width=12,
-            bootstyle=PRIMARY_DARK
+            bootstyle=cores.PRIMARY_DARK
         )
         self.entry_data.grid(row=0, column=3, padx=(0,20), pady=5)
 
