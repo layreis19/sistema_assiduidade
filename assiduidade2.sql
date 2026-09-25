@@ -2,8 +2,10 @@
 -- BASE DE DADOS: ASSIDUIDADE
 -- Sistema de controlo de picagens, horários, atrasos e faltas
 -- ============================================================
-
-CREATE DATABASE IF NOT EXISTS ASSIDUIDADE2;
+CREATE DATABASE IF NOT EXISTS ASSIDUIDADE2
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_general_ci;
+    
 USE ASSIDUIDADE2;
 
 -- ============================================================
