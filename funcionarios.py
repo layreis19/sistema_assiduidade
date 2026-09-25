@@ -128,14 +128,47 @@ class PaginaFuncionarios(tk.Frame):
                 (nome, senha_hash, tipo)
             )
             
+            novo_id = self.cursor.lastrowid
 
             conn.commit()
+
+            aviso_admin_padrao_removido = ""
+
+            # Assim que for criado um admin a sério, o admin padrão criado
+            # pelo script SQL (nome 'admin', só para o primeiro login) já
+            # não faz falta e passa a ser um risco de segurança (senha
+            # padrão, previsível). "id_funcionario != %s" garante que, se
+            # alguém genuinamente chamar 'Admin' a este novo admin, não se
+            # elimina a si próprio por engano.
+            if tipo == "ADMIN":
+                try:
+                    self.cursor.execute(
+                        """
+                        DELETE FROM funcionarios
+                        WHERE LOWER(nome) = 'admin'
+                          AND tipo = 'ADMIN'
+                          AND id_funcionario != %s
+                        """,
+                        (novo_id,)
+                    )
+
+                    if self.cursor.rowcount > 0:
+                        conn.commit()
+                        aviso_admin_padrao_removido = "\n\nO admin padrão inicial foi removido automaticamente."
+
+                except mysql.connector.Error:
+                    # Se o admin padrão já tiver alguma referência (ex:
+                    # aprovou uma ausência, retificou uma picagem) a
+                    # eliminação pode falhar por causa de uma FK — não
+                    # deve impedir a criação do novo admin, que já está
+                    # gravada. Nesse caso, o admin padrão fica por
+                    # remover e pode ser desativado manualmente depois.
+                    conn.rollback()
        
-           
 
             messagebox.showinfo(
                 "Sucesso",
-                f"Funcionário '{nome}' adicionado!"
+                f"Funcionário '{nome}' adicionado!{aviso_admin_padrao_removido}"
             )
 
             # Limpar campos
@@ -360,6 +393,3 @@ class PaginaFuncionarios(tk.Frame):
                 "Erro",
                 f"Erro ao ativar/desativar funcionário: {err}"
             )
-
-      
-
