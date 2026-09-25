@@ -24,6 +24,8 @@ CREATE TABLE FUNCIONARIOS (
     estado ENUM('ATIVO', 'INATIVO') NOT NULL DEFAULT 'ATIVO'
 );
 
+INSERT INTO funcionarios (nome, tipo, senha) VALUES ('admin', 'ADMIN', '$2b$12$yOTfQ.4LWKNG6A4VrL6ob.SRZYTlsOWnVWIXMiI6fc13WTeYjrhJm');
+
 -- ============================================================
 -- HORARIO
 -- Guarda todas as definições possíveis de tempo de trabalho:
@@ -50,6 +52,20 @@ CREATE TABLE HORARIO (
     horas_diarias_exigidas DECIMAL(4,2) NULL
 );
 
+INSERT INTO horario (nome, tipo, entrada, saida, inicio_almoco, fim_almoco, tolerancia) VALUES 
+('FIXO PADRÃO', 'FIXO', '08:30:00', '17:30:00', '12:30:00', '13:30:00', 5),
+('TURNO MANHÃ', 'TURNO', '06:00:00', '15:00:00', '10:00:00', '11:00:00', 5),
+('TURNO TARDE', 'TURNO', '14:00:00', '23:00:00', '18:00:00', '19:00:00', 5),
+('TURNO NOITE', 'TURNO', '22:00:00', '07:00:00', '02:00:00', '03:00:00', 5);
+
+INSERT INTO horario (nome, tipo, janela_inicio, jaNela_fim, horas_diarias_exigidas) VALUES
+('LIVRE PADRÃO', 'LIVRE', '09:00:00', '20:00:00', 8.0);
+
+INSERT INTO horario (nome, tipo, entrada, saida, tolerancia) VALUES
+('MEIO DIA TARDE', 'TURNO', '13:30:00', '17:30:00', 5),
+('MEIO DIA MANHÃ', 'TURNO', '08:30:00', '12:30:00', 5);
+
+INSERT INTO horario (nome, tipo) VALUES ('FOLGA', 'FOLGA');
 -- ============================================================
 -- FUNCIONARIO_HORARIO
 -- Liga cada funcionário ao horário que lhe é aplicável num dia
@@ -182,19 +198,3 @@ CREATE TABLE RESULTADOS (
 CREATE INDEX idx_picagem_funcionario_data ON PICAGEM (id_funcionario, data);
 CREATE INDEX idx_ausencias_funcionario_periodo ON AUSENCIAS (id_funcionario, data_inicio, data_fim);
 
--- ============================================================
--- DADOS DE EXEMPLO (opcional — remover em produção)
--- ============================================================
--- INSERT INTO HORARIO (nome, tipo, entrada, saida, inicio_almoco, fim_almoco, tolerancia) VALUES
---     ('Fixo Padrão', 'FIXO', '09:00', '18:00', '13:00', '14:00', 15);
---
--- INSERT INTO HORARIO (nome, tipo, entrada, saida, tolerancia) VALUES
---     ('Turno Manhã', 'TURNO', '08:00', '13:00', 10),
---     ('Turno Tarde',  'TURNO', '13:00', '18:00', 10),
---     ('Turno Noite',  'TURNO', '22:00', '06:00', 10);
---
--- INSERT INTO HORARIO (nome, tipo, janela_inicio, janela_fim, horas_diarias_exigidas) VALUES
---     ('Livre 9-20', 'LIVRE', '09:00', '20:00', 8.00);
---
--- INSERT INTO HORARIO (nome, tipo) VALUES
---     ('Folga', 'FOLGA');
