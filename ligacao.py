@@ -11,6 +11,7 @@
 # exatamente como antes — nada muda do lado de quem usa a ligação.
 
 import os
+import re
 import mysql.connector
 from mysql.connector import errorcode
 from dotenv import load_dotenv
@@ -93,7 +94,12 @@ def criar_estrutura_bd(host, porta, utilizador, senha):
     # driver usada) — dividir e executar um a um funciona sempre, seja
     # qual for a versão instalada. Isto é seguro para este script porque
     # nenhum comando tem ";" dentro de valores ou comentários.
-    comandos = [comando.strip() for comando in script.split(";") if comando.strip()]
+    #
+    # Os comentários ("-- ...") são removidos antes de dividir: um ";"
+    # escrito dentro de um comentário partiria um comando ao meio. (Só
+    # é seguro porque nenhum valor de texto do script contém "--".)
+    script_sem_comentarios = re.sub(r"--[^\n]*", "", script)
+    comandos = [comando.strip() for comando in script_sem_comentarios.split(";") if comando.strip()]
 
     for comando in comandos:
         try:
@@ -135,6 +141,7 @@ def obter_ligacao():
             user=utilizador,
             password=senha,
             database=nome_bd,
+            collation="utf8mb4_general_ci"
         )
 
     except mysql.connector.Error as erro:
