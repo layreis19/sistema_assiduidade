@@ -14,40 +14,60 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
+
 import mysql.connector
 from ttkbootstrap.widgets import DateEntry
+
 from ligacao import conn
 import cores
-
 
 
 class PaginaAtribuicaoHorarios(tk.Frame):
 
     def __init__(self, parent):
+
         super().__init__(parent)
 
+        # buffered = true (guarda os resultados da consulta no cursor)
         self.cursor = conn.cursor(buffered=True)
 
+
+        # Página atribuir horários/editar
+        self.pagina_atribuir_horarios = tk.Frame(self, background=cores.BG)
+        self.pagina_editar_horarios = tk.Frame(self,background=cores.BG)
+
+        self.construir_atribuicao_horarios()
+        self.criar_pagina2()
+
+
+        # mostrar por defeito a primeira página 
+        self.mostrar_pagina1()
+
+        self.carregar_funcionarios()
+        self.carregar_horarios()
+
+    def construir_atribuicao_horarios(self):
+
+        # Título da página atribuir horários
         titulo = tk.Label(
-            self,
-            text="ATRIBUIÇÃO DE HORÁRIOS",
+            self.pagina_atribuir_horarios,
+            text="ATRIBUIR HORÁRIOS",
             font=("Arial", 24),
             background=cores.BG
         )
         titulo.pack(pady=(30,20))
 
-        # -------------------------
-        # FORMULÁRIO
-        # -------------------------
-
-        frame_formulario = tk.Frame(self)
+        # Formulário 
+        frame_formulario = tk.Frame(self.pagina_atribuir_horarios,background=cores.BG)
+        
         frame_formulario.pack(pady=10)
 
         # Funcionário
         tk.Label(
             frame_formulario,
             text="Funcionário:",
-            font=("Arial", 12)
+            font=("Arial", 12),
+            background=cores.BG
         ).grid(row=0, column=0, padx=(10,5), pady=5, sticky="e")
 
         self.combo_funcionario = ttk.Combobox(
@@ -56,7 +76,12 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             state="readonly",
             width=16
         )
-        self.combo_funcionario.grid(row=0, column=1, padx=(0,20), pady=5)
+        self.combo_funcionario.grid(
+            row=0, 
+            column=1, 
+            padx=(0,20), 
+            pady=5)
+
 
         self.combo_funcionario.bind(
             "<<ComboboxSelected>>",
@@ -67,8 +92,14 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         tk.Label(
             frame_formulario,
             text="Data:",
-            font=("Arial", 12)
-        ).grid(row=0, column=2, padx=(10,5), pady=5, sticky="e")
+            font=("Arial", 12),
+            background=cores.BG
+        ).grid(
+            row=0, 
+            column=2, 
+            padx=(10,5), 
+            pady=5, 
+            sticky="e")
 
         self.entry_data = DateEntry(
             frame_formulario,
@@ -76,14 +107,24 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             width=12,
             bootstyle=cores.PRIMARY_DARK
         )
-        self.entry_data.grid(row=0, column=3, padx=(0,20), pady=5)
+        self.entry_data.grid(
+            row=0, 
+            column=3, 
+            padx=(0,20), 
+            pady=5)
 
         # Horário
         tk.Label(
             frame_formulario,
             text="Horário:",
-            font=("Arial", 12)
-        ).grid(row=0, column=4, padx=(10,5), pady=5, sticky="e")
+            font=("Arial", 12),
+            background=cores.BG
+        ).grid(
+            row=0, 
+            column=4, 
+            padx=(10,5), 
+            pady=5, 
+            sticky="e")
 
         self.combo_horario = ttk.Combobox(
             frame_formulario,
@@ -91,25 +132,50 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             state="readonly",
             width=16
         )
-        self.combo_horario.grid(row=0, column=5, padx=(0,10), pady=5)
+        self.combo_horario.grid(
+            row=0, 
+            column=5, 
+            padx=(0,10), 
+            pady=5)
+
+
+        frame_botoes = tk.Frame(self.pagina_atribuir_horarios, background=cores.BG)
+        frame_botoes.pack(pady=10)
 
         # Botão atribuir
-        btn_atribuir = tk.Button(
-            self,
+        botao_atribuir = tk.Button(
+            frame_botoes,
             text="Atribuir Horário",
             font=("Arial", 12),
+            background=cores.BG,
             command=self.atribuir_horario
             
         )
-        btn_atribuir.pack(expand=True, pady=15)
+        botao_atribuir.pack(side=tk.LEFT,padx=10, pady=10)
 
-        # -------------------------
+        # botão para ir para a página de edição de horários 
+        botao_seguinte = tk.Button(
+            frame_botoes,
+            text="Editar Horários",
+            font=("Arial", 12),
+            background=cores.BG,
+            command= self.mostrar_pagina2
+        )
+
+        botao_seguinte.pack(
+            side=tk.LEFT,padx=10,pady=10)
+
+        # ------------------------
         # TABELA DE ATRIBUIÇÕES
         # -------------------------
 
         self.tabela = ttk.Treeview(
-            self,
-            columns=("data", "horario", "tipo", "entrada", "saida"),
+            self.pagina_atribuir_horarios,
+            columns=("data", 
+                     "horario", 
+                     "tipo", 
+                     "entrada", 
+                     "saida"),
             show="headings"
         )
 
@@ -126,17 +192,33 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             pady=20
         )
 
-        # -------------------------
-        # CARREGAR DADOS INICIAIS
-        # -------------------------
 
-        self.carregar_funcionarios()
-        self.carregar_horarios()
+    def criar_pagina2(self):
 
-    # ==================================================
-    # CARREGAR COMBOBOXES
-    # ==================================================
+        # Título 
+        titulo2 = tk.Label(
+            self.pagina_editar_horarios,
+            text="EDITAR HORÁRIOS",
+            font=("Arial", 24),
+            background=cores.BG
+        )
 
+        titulo2.pack(pady=(30,20))
+
+        botao_voltar = tk.Button(
+            self.pagina_editar_horarios,
+            text="Voltar",
+            font=("Arial", 12),
+            background=cores.BG,
+            command=self.mostrar_pagina1
+        )
+
+        botao_voltar.pack(
+            side="bottom",
+            anchor="w",
+            padx=30,
+            pady=15
+        )
     def carregar_funcionarios(self):
         self.cursor.execute(
             """
@@ -305,3 +387,13 @@ class PaginaAtribuicaoHorarios(tk.Frame):
                     saida if saida else "-"
                 )
             )
+
+
+    def mostrar_pagina2(self):
+        self.pagina_atribuir_horarios.pack_forget()
+        self.pagina_editar_horarios.pack(fill="both", expand=True)
+
+
+    def mostrar_pagina1(self):
+        self.pagina_editar_horarios.pack_forget()
+        self.pagina_atribuir_horarios.pack(fill="both",expand= True)
