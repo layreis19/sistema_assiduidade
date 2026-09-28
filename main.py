@@ -16,6 +16,7 @@ from ctrl_presencas import PaginaPresencas
 from administrador import PaginaAdministrador
 from relatorios import PaginaRelatorios
 from atribuicao_horario import PaginaAtribuicaoHorarios
+from picagensAdmin import PaginaPicagensAdmin
 from ligacao import conn
 
 janela = tk.Tk()
@@ -38,6 +39,10 @@ pagina_funcionarios = PaginaFuncionarios(conteudo)
 pagina_presencas = PaginaPresencas(conteudo)
 pagina_relatorios = PaginaRelatorios(conteudo)
 pagina_atribuicao_horarios = PaginaAtribuicaoHorarios(conteudo)
+pagina_picagens_admin = PaginaPicagensAdmin(
+    conteudo,
+    lambda: getattr(pagina_administrador, "id_admin_logado", None)
+)
 
 
 
@@ -49,6 +54,7 @@ def mostrar_pagina(pagina):
     pagina_relatorios.pack_forget()
     pagina_atribuicao_horarios.pack_forget()
     pagina_funcionarios.pack_forget()
+    pagina_picagens_admin.pack_forget()
 
     # mostrar a página escolhida
     pagina.pack(fill="both", expand=True)
@@ -63,7 +69,11 @@ def mostrar_pagina(pagina):
     elif pagina == pagina_atribuicao_horarios:
         pagina_atribuicao_horarios.carregar_funcionarios()
         pagina_atribuicao_horarios.carregar_horarios()
-
+    
+    
+    elif pagina == pagina_picagens_admin:
+        pagina_picagens_admin.carregar_funcionarios()
+        pagina_picagens_admin.atualizar_tabela()
 
 def mostrar_botoes_admin():
     # chamada quando o login corre bem
@@ -72,7 +82,9 @@ def mostrar_botoes_admin():
     btn_funcionarios.pack(side="left", padx=10, pady=10)
     btn_horarios.pack(side="left", padx=10, pady=10)
     btn_relatorios.pack(side="left", padx=10, pady=10)
+    btn_Picagens.pack(side="left", padx=10, pady=10)
     btn_sair.pack(side="left", padx=10, pady=10)
+   
 
     mostrar_pagina(pagina_funcionarios)
 
@@ -82,6 +94,7 @@ def sair_admin():
     btn_funcionarios.pack_forget()
     btn_horarios.pack_forget()
     btn_relatorios.pack_forget()
+    btn_Picagens.pack_forget()
     btn_sair.pack_forget()
 
     # voltar a mostrar o botão Administrador
@@ -129,10 +142,20 @@ btn_relatorios = tk.Button(
     text="Relatórios",
     command=lambda: mostrar_pagina(pagina_relatorios))
 
+
+btn_Picagens = tk.Button(
+    menu,
+    text="Picagens",
+    command=lambda:mostrar_pagina(pagina_picagens_admin)
+    
+)
+
 btn_sair = tk.Button(
     menu,
     text="Sair",
     command=sair_admin)
+
+
 
 
 # PÁGINA DO ADMINISTRADOR (precisa da função mostrar_botoes_admin)

@@ -8,14 +8,13 @@ O QUE ESTE FICHEIRO FAZ?
 - Avisa se o funcionário está de folga e impede picagens a mais no mesmo dia.
 - Grava a picagem na tabela PICAGEM e recalcula os resultados do dia
   (atrasos, horas extra, total trabalhado).
-- Mostra numa tabela todas as picagens registadas.
 """
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime, timedelta
 
 import bcrypt
-import cores
+import cores 
 from ligacao import conn
 from calculo_assiduidade import combinar_data_hora, calcular_e_guardar_dia, _para_time
 from rotulos import rotulo_tipo_picagem
@@ -139,34 +138,13 @@ class PaginaPonto(tk.Frame):
         botao.pack(pady=20)
 
 
-        # -------------------------
-        # TABELA
-        # -------------------------
-
-        self.tabela = ttk.Treeview(
-            self,
-            columns=("nome", "data", "tipo"),
-            show="headings"
-        )
-
-        self.tabela.heading("nome", text="Funcionário")
-        self.tabela.heading("data", text="Data")
-        self.tabela.heading("tipo", text="Tipo")
-
-        self.tabela.pack(
-            fill="both",
-            expand=True,
-            padx=30,
-            pady=20
-        )
-
-
+        
         # -------------------------
         # CARREGAR DADOS
         # -------------------------
 
         self.carregar_funcionarios()
-        self.atualizar_tabela()
+        
 
 
     # ==================================================
@@ -558,13 +536,7 @@ class PaginaPonto(tk.Frame):
                 print(erro_resultados)
 
 
-            # --------------------------------
-            # ATUALIZAR TABELA
-            # --------------------------------
-
-            self.atualizar_tabela()
-
-
+            
             messagebox.showinfo(
                 "Picagem registada",
                 f"{rotulo_tipo_picagem(tipo)} registada com sucesso!"
@@ -588,42 +560,4 @@ class PaginaPonto(tk.Frame):
             )
 
 
-    def atualizar_tabela(self):
-
-        # Limpar tabela
-
-        for item in self.tabela.get_children():
-
-            self.tabela.delete(item)
-
-
-        # Buscar picagens (só as válidas, não anuladas)
-
-        self.cursor.execute(
-            """
-            SELECT
-                funcionarios.nome,
-                picagem.data,
-                picagem.tipo
-            FROM picagem
-            JOIN funcionarios
-                ON funcionarios.id_funcionario =
-                   picagem.id_funcionario
-            WHERE picagem.anulada = 0
-            ORDER BY picagem.data DESC
-            """
-        )
-
-        resultados = self.cursor.fetchall()
-
-
-        # Inserir na tabela (com o nome bonito do tipo, não o valor em
-        # bruto da BD)
-
-        for nome, data_picagem, tipo in resultados:
-
-            self.tabela.insert(
-                "",
-                tk.END,
-                values=(nome, data_picagem, rotulo_tipo_picagem(tipo))
-            )
+    

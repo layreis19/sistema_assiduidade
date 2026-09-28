@@ -74,7 +74,7 @@ class PaginaFuncionarios(tk.Frame):
         btn_ativar_desativar.pack(side=tk.LEFT, padx=10, pady=10)
  
         # Estilo da tabela: cores definidas de forma explícita, para o texto
-        # nunca ficar branco em fundo branco e a linha selecionada aparecer
+       
         estilo = ttk.Style()
         estilo.theme_use("clam")
         estilo.configure(
