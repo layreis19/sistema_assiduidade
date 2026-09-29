@@ -183,7 +183,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         botao_seguinte = tk.Button(
             frame_botoes,
             text="Editar Horários",
-            font=("Arial", 12),
+            font=("Arial", 11),
             bg=cores.PRIMARY,
             fg=cores.CARD,
             activebackground=cores.PRIMARY_DARK,
@@ -191,6 +191,8 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             relief="flat",
             bd=0,
             cursor="hand2",
+            padx=14,
+            pady=6,
             command= self.mostrar_pagina2
         )
 
