@@ -28,19 +28,6 @@ from rotulos import rotulo_tipo_picagem
 # para não penalizar quem faz umas horas extra a mais sem ser um
 # esquecimento genuíno.
 
-BG = "#EAF6FF"             # Fundo principal
-PRIMARY = "#3F8FC1"        # Azul principal
-PRIMARY_DARK = "#2F78A8"   # Azul mais escuro
-BLUE_LIGHT = "#B5D9EA"     # Azul claro
-BLUE_VERY_LIGHT = "#D9EDF7"
-CARD = "#FFFFFF"           # Branco
-TEXT = "#1E3A52"           # Texto principal
-TEXT_SECONDARY = "#6B879C" # Texto secundário
-BORDER = "#C7E3F2"
-
-
-
-
 
 MARGEM_ABANDONO_TURNO = timedelta(hours=4)
 
@@ -60,10 +47,12 @@ class PaginaPonto(tk.Frame):
         titulo = tk.Label(
             self,
             text="RELÓGIO DE PONTO",
-            font=("Arial", 24)
+            font=("Arial", 24),
+            background=cores.CARD,
+            fg=cores.TEXT
         )
 
-        titulo.pack(pady=30)
+        titulo.pack(pady=(30,20))
 
 
         # -------------------------
@@ -72,7 +61,9 @@ class PaginaPonto(tk.Frame):
 
         self.relogio = tk.Label(
             self,
-            font=("Arial", 20)
+            font=("Arial", 20),
+            background=cores.CARD,
+            fg=cores.TEXT
         )
 
         self.relogio.pack(pady=10)
@@ -87,21 +78,21 @@ class PaginaPonto(tk.Frame):
         nome_label = tk.Label(
             self,
             text="Funcionário:",
-            font=("Arial", 14)
-        )
+            font=("Arial", 12),
+            background=cores.CARD,
+            fg=cores.TEXT)
 
-        nome_label.pack(pady=10)
-
+        
+        nome_label.pack(padx=(10,5),pady=5)
 
         self.combo_funcionarios = ttk.Combobox(
             self,
-            font=("Arial", 14),
-            state="readonly"
+            font=("Arial", 12),
+            state="readonly",
+            width=16
         )
 
-        self.combo_funcionarios.pack(pady=5)
-
-
+        self.combo_funcionarios.pack(padx=(10,5), pady=5)
         # -------------------------
         # PASSWORD
         # -------------------------
@@ -109,19 +100,21 @@ class PaginaPonto(tk.Frame):
         password_label = tk.Label(
             self,
             text="Senha:",
-            font=("Arial", 14)
+            font=("Arial", 12),
+            background=cores.CARD,
+            fg=cores.TEXT
         )
 
-        password_label.pack(pady=10)
+        password_label.pack(padx=(10,5))
 
 
         self.entrada_password = tk.Entry(
             self,
-            font=("Arial", 14),
+            font=("Arial", 12),
             show="*"
         )
 
-        self.entrada_password.pack(pady=5)
+        self.entrada_password.pack(pady=(0,15))
 
 
         # -------------------------
@@ -131,11 +124,20 @@ class PaginaPonto(tk.Frame):
         botao = tk.Button(
             self,
             text="Fazer Picagem",
-            font=("Arial", 14),
-            command=self.registar_picagem
+            font=("Arial", 11),
+            bg=cores.PRIMARY,
+            fg=cores.CARD,
+            activebackground=cores.PRIMARY_DARK,
+            activeforeground=cores.CARD,
+            relief="flat",
+            bd=0,
+            cursor="hand2",
+            command=self.registar_picagem,
+            padx=14,
+            pady=6
         )
 
-        botao.pack(pady=20)
+        botao.pack(padx=10)
 
 
         
