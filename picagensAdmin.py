@@ -215,7 +215,7 @@ class PaginaPicagensAdmin(tk.Frame):
 
    
     # FORMULÁRIO (usado por Adicionar e Alterar)
-    def _formulario(self, titulo, nome_fixo, data_txt, hora_txt, tipo,):
+    def formulario(self, titulo, nome_fixo, data_txt, hora_txt, tipo,):
         janela = tk.Toplevel(self)
         janela.title(titulo)
         janela.configure(bg=cores.CARD)
@@ -260,7 +260,7 @@ class PaginaPicagensAdmin(tk.Frame):
         entry_motivo = tk.Entry(janela, width=32)
         entry_motivo.pack(padx=20)
 
-        
+        #atualizar tabela
     def atualizar_tabela(self):
         for linha in self.tabela.get_children():
             self.tabela.delete(linha)
@@ -323,6 +323,62 @@ class PaginaPicagensAdmin(tk.Frame):
                 tags=("anulada",) if anulada else ()
             )   
   
-    def adicionar_picagem(self): pass
-    def alterar_picagem(self): pass
+  
+  #adicionar picagem
+    def adicionar_picagem(self):
+        self.formulario("Adicionar picagem manual",
+                        None, datetime.now().strtime(FORMATO_DATA),
+                        "", None, self. gravar_nova
+            
+        )
+        
+        
+    #gravar nova picagem
+    def gravar_nova(self,id_funcionario,data_hora,tipo,motivo):
+        try:
+            self.cursor.execute(
+                """INSERT INTO( id_funcionario,data,tipo,id_admin_retificacao,motivo_retificacao)
+                VALUES (%s, %s, %s, %s, %s) 
+                """, (id_funcionario, data_hora, tipo, self.obter_id_admin(), motivo) 
+            )
+            conn.commit()
+        except mysql.connector.Error as erro:
+            conn.rollback()
+            messagebox.showerror("Erro", f"Erro ao registar picagem: \n{erro}")
+            return False
+        self.recalcular(id_funcionario,data_hora,tipo)
+        self.atualizar_tabela()
+        messagebox.showinfo("Sucesso","Picagem registada com sucesso!")
+        return True
+        
+        
+        #alterar picagem
+    def alterar_picagem(self):
+        p= self.obter_selecionada()
+        if not p:
+            return
+        if p["anulada"]:
+            messagebox.showerror("Erro", "Esta picagem já está anulada e não pode ser alterada"
+                )
+            return
+        
+        #gravar 
+    def gravar(id,nova_data,novo_tipo,motivo):
+        return self.gravar_alteracao()
+    
+        self.formulario(
+            "Alterar picagem",
+            p["nome"],
+             p["data"].strftime(FORMATO_DATA),
+            p["data"].strftime(FORMATO_HORA),
+            p["tipo"],
+            gravar
+           
+    )
+    
+ #gravar alteracao
+    def gravar_alteracao(self,p,nova_data,novo_tipo,motivo): 
+        pass
+        
+        
     def eliminar_picagem(self): pass
