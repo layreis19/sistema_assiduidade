@@ -150,7 +150,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         botao_atribuir = tk.Button(
             frame_botoes,
             text="Atribuir Horário",
-            font=("Arial", 12),
+            font=("Arial", 11),
             bg=cores.PRIMARY,
             fg=cores.CARD,
             activebackground=cores.PRIMARY_DARK,
@@ -158,9 +158,11 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             relief="flat",
             bd=0,
             cursor="hand2",
-            command=self.atribuir_horario
-            
+            command=self.atribuir_horario,
+            padx=14,
+            pady=6
         )
+
         botao_atribuir.pack(side=tk.LEFT,padx=10)
 
 
