@@ -53,7 +53,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             self.pagina_atribuir_horarios,
             text="ATRIBUIR HORÁRIOS",
             font=("Arial", 24),
-            background=cores.BG, 
+            background=cores.CARD, 
             fg=cores.TEXT
         )
         titulo.pack(pady=(30,20))
@@ -144,7 +144,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
 
 
         frame_botoes = tk.Frame(self.pagina_atribuir_horarios, background=cores.CARD)
-        frame_botoes.pack(pady=10)
+        frame_botoes.pack(pady=20, padx=10)
 
         # Botão atribuir
         botao_atribuir = tk.Button(
@@ -161,7 +161,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             command=self.atribuir_horario
             
         )
-        botao_atribuir.pack(side=tk.LEFT,padx=10, pady=10)
+        botao_atribuir.pack(side=tk.LEFT,padx=10)
 
         # botão para ir para a página de edição de horários 
         botao_seguinte = tk.Button(
@@ -179,7 +179,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         )
 
         botao_seguinte.pack(
-            side=tk.LEFT,padx=10,pady=10)
+            side=tk.LEFT,padx=10)
 
         # ------------------------
         # TABELA DE ATRIBUIÇÕES
