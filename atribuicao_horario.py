@@ -26,15 +26,15 @@ class PaginaAtribuicaoHorarios(tk.Frame):
 
     def __init__(self, parent):
 
-        super().__init__(parent)
+        super().__init__(parent, bg=cores.CARD)
 
         # buffered = true (guarda os resultados da consulta no cursor)
         self.cursor = conn.cursor(buffered=True)
 
 
         # Página atribuir horários/editar
-        self.pagina_atribuir_horarios = tk.Frame(self, background=cores.BG)
-        self.pagina_editar_horarios = tk.Frame(self,background=cores.BG)
+        self.pagina_atribuir_horarios = tk.Frame(self, background=cores.CARD)
+        self.pagina_editar_horarios = tk.Frame(self,background=cores.CARD)
 
         self.construir_atribuicao_horarios()
         self.criar_pagina2()
@@ -53,12 +53,13 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             self.pagina_atribuir_horarios,
             text="ATRIBUIR HORÁRIOS",
             font=("Arial", 24),
-            background=cores.BG
+            background=cores.BG, 
+            fg=cores.TEXT
         )
         titulo.pack(pady=(30,20))
 
         # Formulário 
-        frame_formulario = tk.Frame(self.pagina_atribuir_horarios,background=cores.BG)
+        frame_formulario = tk.Frame(self.pagina_atribuir_horarios,background=cores.CARD)
         
         frame_formulario.pack(pady=10)
 
@@ -67,7 +68,8 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             frame_formulario,
             text="Funcionário:",
             font=("Arial", 12),
-            background=cores.BG
+            background=cores.CARD,
+            fg=cores.TEXT
         ).grid(row=0, column=0, padx=(10,5), pady=5, sticky="e")
 
         self.combo_funcionario = ttk.Combobox(
@@ -93,7 +95,8 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             frame_formulario,
             text="Data:",
             font=("Arial", 12),
-            background=cores.BG
+            background=cores.CARD,
+            fg=cores.TEXT
         ).grid(
             row=0, 
             column=2, 
@@ -118,7 +121,8 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             frame_formulario,
             text="Horário:",
             font=("Arial", 12),
-            background=cores.BG
+            background=cores.CARD,
+            fg=cores.TEXT
         ).grid(
             row=0, 
             column=4, 
@@ -139,7 +143,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             pady=5)
 
 
-        frame_botoes = tk.Frame(self.pagina_atribuir_horarios, background=cores.BG)
+        frame_botoes = tk.Frame(self.pagina_atribuir_horarios, background=cores.CARD)
         frame_botoes.pack(pady=10)
 
         # Botão atribuir
@@ -147,7 +151,13 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             frame_botoes,
             text="Atribuir Horário",
             font=("Arial", 12),
-            background=cores.BG,
+            bg=cores.PRIMARY,
+            fg=cores.CARD,
+            activebackground=cores.PRIMARY_DARK,
+            activeforeground=cores.CARD,
+            relief="flat",
+            bd=0,
+            cursor="hand2",
             command=self.atribuir_horario
             
         )
@@ -158,7 +168,13 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             frame_botoes,
             text="Editar Horários",
             font=("Arial", 12),
-            background=cores.BG,
+            bg=cores.PRIMARY,
+            fg=cores.CARD,
+            activebackground=cores.PRIMARY_DARK,
+            activeforeground=cores.CARD,
+            relief="flat",
+            bd=0,
+            cursor="hand2",
             command= self.mostrar_pagina2
         )
 
@@ -200,7 +216,8 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             self.pagina_editar_horarios,
             text="EDITAR HORÁRIOS",
             font=("Arial", 24),
-            background=cores.BG
+            background=cores.BG,
+            fg=cores.TEXT
         )
 
         titulo2.pack(pady=(30,20))
@@ -209,7 +226,13 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             self.pagina_editar_horarios,
             text="Voltar",
             font=("Arial", 12),
-            background=cores.BG,
+            bg=cores.PRIMARY,
+            fg=cores.CARD,
+            activebackground=cores.PRIMARY_DARK,
+            activeforeground=cores.CARD,
+            relief="flat",
+            bd=0,
+            cursor="hand2",
             command=self.mostrar_pagina1
         )
 
