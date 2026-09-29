@@ -144,7 +144,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
 
 
         frame_botoes = tk.Frame(self.pagina_atribuir_horarios, background=cores.CARD)
-        frame_botoes.pack(pady=20, padx=10)
+        frame_botoes.pack(pady=10)
 
         # Botão atribuir
         botao_atribuir = tk.Button(
@@ -163,6 +163,20 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         )
         botao_atribuir.pack(side=tk.LEFT,padx=10)
 
+
+
+        frame_tabela = tk.Frame(
+            self.pagina_atribuir_horarios,
+            background=cores.CARD
+        )
+
+        frame_tabela.pack(
+            fill="both",
+            expand=True,
+            padx=30,
+            pady=20
+        )
+
         # botão para ir para a página de edição de horários 
         botao_seguinte = tk.Button(
             frame_botoes,
@@ -179,20 +193,33 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         )
 
         botao_seguinte.pack(
-            side=tk.LEFT,padx=10)
+            side="left",
+            padx=5)
 
-        # ------------------------
+        frame_tabela_conteudo = tk.Frame(
+            frame_tabela,
+            background=cores.CARD
+        )
+
+        frame_tabela_conteudo.pack(
+            fill="both",
+            expand=True
+        )
+
+        # -----------------------
         # TABELA DE ATRIBUIÇÕES
         # -------------------------
 
         self.tabela = ttk.Treeview(
-            self.pagina_atribuir_horarios,
+            frame_tabela_conteudo,
             columns=("data", 
                      "horario", 
                      "tipo", 
                      "entrada", 
                      "saida"),
-            show="headings"
+            show="headings",
+            selectmode="browse",
+            style="Pic.Treeview"
         )
 
         self.tabela.heading("data", text="Data")
@@ -201,13 +228,58 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         self.tabela.heading("entrada", text="Entrada")
         self.tabela.heading("saida", text="Saída")
 
-        self.tabela.pack(
-            fill="both",
-            expand=True,
-            padx=30,
-            pady=20
+        # largura das colunas
+
+        self.tabela.column(
+            "data",
+            width=120,
+            anchor="center"
         )
 
+        self.tabela.column(
+            "horario",
+            width=180,
+            anchor="center"
+        )
+
+        self.tabela.column(
+            "tipo",
+            width=120,
+            anchor="center"
+        )
+
+        self.tabela.column(
+            "entrada",
+            width=100,
+            anchor="center"
+        )
+
+        self.tabela.column(
+            "saida",
+            width=100,
+            anchor="center"
+        )
+
+        scroll = ttk.Scrollbar(
+            frame_tabela_conteudo,
+            orient="vertical",
+            command=self.tabela.yview
+        )
+
+        self.tabela.configure(
+            yscrollcommand=scroll.set
+        )
+
+        self.tabela.pack(
+            side="left",
+            fill="both",
+            expand=True
+        )
+
+        scroll.pack(
+            side="right",
+            fill="y"
+        )
 
     def criar_pagina2(self):
 
@@ -225,7 +297,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         botao_voltar = tk.Button(
             self.pagina_editar_horarios,
             text="Voltar",
-            font=("Arial", 12),
+            font=("Arial", 11),
             bg=cores.PRIMARY,
             fg=cores.CARD,
             activebackground=cores.PRIMARY_DARK,
