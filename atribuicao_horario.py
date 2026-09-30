@@ -37,6 +37,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         self.pagina_editar_horarios = tk.Frame(self,background=cores.CARD)
 
         self.construir_atribuicao_horarios()
+        
         self.criar_pagina2()
 
 
@@ -292,12 +293,155 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             self.pagina_editar_horarios,
             text="EDITAR HORÁRIOS",
             font=("Arial", 24),
-            background=cores.BG,
+            background=cores.CARD,
             fg=cores.TEXT
         )
 
         titulo2.pack(pady=(30,20))
 
+        # frame label 
+        frame_label = tk.Frame(
+            self.pagina_editar_horarios,
+            background=cores.CARD
+        )
+        frame_label.pack(pady=10)
+
+        # nome 
+        nome_label = tk.Label(
+            frame_label, 
+            text="Nome:", 
+            font=("Arial", 12))
+        
+        nome_label.pack(side=tk.LEFT,pady=5)
+         
+        self.entry_nome = tk.Entry(frame_label)
+        self.entry_nome.pack(side=tk.LEFT, padx=10, pady=10)
+
+        # Hora
+
+        hora_label = tk.Label(
+            frame_label,
+            text="Entrada:",
+            font=("Arial", 12)
+        )
+
+        hora_label.pack(side=tk.LEFT, padx=10, pady=10)
+
+        self.entry_entrada = tk.Entry(frame_label)
+                
+        self.entry_entrada.pack(side=tk.LEFT, padx=10, pady=10)
+
+        # Inicio da pausa 
+        inicio_pausa_label = tk.Label(
+            frame_label,
+            text="Inicio Pausa:",
+            font=("Arial", 12)
+        )
+
+        inicio_pausa_label.pack(side=tk.LEFT,padx=10, pady=10)
+
+        self.entry_pausa = tk.Entry(frame_label)
+        self.entry_pausa.pack(side=tk.LEFT, padx=10, pady=10)
+
+        # Fim da pausa 
+        fim_pausa_label = tk.Label(
+            frame_label,
+            text="Fim Pausa:",
+            font=("Arial", 12)
+        )
+        fim_pausa_label.pack(side=tk.LEFT,padx=10, pady=10)
+
+        self.entry_fim_pausa = tk.Entry(frame_label)
+        self.entry_fim_pausa.pack(side=tk.LEFT, padx=10, pady=10)
+
+        # Saída
+        saida_label = tk.Label(
+            frame_label,
+            text="Saída:",
+            font=("Arial", 12)
+        )
+
+        saida_label.pack(side=tk.LEFT, padx=10, pady=10)
+        self.entry_saida = tk.Entry(frame_label)
+        self.entry_saida.pack(side=tk.LEFT, padx=10, pady=10)
+        
+        
+        # frame botões
+        frame_botoes = tk.Frame(
+            self.pagina_editar_horarios,
+            background=cores.CARD
+        )
+
+        frame_botoes.pack(pady=10)
+
+        # Botão criar 
+        botao_criar = tk.Button(
+                    frame_botoes,
+                    text="Criar",
+                    font=("Arial",11),
+                    bg=cores.PRIMARY,
+                    fg=cores.CARD,
+                    activebackground=cores.PRIMARY_DARK,
+                    activeforeground=cores.CARD,
+                    relief="flat",
+                    bd=0,
+                    cursor="hand2",
+                    padx=14,
+                    pady=6
+                )
+        
+        botao_criar.pack(
+            side="left",
+            padx=5
+        )
+            
+        # Botão editar
+
+        botao_editar = tk.Button(
+            frame_botoes,
+            text="Editar",
+            font=("Arial", 11),
+            bg=cores.PRIMARY,
+            fg=cores.CARD,
+            activebackground=cores.PRIMARY_DARK,
+            activeforeground=cores.CARD,
+            relief="flat",
+            bd=0,
+            cursor="hand2",
+            padx=14,
+            pady=6)
+
+        botao_editar.pack(
+            side="left",
+            padx=5
+        )
+
+
+        # Botão eliminar 
+
+        botao_eliminar = tk.Button(
+            frame_botoes,
+            text="Eliminar",
+            font=("Arial", 11),
+            bg=cores.PRIMARY,
+            fg=cores.CARD,
+            activebackground=cores.PRIMARY_DARK,
+            activeforeground=cores.CARD,
+            relief="flat",
+            bd=0,
+            cursor="hand2",
+            padx=14,
+            pady=6,
+        )
+
+
+        botao_eliminar.pack(
+            side="left",
+            padx=5
+        )
+
+
+        # Botão voltar
         botao_voltar = tk.Button(
             self.pagina_editar_horarios,
             text="Voltar",
@@ -318,6 +462,82 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             padx=30,
             pady=15
         )
+
+        # tabela
+
+        frame_tabela = tk.Frame(
+            self.pagina_editar_horarios,
+            background=cores.CARD
+        )
+
+        frame_tabela.pack(
+            fill="both",
+            expand=True,
+            padx=30,
+            pady=20
+        )
+
+        frame_tabela_conteudo = tk.Frame(
+            frame_tabela,
+            background=cores.CARD
+        )
+
+        frame_tabela_conteudo.pack(
+            fill="both",
+            expand=True)
+
+        self.tabela_horarios = ttk.Treeview(
+            frame_tabela_conteudo,
+            columns=(
+                "id",
+                "nome",
+                "tipo",
+                "entrada",
+                "inicio_pausa",
+                "fim_pausa",
+                "saida"
+            ),
+            show="headings",
+            selectmode="browse",
+            style="Pic.Treeview"
+        )
+
+        # Cabeçalhos
+        self.tabela_horarios.heading("id", text="ID")
+        self.tabela_horarios.heading("nome", text="Nome")
+        self.tabela_horarios.heading("tipo", text="Tipo")
+        self.tabela_horarios.heading("entrada", text="Entrada")
+        self.tabela_horarios.heading("inicio_pausa", text="Inicio Pausa")
+        self.tabela_horarios.heading("fim_pausa", text="Fim Pausa")
+        self.tabela_horarios.heading("saida", text="Saída")
+
+
+        # larguras das colunas
+
+
+        self.tabela_horarios.column("id", width=60,anchor="center")
+        self.tabela_horarios.column("nome", width=150,anchor="center")
+        self.tabela_horarios.column("tipo", width=100,anchor="center")
+        self.tabela_horarios.column("entrada", width=100,anchor="center")
+        self.tabela_horarios.column("inicio_pausa", width=120,anchor="center")
+        self.tabela_horarios.column("fim_pausa", width=120,anchor="center")
+        self.tabela_horarios.column("saida", width=100,anchor="center")
+
+
+        # scroll 
+        scroll = ttk.Scrollbar(
+            frame_tabela_conteudo,
+            orient="vertical",
+            command=self.tabela_horarios.yview
+        )
+
+        self.tabela_horarios.configure(yscrollcommand=scroll.set)
+        
+        self.tabela_horarios.pack(side="left",fill="both", expand=True)
+        scroll.pack(side="right",
+                    fill="y")
+
+
     def carregar_funcionarios(self):
         self.cursor.execute(
             """
