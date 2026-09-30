@@ -16,7 +16,7 @@ from ctrl_presencas import PaginaPresencas
 from administrador import PaginaAdministrador
 from relatorios import PaginaRelatorios
 from atribuicao_horario import PaginaAtribuicaoHorarios
-from picagensAdmin import PaginaPicagensAdmin
+from testepicagensAdmin import PaginaPicagensAdmin
 from ligacao import conn
 
 janela = tk.Tk()
