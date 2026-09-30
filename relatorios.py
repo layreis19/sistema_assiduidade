@@ -23,45 +23,47 @@ class PaginaRelatorios(tk.Frame):
         frame_topo = tk.Frame(self, bg=cores.BG)
         frame_topo.pack(fill="x", padx=30, pady=10)
         tk.Label(frame_topo, text="RELATÓRIOS DE ASSIDUIDADE",
-                 font=("Arial", 22, "bold"), bg=cores.BG, fg=cores.TEXT).pack(pady=50)
+                 font=("Arial", 24), background=cores.CARD, fg=cores.TEXT).pack(pady=(30,20))
 
         #Filtros 
-        frame_filtros = tk.Frame(self, bg=cores.BG)
+        frame_filtros = tk.Frame(self, background=cores.CARD)
         frame_filtros.pack(pady=10)
 
-        tk.Label(frame_filtros, text="ID do Funcionário:",
-                 font=("Arial", 12), bg=cores.BG, fg=cores.TEXT).pack(side=tk.LEFT, padx=5)
-        self.entry_id = tk.Entry(frame_filtros)
-        self.entry_id.pack(side=tk.LEFT, padx=(0, 20))
+        tk.Label(frame_filtros, text="ID Funcionário:",
+                 font=("Arial", 12), fg=cores.TEXT).pack(side=tk.LEFT, padx=5)
+        self.entry_id = tk.Entry(frame_filtros,font=("Arial", 12))
+        self.entry_id.pack(side=tk.LEFT, padx=(0,20))
 
         tk.Label(frame_filtros, text="Data de Início:",
-                 font=("Arial", 12), bg=cores.BG, fg=cores.TEXT).pack(side=tk.LEFT, padx=5)
+                 font=("Arial", 12), fg=cores.TEXT).pack(side=tk.LEFT, padx=5)
         self.calendario_inicio = DateEntry(frame_filtros, dateformat="%d/%m/%Y",
-                                           width=15, bootstyle="info")
-        self.calendario_inicio.pack(side=tk.LEFT, padx=(0, 20))
+                                           width=15, bootstyle=cores.PRIMARY_DARK)
+        self.calendario_inicio.pack(side=tk.LEFT, padx=(0,20))
 
         tk.Label(frame_filtros, text="Data de Fim:",
-                 font=("Arial", 12), bg=cores.BG, fg=cores.TEXT).pack(side=tk.LEFT, padx=5)
+                 font=("Arial", 12), fg=cores.TEXT).pack(side=tk.LEFT, padx=5)
         self.calendario_fim = DateEntry(frame_filtros, dateformat="%d/%m/%Y",
-                                        width=15, bootstyle="info")
-        self.calendario_fim.pack(side=tk.LEFT)
+                                        width=15, bootstyle=cores.PRIMARY_DARK)
+        self.calendario_fim.pack(side=tk.LEFT, padx=(0,20))
 
         # Botões 
-        tk.Button(frame_filtros, text="Filtrar", font=("Arial", 11, "bold"),
-                  bg=cores.PRIMARY, fg="white", activebackground=cores.PRIMARY_DARK,
-                  activeforeground="white", bd=0, cursor="hand2",
-                  command=self.filtrar_relatorio).pack(side=tk.LEFT, padx=10, ipady=10)
+        tk.Button(frame_filtros, text="Filtrar", font=("Arial", 11),
+                  bg=cores.PRIMARY, fg=cores.CARD, activebackground=cores.PRIMARY_DARK,
+                  activeforeground=cores.CARD, bd=0, cursor="hand2",
+                  command=self.filtrar_relatorio).pack(side=tk.LEFT, padx=14, pady=6)
 
-        tk.Button(frame_filtros, text="Gerar Relatório", font=("Arial", 11, "bold"),
-                  bg=cores.PRIMARY, fg="white", activebackground=cores.PRIMARY_DARK,
-                  activeforeground="white", bd=0, cursor="hand2",
-                  command=self.gerar_relatorio_txt).pack(side=tk.LEFT, padx=10, ipady=10)
+        tk.Button(frame_filtros, text="Gerar Relatório", font=("Arial", 11),
+                  bg=cores.PRIMARY, fg=cores.CARD, activebackground=cores.PRIMARY_DARK,
+                  activeforeground=cores.CARD, bd=0, cursor="hand2",
+                  command=self.gerar_relatorio_txt).pack(side=tk.LEFT, padx=14, pady=6)
 
         #Tabela 
         self.tabela = ttk.Treeview(
             self,
             columns=("id", "nome", "data", "atrasos", "extras", "total"),
-            show="headings"
+            show="headings",
+            selectmode="browse",
+            style="Pic.Treeview"
         )
         self.tabela.heading("id", text="ID")
         self.tabela.heading("nome", text="Nome")
