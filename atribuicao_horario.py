@@ -453,7 +453,9 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             relief="flat",
             bd=0,
             cursor="hand2",
-            command=self.mostrar_pagina1
+            command=self.mostrar_pagina1,
+            padx=14,
+            pady=6
         )
 
         botao_voltar.pack(
