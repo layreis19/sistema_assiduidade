@@ -22,6 +22,7 @@ Exemplo:
 
 import tkinter as tk
 import cores
+from tkinter import ttk
 
 # ── Cores (únicos sítios onde este ficheiro lê o cores.py) ──
 COR_FUNDO = cores.CARD
@@ -85,3 +86,37 @@ def criar_entrada(pai, largura=25, senha=False, **extra):
         highlightbackground=COR_BORDA,    # borda normal
         highlightcolor=COR_BOTAO,         # borda quando tem o cursor
         **extra)
+
+
+def criar_estilo_tabela():
+
+    estilo = ttk.Style()
+
+    estilo.theme_use("clam")
+
+    estilo.configure(
+        "Estilo_tabela",
+        background=cores.CARD,
+        foreground=cores.TEXT,
+        fieldbackground=cores.CARD,
+        rowheight=28,
+        font=FONTE_BOTAO
+    )
+
+    estilo.configure(
+        "Estilo_tabela.Heading",
+        font=("Arial", 11, "bold"),
+        background=cores.BLUE_VERY_LIGHT,
+        foreground=cores.TEXT
+    )
+
+    estilo.map(
+        "Estilo_tabela",
+        background=[("selected", cores.PRIMARY)],
+        foreground=[("selected", cores.CARD)]
+    )
+
+    estilo.layout(
+        "Estilo_tabela",
+        estilo.layout("Treeview")
+    )
