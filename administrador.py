@@ -8,16 +8,15 @@ Mostra o formulário de login do administrador (nome e senha).
 """
 import tkinter as tk
 from tkinter import messagebox
-from tkinter import ttk
 import bcrypt
 import mysql.connector
 from ligacao import conn
-import cores
+import widgets as w
 
 
 class PaginaAdministrador(tk.Frame):
     def __init__(self,parent, mostrar_botoes_admin):
-        super().__init__(parent, bg= cores.BG)
+        super().__init__(parent, bg=w.COR_FUNDO)
         self.parent = parent
         self.mostrar_botoes_admin= mostrar_botoes_admin
         self.cursor = conn.cursor(buffered=True)
@@ -29,71 +28,27 @@ class PaginaAdministrador(tk.Frame):
  # Função  Login
 
     def tela_login(self):
-        #cria um sub-fram
-        self.frame_login = tk.Frame(self,bg=cores.CARD, highlightbackground=cores.BORDER,highlightthickness=1)
+        # cartão branco com borda, centrado na página
+        self.frame_login = tk.Frame(
+            self, bg=w.COR_FUNDO,
+            highlightbackground=w.COR_BORDA, highlightthickness=1)
+        self.frame_login.pack(expand=True, padx=40, ipadx=30, ipady=30)
 
-        self.frame_login.pack(expand=True,padx=40,ipadx=30,ipady=30)
+        w.criar_titulo(self.frame_login, "ÁREA ADMINISTRATIVA").pack(pady=(10, 20))
 
-        titulo = tk.Label(self.frame_login, text= "ÁREA ADMINISTRATIVA", font= ("Arial",16,"bold"),bg=cores.CARD, fg=cores.TEXT)
-        titulo.pack(pady=(10, 20))
+        # nome
+        w.criar_label(self.frame_login, "Nome:", negrito=True).pack(anchor="w", padx=20, pady=(5, 2))
+        self.ent_nome = w.criar_entrada(self.frame_login)
+        self.ent_nome.pack(padx=20, pady=(0, 15), ipady=4)
 
-        nome_login = tk.Label(self.frame_login, text= "Nome:",font=( "Arial",10,"bold"), bg= cores.CARD,fg= cores.TEXT)
-        nome_login.pack(anchor="w", padx=20, pady=(5,2))
+        # senha
+        w.criar_label(self.frame_login, "Senha:", negrito=True).pack(anchor="w", padx=20, pady=(5, 2))
+        self.ent_senha = w.criar_entrada(self.frame_login, senha=True)
+        self.ent_senha.pack(padx=20, pady=(0, 20), ipady=4)
 
-       #caixa de entrada nome
-        self.ent_nome = tk.Entry(
-            self.frame_login,
-            font= ("Arial",11),
-            width=25,
-            bg=cores.BLUE_VERY_LIGHT,
-            fg= cores.TEXT,
-            bd= 0,
-            highlightbackground= cores.BORDER,
-            highlightthickness=1
-            )
-        self.ent_nome.pack(padx=20, pady=(0,15), ipady=4)
+        # botão autenticar
+        w.criar_botao(self.frame_login, "Autenticar", self.autenticar_admin, largura=15).pack(pady=10, ipady=5)
 
-        senha_login= tk.Label(
-            self.frame_login,
-            text= "Senha:",
-            font=("Arial", 10, "bold"),
-            bg= cores.CARD,
-            fg=cores.TEXT
-        )
-        senha_login.pack(anchor="w",padx=20,pady=(5,2))
-
-        self.ent_senha = tk.Entry(
-            self.frame_login,
-            show="*",
-            font=("Arial,11"),
-            width=25,
-            bg=cores.BLUE_VERY_LIGHT,
-            fg=cores.TEXT,
-            bd=0,
-            highlightbackground=cores.BORDER,
-            highlightthickness=1
-        )
-        self.ent_senha.pack(padx=20, pady=(0,20), ipady=4)
-
-        #botao autenticar 
-
-        btn_entrar = tk.Button(
-            self.frame_login,
-            text= "Autenticar",
-            font=("Arial", 11, "bold"),
-            bg= cores.PRIMARY,
-            fg="white",
-            activebackground= cores.PRIMARY_DARK,
-            activeforeground="white",
-            bd=0,
-            cursor="hand2",
-            width=15,
-            command=self.autenticar_admin
-        )
-        btn_entrar.pack(pady=(10,10), ipady=5)
-        
-        
-        
         #botao sair
     def reiniciar_login(self):
         
@@ -157,5 +112,3 @@ class PaginaAdministrador(tk.Frame):
 
         except mysql.connector.Error as erro:
             messagebox.showerror("Erro", f"Erro na base de dados: {erro}")
-
-    
