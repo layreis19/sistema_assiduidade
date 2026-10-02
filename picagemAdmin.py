@@ -17,7 +17,7 @@ Em todos os casos o motivo é obrigatório, e os resultados do dia
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 from datetime import datetime, timedelta
- 
+import widgets as w
 import mysql.connector
 import cores
 from ligacao import conn
@@ -26,7 +26,7 @@ from rotulos import rotulo_tipo_picagem
  
 # Tipos de picagem usados pelo relogio_ponto.py
 TIPOS = ["ENTRADA", "SAIDA_ALMOCO", "VOLTA_ALMOCO", "SAIDA"]
- 
+
 FORMATO_DATA = "%d/%m/%Y"
 FORMATO_HORA = "%H:%M"
  
@@ -45,20 +45,15 @@ class PaginaPicagensAdmin(tk.Frame):
         self.picagens = {}           # id_picagem -> dados da linha
         self.rotulo_para_tipo = {rotulo_tipo_picagem(t): t for t in TIPOS}
  
-        tk.Label(
-            self, text="PICAGENS", font=("Arial", 24),
-            bg=cores.CARD, fg=cores.TEXT
-        ).pack(pady=15)
- 
-       
-        acoes = tk.Frame(self, bg=cores.CARD)
+        w.criar_titulo(self, "PICAGENS").pack(pady=15)
+        acoes= tk.Frame(self, bg=cores.CARD)
         acoes.pack(pady=10)
- 
-        tk.Button(acoes, text="Adicionar picagem", command=self.adicionar_picagem).pack(side="left", padx=10)
-        tk.Button(acoes, text="Alterar", command=self.alterar_picagem).pack(side="left", padx=10)
-        tk.Button(acoes, text="Eliminar", command=self.eliminar_picagem).pack(side="left", padx=10)
- 
-      
+        
+        w.criar_botao(acoes,"Adicionar picagem",self.adicionar_picagem).pack(side="left")
+        w.criar_botao(acoes,"Alterar",self.alterar_picagem).pack(side="left",padx=10)
+        w.criar_botao(acoes,"Eliminar",self.eliminar_picagem).pack(side="left",padx=10)
+        
+     
         self.aplicar_estilo()
  
         self.tabela = ttk.Treeview(
@@ -201,31 +196,28 @@ class PaginaPicagensAdmin(tk.Frame):
         janela.title("Adicionar picagem manual")
         janela.grab_set()
  
-        tk.Label(janela, text="Funcionário:").pack(pady=(10, 2), padx=20)
-        combo_func = ttk.Combobox(
-            janela, values=list(self.funcionarios_map.keys()),
-            state="readonly", width=28
-        )
+        w.criar_label( janela,"Funcionário:").pack(pady=(10,2), padx=20)
+        combo_func = ttk.Combobox(janela, values=list(self.funcionarios_map.keys()), state="readonly",width=28)
         combo_func.pack(padx=20)
- 
-        tk.Label(janela, text="Data (DD/MM/AAAA):").pack(pady=(10, 2), padx=20)
-        entry_data = tk.Entry(janela, width=14)
+        
+        w.criar_label(janela, "Data (DD/MM/AAAA):").pack(pady=(10, 2), padx=20)
+        entry_data = w.criar_entrada(janela, largura=14)
         entry_data.insert(0, datetime.now().strftime(FORMATO_DATA))
         entry_data.pack(padx=20)
  
-        tk.Label(janela, text="Hora (HH:MM):").pack(pady=(10, 2), padx=20)
-        entry_hora = tk.Entry(janela, width=14)
+        w.criar_label(janela, "Hora (HH:MM):").pack(pady=(10, 2), padx=20)
+        entry_hora = w.criar_entrada(janela, largura=14)
         entry_hora.pack(padx=20)
  
-        tk.Label(janela, text="Tipo:").pack(pady=(10, 2), padx=20)
+        w.criar_label(janela, "Tipo:").pack(pady=(10, 2), padx=20)
         combo_tipo = ttk.Combobox(
             janela, values=list(self.rotulo_para_tipo.keys()),
             state="readonly", width=20
         )
         combo_tipo.pack(padx=20)
  
-        tk.Label(janela, text="Motivo (obrigatório):").pack(pady=(10, 2), padx=20)
-        entry_motivo = tk.Entry(janela, width=32)
+        w.criar_label(janela, "Motivo (obrigatório):").pack(pady=(10, 2), padx=20)
+        entry_motivo = w.criar_entrada(janela, width=32)
         entry_motivo.pack(padx=20)
  
         def guardar():
@@ -279,7 +271,7 @@ class PaginaPicagensAdmin(tk.Frame):
             messagebox.showinfo("Sucesso", "Picagem registada com sucesso!")
             janela.destroy()
  
-        tk.Button(janela, text="Guardar", command=guardar).pack(pady=15)
+        w.criar_botao(janela,"Guardar",guardar).pack(pady=15)
  
     
     # 2. ALTERAR PICAGEM
