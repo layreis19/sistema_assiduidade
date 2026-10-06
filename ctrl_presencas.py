@@ -3,7 +3,11 @@ from tkinter import ttk
 from ligacao import conn
 from datetime import date
 from tkinter import messagebox
+import widgets as w 
+from widgets import *
 import cores
+
+
 # Criar a classe chamada PaginaPresencas
 # Herda o tk.Frame(janela/área dentro da aplicação)
 class PaginaPresencas(tk.Frame):
@@ -15,37 +19,31 @@ class PaginaPresencas(tk.Frame):
         # Cursor da base de dados
         self.cursor = conn.cursor(buffered=True)
 
-        # Titulo 
-        titulo = tk.Label(
-                    self,
-                    text="CONTROLO DE PRESENÇAS",
-                    font=("Arial", 24)
-                )
+        w.criar_estilo_tabela()
         
-        titulo.pack(pady=50)
-
+        # Titulo 
+        w.criar_titulo(self,"CONTROLO DE PRESENÇAS").pack(pady=(30,20))
+        
         # KPI´S
-        self.frame_kpis = tk.Frame(self)
-        self.frame_kpis.pack(pady=10)
-
-
+        frame_kpis = tk.Frame(self)
+        frame_kpis.pack(pady=10)
 
         # KPI total de funcionários
 
-        self.total_kpi = tk.Frame(
-            self.frame_kpis,
+        total_kpi = tk.Frame(
+            frame_kpis,
             width=220,
             height=110,
             relief = "solid",
             borderwidth=1
         )
 
-        self.total_kpi.pack(
+        total_kpi.pack(
             side="left",
             padx=10
         )
 
-        self.total_kpi.pack_propagate(False)
+        total_kpi.pack_propagate(False)
 
         tk.Label(self.total_kpi,
                  text="TOTAL DE FUNCIONÁRIOS",
@@ -64,7 +62,6 @@ class PaginaPresencas(tk.Frame):
 
 
         # KPI´s funcionários presentes
-
         self.presentes_kpi = tk.Frame(
             self.frame_kpis,
             width=220,
@@ -73,59 +70,24 @@ class PaginaPresencas(tk.Frame):
             borderwidth=1
         )
 
-        self.presentes_kpi.pack(
-            side="left",
-            padx=10 )
+        self.presentes_kpi.pack(side="left", padx=10)
 
         self.presentes_kpi.pack_propagate(False)
 
-        tk.Label(
+        # Texto
+        w.criar_label(
             self.presentes_kpi,
-            text="PRESENTES",
-            font=("Arial", 11)).pack(
-                pady=(15,5)
-            )
-
-        self.label_presentes = tk.Label(
+            "PRESENTES").pack(pady=(15,5))
+        
+        # Número
+        self.label_presentes = w.criar_label(
             self.presentes_kpi,
-            text="0",
-            font=("Arial", 26, "bold"),
-            fg="green"
+            "0",
+            negrito=True,
+            cor="green"
         )
 
         self.label_presentes.pack()
-
-
-        # KPI funcionários em pausa
-
-        self.pausa_kpi = tk.Frame(
-            self.frame_kpis,
-            width=220,
-            height=110,
-            relief="solid",
-            borderwidth=1
-        )
-
-        self.pausa_kpi.pack(side="left",
-                             padx=10)
-
-        self.pausa_kpi.pack_propagate(False)
-
-        tk.Label(
-            self.pausa_kpi,
-            text="EM PAUSA",
-            font=("Arial", 11)).pack(
-                pady=(15,5)
-        )
-
-        self.label_pausa = tk.Label(
-            self.pausa_kpi,
-            text="0",
-            font=("Arial", 26, "bold"),
-            fg="orange"
-        )
-
-        self.label_pausa.pack()
 
 
         # KPI funcionários ausentes
@@ -203,9 +165,7 @@ class PaginaPresencas(tk.Frame):
 
         # filtrar por estado 
 
-        self.filtro = tk.StringVar(
-            value="Todos"
-        )
+        self.filtro = tk.StringVar(value="Todos")
 
 
         tk.Label(
@@ -227,16 +187,12 @@ class PaginaPresencas(tk.Frame):
             values=(
                 "Todos",
                 "Presentes",
-                "Em Pausa",
                 "Ausentes"),
                 state="readonly",
                 width=12
         )
 
-        combo_filtro.pack(
-            side="left",
-            padx=5
-        )
+        combo_filtro.pack(side="left",padx=5)
 
 
         # escolher opção atualizar tabela
@@ -249,7 +205,37 @@ class PaginaPresencas(tk.Frame):
 
 
         # criar a tabela
+        
+        estilo = ttk.Style()
 
+        estilo.theme_use("clam")
+
+        estilo.configure(
+            "Estilo_tabela_presencas",
+            background=cores.CARD,
+            foreground=cores.TEXT,
+            fieldbackground=cores.CARD,
+            rowheight=28,
+            font=FONTE_BOTAO
+        )
+
+        estilo.configure(
+            "Estilo_tabela_presencas.Heading",
+            font=("Arial", 11, "bold"),
+            background=cores.BLUE_VERY_LIGHT,
+            foreground=cores.TEXT
+        )
+
+        estilo.map(
+        "Estilo_tabela_prencas.Heading",
+        background=[("active", cores.BLUE_VERY_LIGHT)])
+
+
+        estilo.layout(
+            "Estilo_tabela_presencas",
+            estilo.layout("Treeview")
+        )
+        
         self.tabela = ttk.Treeview(
             self,
             columns=(
@@ -257,70 +243,31 @@ class PaginaPresencas(tk.Frame):
                 "nome",
                 "estado"
             ),
-            show="headings"
+            show="headings",
+            style="Estilo_tabela_presencas"
         )
 
         # cabeçalho 
-
-        self.tabela.heading(
-            "id_funcionario",
-            text="ID_Funcionário"
-        )
-
-
-        self.tabela.heading(
-            "nome",
-            text="Nome"
-        )
-
-
-        self.tabela.heading(
-            "estado",
-            text="Estado"
-        )
+        self.tabela.heading("id_funcionario",text="ID_Funcionário")
+        self.tabela.heading("nome",text="Nome")
+        self.tabela.heading("estado",text="Estado")
 
 
         # Largura das colunas
+        self.tabela.column("id_funcionario",width=120,anchor="center")
+        self.tabela.column("nome",width=250)
+        self.tabela.column("estado",width=150,anchor="center")
 
-        self.tabela.column(
-            "id_funcionario",
-            width=120,
-            anchor="center"
-        )
-
-        self.tabela.column(
-            "nome",
-            width=250
-        )
-
-        self.tabela.column(
-            "estado",
-            width=150,
-            anchor="center"
-        )
-
-        self.tabela.pack(pady=10)
+        self.tabela.pack(
+            fill="both",
+            expand=True,
+            padx=20,
+            pady=10)
 
 
         # Cores da tabela
-
-        self.tabela.tag_configure(
-            "presente",
-            foreground="green"
-        )
-
-
-        self.tabela.tag_configure(
-            "ausente",
-            foreground="red"
-        )
-
-        # Reposto: sem esta tag, quem estava em pausa ficava sem cor
-        # própria (ou rebentava, consoante a versão).
-        self.tabela.tag_configure(
-            "pausa",
-            foreground="orange"
-        )
+        self.tabela.tag_configure("presente",foreground="green")
+        self.tabela.tag_configure("ausente",foreground="red")
 
         self.atualizar_presenca()
 
@@ -330,7 +277,6 @@ class PaginaPresencas(tk.Frame):
               self.tabela.delete(linha)
 
         # data de hoje
-        
         hoje = date.today()
 
 
@@ -357,13 +303,11 @@ class PaginaPresencas(tk.Frame):
         funcionarios.id_funcionario,
         picagem.data""", (hoje,))
 
-            # Guardar os resultados
-
+        # Guardar os resultados
         picagens = self.cursor.fetchall()
 
 
         # Criar o dicionário 
-
         dicionario_funcionarios = {}
 
         # percorrer todas as picagens
@@ -377,7 +321,6 @@ class PaginaPresencas(tk.Frame):
             tipo = picagem[2]
 
             # guardar os dados do funcionário
-
             dicionario_funcionarios[id_funcionario] = {
                 "nome": nome,
                 "tipo": tipo}
@@ -399,7 +342,6 @@ class PaginaPresencas(tk.Frame):
                 continue
 
             # encontramos o funcionario 
-
             funcionario_encontrado = True
 
             nome = dados["nome"]
@@ -415,17 +357,12 @@ class PaginaPresencas(tk.Frame):
                 estado = "PRESENTE"
                 tag = "presente"
 
-            elif tipo == "SAIDA_ALMOCO":
-                estado = "EM PAUSA"
-                tag = "pausa"
-
             else:  # tipo == "SAIDA" ou tipo is None
                 estado = "AUSENTE"
                 tag = "ausente"
 
 
             # aplicar o filtro
-
             if (
                 self.filtro.get() == "Presentes"
                 and estado != "PRESENTE"
@@ -433,10 +370,6 @@ class PaginaPresencas(tk.Frame):
 
                 continue
 
-            if (self.filtro.get() == "Em Pausa"
-                and estado != "EM PAUSA"):
-
-                continue
 
             if (self.filtro.get() == "Ausentes"
                 and estado != "AUSENTE"):
@@ -445,7 +378,6 @@ class PaginaPresencas(tk.Frame):
 
 
             # colocar funcionário na tabela
-
             self.tabela.insert(
                 "",
                 "end",
@@ -466,24 +398,16 @@ class PaginaPresencas(tk.Frame):
     def atualizar_kpis(self, dicionario_funcionarios):
 
         # calcular o total
-
         total = len(dicionario_funcionarios)
-
-
         presentes = 0 
-        em_pausa = 0
         ausentes = 0
 
         # percorrer os dados dos funcionários
-
         for dados in dicionario_funcionarios.values():
             tipo = dados["tipo"]
 
             if tipo in ("ENTRADA", "VOLTA_ALMOCO"):
                 presentes += 1
-
-            elif tipo == "SAIDA_ALMOCO":
-                em_pausa += 1
 
             else:
 
@@ -491,19 +415,6 @@ class PaginaPresencas(tk.Frame):
 
 
         # mostrar os valores nos kpis
-
-        self.label_total.config(
-            text=str(total)
-        )
-
-        self.label_presentes.config(
-            text=str(presentes)
-        )
-
-        self.label_pausa.config(
-            text=str(em_pausa)
-        )
-
-        self.label_ausentes.config(
-            text=str(ausentes)
-        )
+        self.label_total.config(text=str(total))
+        self.label_presentes.config(text=str(presentes))
+        self.label_ausentes.config(text=str(ausentes))
