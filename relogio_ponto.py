@@ -560,6 +560,3 @@ class PaginaPonto(tk.Frame):
                 "Erro",
                 "Ocorreu um erro ao registar a picagem. Tente novamente!"
             )
-
-
-    

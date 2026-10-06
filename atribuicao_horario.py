@@ -34,8 +34,8 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         w.criar_estilo_tabela()
 
         # Página atribuir horários/editar
-        self.pagina_atribuir_horarios = tk.Frame(self)
-        self.pagina_editar_horarios = tk.Frame(self)
+        self.pagina_atribuir_horarios = tk.Frame(self, background=cores.CARD)
+        self.pagina_editar_horarios = tk.Frame(self, background=cores.CARD)
 
         self.construir_atribuicao_horarios()
         
@@ -54,7 +54,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         w.criar_titulo(self.pagina_atribuir_horarios,"ATRIBUIR HORÁRIOS").pack(pady=(30,20))
 
         # Formulário 
-        frame_formulario = tk.Frame(self.pagina_atribuir_horarios)
+        frame_formulario = tk.Frame(self.pagina_atribuir_horarios, background=cores.CARD)
         frame_formulario.pack(pady=10)
 
         # Funcionário
@@ -81,7 +81,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         self.combo_horario.grid(row=0, column=5, padx=(0,10), pady=5)
 
         # botões
-        frame_botoes = tk.Frame(self.pagina_atribuir_horarios)
+        frame_botoes = tk.Frame(self.pagina_atribuir_horarios, background=cores.CARD)
         frame_botoes.pack(pady=10)
 
         # Botão atribuir
@@ -93,7 +93,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
 
 
         # FRAME TABELA
-        frame_tabela = tk.Frame(self.pagina_atribuir_horarios)
+        frame_tabela = tk.Frame(self.pagina_atribuir_horarios, background=cores.CARD)
         frame_tabela.pack(fill="both", expand=True, padx=30, pady=20)
 
         # Tabela 
@@ -134,7 +134,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         w.criar_titulo(self.pagina_editar_horarios,"EDITAR HORÁRIOS",).pack(pady=(30,20))
 
         # frame label 
-        frame_formulario = tk.Frame(self.pagina_editar_horarios)
+        frame_formulario = tk.Frame(self.pagina_editar_horarios, background=cores.CARD)
         frame_formulario.pack(pady=10)
 
         # Nome 
@@ -164,7 +164,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         
         
         # frame botões
-        frame_botoes = tk.Frame(self.pagina_editar_horarios)
+        frame_botoes = tk.Frame(self.pagina_editar_horarios, background=cores.CARD)
         frame_botoes.pack(pady=10)
 
         # Botão criar 
@@ -180,7 +180,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         w.criar_botao(self.pagina_editar_horarios, "Voltar", self.mostrar_pagina1).pack(side="bottom",anchor="w",padx=30, pady=15)
 
         # FRAME TABELA
-        frame_tabela = tk.Frame(self.pagina_editar_horarios)
+        frame_tabela = tk.Frame(self.pagina_editar_horarios, background=cores.CARD)
         frame_tabela.pack(fill="both", expand=True, padx=30,pady=20)
         
         # Tabela 
