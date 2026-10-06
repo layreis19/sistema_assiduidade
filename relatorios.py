@@ -24,7 +24,7 @@ class PaginaRelatorios(tk.Frame):
         w.criar_titulo(self,"RELATÓRIOS DE ASSIDUIDADE").pack(pady=(30,20))
 
         #Filtros 
-        frame_formulario = tk.Frame(self)
+        frame_formulario = tk.Frame(self, background=cores.CARD)
         frame_formulario.pack(pady=10)
 
         w.criar_label(frame_formulario,"ID Funcionário:").pack(side=tk.LEFT,pady=5)    
@@ -49,7 +49,7 @@ class PaginaRelatorios(tk.Frame):
         self.calendario_fim.pack(side=tk.LEFT, padx=(0,20), pady=5)
 
         # Botões 
-        frame_botoes = tk.Frame(self)
+        frame_botoes = tk.Frame(self, background=cores.CARD)
         frame_botoes.pack(pady=10)
 
         # Botão editar

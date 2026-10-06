@@ -393,19 +393,3 @@ class PaginaPicagensAdmin(tk.Frame):
     def eliminar_picagem(self):
  
       pass
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
