@@ -24,7 +24,6 @@ import widgets as w
 
 
 class PaginaAtribuicaoHorarios(tk.Frame):
-
     def __init__(self, parent):
 
         super().__init__(parent, bg=cores.CARD)
@@ -35,8 +34,8 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         w.criar_estilo_tabela()
 
         # Página atribuir horários/editar
-        self.pagina_atribuir_horarios = tk.Frame(self)
-        self.pagina_editar_horarios = tk.Frame(self)
+        self.pagina_atribuir_horarios = tk.Frame(self, background=cores.CARD)
+        self.pagina_editar_horarios = tk.Frame(self, background=cores.CARD)
 
         self.construir_atribuicao_horarios()
         
@@ -55,111 +54,47 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         w.criar_titulo(self.pagina_atribuir_horarios,"ATRIBUIR HORÁRIOS").pack(pady=(30,20))
 
         # Formulário 
-        frame_formulario = tk.Frame(self.pagina_atribuir_horarios)
+        frame_formulario = tk.Frame(self.pagina_atribuir_horarios, background=cores.CARD)
         frame_formulario.pack(pady=10)
 
         # Funcionário
-        w.criar_label(
-            frame_formulario,
-            "Funcionário:").grid(
-                row=0, 
-                column=0, 
-                padx=(10,5), 
-                pady=5, 
-                sticky="e")
+        w.criar_label(frame_formulario,"Funcionário:").grid(row=0, column=0, padx=(10,5), pady=5, sticky="e")
 
-        self.combo_funcionario = ttk.Combobox(
-            frame_formulario,
-            font=w.FONTE_LABEL,
-            state="readonly",
-            width=16
-        )
-        self.combo_funcionario.grid(
-            row=0, 
-            column=1, 
-            padx=(0,20), 
-            pady=5)
+        self.combo_funcionario = ttk.Combobox(frame_formulario,font=w.FONTE_LABEL, state="readonly", width=16)
+        self.combo_funcionario.grid(row=0, column=1, padx=(0,20), pady=5)
 
 
         self.combo_funcionario.bind(
             "<<ComboboxSelected>>",
-            lambda e: self.atualizar_lista_atribuicoes()
-        )
+            lambda e: self.atualizar_lista_atribuicoes())
 
         # Data
-        w.criar_label(
-            frame_formulario,
-            "Data:"
-        ).grid(
-            row=0, 
-            column=2, 
-            padx=(10,5), 
-            pady=5, 
-            sticky="e")
+        w.criar_label(frame_formulario, "Data:").grid(row=0, column=2, padx=(10,5), pady=5, sticky="e")
 
-        self.entry_data = DateEntry(
-            frame_formulario,
-            dateformat="%Y-%m-%d",
-            width=12,
-            bootstyle=cores.PRIMARY_DARK
-        )
-        self.entry_data.grid(
-            row=0, 
-            column=3, 
-            padx=(0,20), 
-            pady=5)
+        self.entry_data = DateEntry(frame_formulario, dateformat="%Y-%m-%d", width=12, bootstyle=cores.PRIMARY_DARK)
+        self.entry_data.grid(row=0, column=3, padx=(0,20), pady=5)
 
         # Horário
-        w.criar_label(
-            frame_formulario,
-            "Horário:"
-        ).grid(
-            row=0, 
-            column=4, 
-            padx=(10,5), 
-            pady=5, 
-            sticky="e")
+        w.criar_label(frame_formulario, "Horário:").grid(row=0, column=4, padx=(10,5), pady=5, sticky="e")
 
-        self.combo_horario = ttk.Combobox(
-            frame_formulario,
-            font=w.FONTE_LABEL,
-            state="readonly",
-            width=16
-        )
-        self.combo_horario.grid(
-            row=0, 
-            column=5, 
-            padx=(0,10), 
-            pady=5)
+        self.combo_horario = ttk.Combobox(frame_formulario, font=w.FONTE_LABEL, state="readonly", width=16)
+        self.combo_horario.grid(row=0, column=5, padx=(0,10), pady=5)
 
         # botões
-        frame_botoes = tk.Frame(self.pagina_atribuir_horarios)
+        frame_botoes = tk.Frame(self.pagina_atribuir_horarios, background=cores.CARD)
         frame_botoes.pack(pady=10)
 
         # Botão atribuir
-        w.criar_botao(
-            frame_botoes,
-            "Atribuir Horário",
-            self.atribuir_horario,
-        ).pack(side=tk.LEFT,padx=10)
+        w.criar_botao(frame_botoes,"Atribuir Horário",self.atribuir_horario).pack(side=tk.LEFT,padx=10)
 
 
         # botão para ir para a página de edição de horários 
-        w.criar_botao(
-            frame_botoes,
-            "Editar Horários",
-            self.mostrar_pagina2
-        ).pack(side="left",padx=5)
+        w.criar_botao(frame_botoes, "Editar Horários", self.mostrar_pagina2).pack(side=tk.LEFT,padx=5)
 
 
         # FRAME TABELA
-        frame_tabela = tk.Frame(self.pagina_atribuir_horarios)
-        
-        frame_tabela.pack(
-            fill="both",
-            expand=True,
-            padx=30,
-            pady=20)
+        frame_tabela = tk.Frame(self.pagina_atribuir_horarios, background=cores.CARD)
+        frame_tabela.pack(fill="both", expand=True, padx=30, pady=20)
 
         # Tabela 
         self.tabela_editar_horarios = ttk.Treeview(
@@ -188,24 +123,10 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         self.tabela_editar_horarios.column("entrada",width=100,anchor="center")
         self.tabela_editar_horarios.column("saida",width=100,anchor="center")
 
-        scroll = ttk.Scrollbar(
-            frame_tabela,
-            orient="vertical",
-            command=self.tabela_editar_horarios.yview
-        )
-
+        scroll = ttk.Scrollbar(frame_tabela, orient="vertical", command=self.tabela_editar_horarios.yview)
         self.tabela_editar_horarios.configure(yscrollcommand=scroll.set)
-
-        self.tabela_editar_horarios.pack(
-            side="left",
-            fill="both",
-            expand=True
-        )
-
-        scroll.pack(
-            side="right",
-            fill="y"
-        )
+        self.tabela_editar_horarios.pack(side="left", fill="both", expand=True)
+        scroll.pack(side="right", fill="y")
 
     def criar_pagina2(self):
 
@@ -213,7 +134,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         w.criar_titulo(self.pagina_editar_horarios,"EDITAR HORÁRIOS",).pack(pady=(30,20))
 
         # frame label 
-        frame_formulario = tk.Frame(self.pagina_editar_horarios)
+        frame_formulario = tk.Frame(self.pagina_editar_horarios, background=cores.CARD)
         frame_formulario.pack(pady=10)
 
         # Nome 
@@ -243,58 +164,24 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         
         
         # frame botões
-        frame_botoes = tk.Frame(self.pagina_editar_horarios)
+        frame_botoes = tk.Frame(self.pagina_editar_horarios, background=cores.CARD)
         frame_botoes.pack(pady=10)
 
         # Botão criar 
-        w.criar_botao(
-            frame_botoes,
-            "Criar",
-            self.pagina_editar_horarios).pack(
-            side="left",
-            padx=5
-        )
+        w.criar_botao(frame_botoes, "Criar", self.pagina_editar_horarios).pack(side=tk.LEFT, padx=5)
             
         # Botão editar
-        w.criar_botao(
-            frame_botoes,
-            "Editar",
-            self.pagina_editar_horarios).pack(
-            side="left",
-            padx=5
-        )
-
+        w.criar_botao(frame_botoes, "Editar", self.pagina_editar_horarios).pack(side=tk.LEFT, padx=5)
 
         # Botão eliminar 
-        w.criar_botao(
-            frame_botoes,
-            "Eliminar",
-            self.pagina_editar_horarios).pack(
-            side="left",
-            padx=5
-        )
-
+        w.criar_botao(frame_botoes, "Eliminar", self.pagina_editar_horarios).pack(side=tk.LEFT, padx=5)
 
         # Botão voltar
-        w.criar_botao(
-            self.pagina_editar_horarios,
-            "Voltar",
-            self.mostrar_pagina1
-        ).pack(
-            side="bottom",
-            anchor="w",
-            padx=30,
-            pady=15
-        )
+        w.criar_botao(self.pagina_editar_horarios, "Voltar", self.mostrar_pagina1).pack(side="bottom",anchor="w",padx=30, pady=15)
 
         # FRAME TABELA
-        frame_tabela = tk.Frame(self.pagina_editar_horarios)
-        
-        frame_tabela.pack(
-                fill="both",
-                expand=True,
-                padx=30,
-                pady=20)
+        frame_tabela = tk.Frame(self.pagina_editar_horarios, background=cores.CARD)
+        frame_tabela.pack(fill="both", expand=True, padx=30,pady=20)
         
         # Tabela 
         self.tabela_horarios = ttk.Treeview(
@@ -334,21 +221,10 @@ class PaginaAtribuicaoHorarios(tk.Frame):
 
 
         # scroll 
-        scroll = ttk.Scrollbar(
-            frame_tabela,
-            orient="vertical",
-            command=self.tabela_horarios.yview
-        )
-
+        scroll = ttk.Scrollbar(frame_tabela, orient="vertical", command=self.tabela_horarios.yview)
         self.tabela_horarios.configure(yscrollcommand=scroll.set)
-        
-        self.tabela_horarios.pack(
-            side="left",
-            fill="both", 
-            expand=True)
-        
-        scroll.pack(side="right",
-                    fill="y")
+        self.tabela_horarios.pack(side="left", fill="both", expand=True)
+        scroll.pack(side="right", fill="y")
 
 
     def carregar_funcionarios(self):
