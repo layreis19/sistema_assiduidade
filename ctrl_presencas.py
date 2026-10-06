@@ -29,7 +29,6 @@ class PaginaPresencas(tk.Frame):
         frame_kpis.pack(pady=10)
 
         # KPI total de funcionários
-
         total_kpi = tk.Frame(
             frame_kpis,
             width=220,
@@ -45,14 +44,14 @@ class PaginaPresencas(tk.Frame):
 
         total_kpi.pack_propagate(False)
 
-        tk.Label(self.total_kpi,
+        tk.Label(total_kpi,
                  text="TOTAL DE FUNCIONÁRIOS",
                  font=("Arial", 11)
                  ).pack(pady=(15,5))
 
 
         self.label_total = tk.Label(
-            self.total_kpi,
+            total_kpi,
             text="0",
             font=("Arial", 26, "bold")
         )
@@ -63,7 +62,7 @@ class PaginaPresencas(tk.Frame):
 
         # KPI´s funcionários presentes
         self.presentes_kpi = tk.Frame(
-            self.frame_kpis,
+            frame_kpis,
             width=220,
             height=110,
             relief="solid",
@@ -93,7 +92,7 @@ class PaginaPresencas(tk.Frame):
         # KPI funcionários ausentes
 
         self.ausentes_kpi = tk.Frame(
-            self.frame_kpis,
+            frame_kpis,
             width=220,
             height=110,
             relief="solid",
@@ -203,39 +202,7 @@ class PaginaPresencas(tk.Frame):
 
         )
 
-
-        # criar a tabela
-        
-        estilo = ttk.Style()
-
-        estilo.theme_use("clam")
-
-        estilo.configure(
-            "Estilo_tabela_presencas",
-            background=cores.CARD,
-            foreground=cores.TEXT,
-            fieldbackground=cores.CARD,
-            rowheight=28,
-            font=FONTE_BOTAO
-        )
-
-        estilo.configure(
-            "Estilo_tabela_presencas.Heading",
-            font=("Arial", 11, "bold"),
-            background=cores.BLUE_VERY_LIGHT,
-            foreground=cores.TEXT
-        )
-
-        estilo.map(
-        "Estilo_tabela_prencas.Heading",
-        background=[("active", cores.BLUE_VERY_LIGHT)])
-
-
-        estilo.layout(
-            "Estilo_tabela_presencas",
-            estilo.layout("Treeview")
-        )
-        
+        # Tabela
         self.tabela = ttk.Treeview(
             self,
             columns=(
@@ -244,7 +211,7 @@ class PaginaPresencas(tk.Frame):
                 "estado"
             ),
             show="headings",
-            style="Estilo_tabela_presencas"
+            style="Estilo_tabela"
         )
 
         # cabeçalho 
