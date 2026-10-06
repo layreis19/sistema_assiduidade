@@ -13,8 +13,7 @@ import cores
 class PaginaPresencas(tk.Frame):
 
     def __init__(self, parent):
-        super().__init__(parent)
-
+        super().__init__(parent, bg=cores.CARD)
 
         # Cursor da base de dados
         self.cursor = conn.cursor(buffered=True)
@@ -24,224 +23,130 @@ class PaginaPresencas(tk.Frame):
         # Titulo 
         w.criar_titulo(self,"CONTROLO DE PRESENÇAS").pack(pady=(30,20))
         
-        # KPI´S
-        frame_kpis = tk.Frame(self)
-        frame_kpis.pack(pady=10)
+        # FRAME
+        frame_kpi= tk.Frame(self)
+        frame_kpi.pack(pady=10)
 
         # KPI total de funcionários
-        total_kpi = tk.Frame(
-            frame_kpis,
-            width=220,
-            height=110,
-            relief = "solid",
-            borderwidth=1
-        )
+        self.label_total_kpi = tk.Frame(frame_kpi, width=220, height=110, relief = "solid", borderwidth=1)
+        self.label_total_kpi.pack(side=tk.LEFT,padx=10)
+        self.label_total_kpi.pack_propagate(False)
 
-        total_kpi.pack(
-            side="left",
-            padx=10
-        )
-
-        total_kpi.pack_propagate(False)
-
-        tk.Label(total_kpi,
-                 text="TOTAL DE FUNCIONÁRIOS",
-                 font=("Arial", 11)
-                 ).pack(pady=(15,5))
+        # LABEL total funcionários
+        w.criar_label(self.label_total_kpi, "TOTAL DE FUNCIONÁRIOS").pack(pady=(15,5))
+        self.label_funcionarios = w.criar_label(self.label_total_kpi, "0", negrito=True)
+        self.label_funcionarios.config(font=("Arial", 22, "bold"))
+        self.label_funcionarios.pack()
 
 
-        self.label_total = tk.Label(
-            total_kpi,
-            text="0",
-            font=("Arial", 26, "bold")
-        )
+        # KPI funcionários presentes
+        self.label_funcionarios_presentes = tk.Frame(frame_kpi, width=220, height=110, relief="solid", borderwidth=1)
+        self.label_funcionarios_presentes.pack(side=tk.LEFT, padx=10)
+        self.label_funcionarios_presentes.pack_propagate(False)
 
-
-        self.label_total.pack()
-
-
-        # KPI´s funcionários presentes
-        self.presentes_kpi = tk.Frame(
-            frame_kpis,
-            width=220,
-            height=110,
-            relief="solid",
-            borderwidth=1
-        )
-
-        self.presentes_kpi.pack(side="left", padx=10)
-
-        self.presentes_kpi.pack_propagate(False)
-
-        # Texto
-        w.criar_label(
-            self.presentes_kpi,
-            "PRESENTES").pack(pady=(15,5))
-        
-        # Número
-        self.label_presentes = w.criar_label(
-            self.presentes_kpi,
-            "0",
-            negrito=True,
-            cor="green"
-        )
-
+       
+        # LABEL Funcionários presentes
+        w.criar_label(self.label_funcionarios_presentes,"PRESENTES").pack(pady=(15,5))
+        self.label_presentes = w.criar_label(self.label_funcionarios_presentes, "0", negrito=True, cor="green")
+        self.label_presentes.config(font=("Arial", 22, "bold"))
         self.label_presentes.pack()
 
 
         # KPI funcionários ausentes
+        self.label_funcionarios_ausentes = tk.Frame(frame_kpi, width=220, height=110, relief="solid", borderwidth=1)
+        self.label_funcionarios_ausentes.pack(side=tk.LEFT, padx=10)
+        self.label_funcionarios_ausentes.pack_propagate(False)
 
-        self.ausentes_kpi = tk.Frame(
-            frame_kpis,
-            width=220,
-            height=110,
-            relief="solid",
-            borderwidth=1
-        )
-
-        self.ausentes_kpi.pack(side="left",
-                               padx=10)
-
-        self.ausentes_kpi.pack_propagate(False)
-
-        tk.Label(
-            self.ausentes_kpi,
-            text="AUSENTES",
-            font=("Arial", 11)).pack(
-                pady=(15,5)
-        )
-
-
-        self.label_ausentes = tk.Label(
-            self.ausentes_kpi,
-            text="0",
-            font=("Arial", 26, "bold"),
-            fg="red"
-        )
-
+        # LABEL Funcionários ausentes
+        w.criar_label(self.label_funcionarios_ausentes,"AUSENTES").pack(pady=(15,5))
+        self.label_ausentes = w.criar_label(self.label_funcionarios_ausentes, "0", negrito=True, cor="red")
+        self.label_ausentes.config(font=("Arial", 22, "bold"))
         self.label_ausentes.pack()
 
 
-        # FILTROS
-
-        self.frame_filtros = tk.Frame(self)
-
-        self.frame_filtros.pack(
-            padx=10,
-            pady=20
-        )
+        # FRAME FORMULÁRIO
+        frame_formulario = tk.Frame(self)
+        frame_formulario.pack(pady=10)
 
         # pesquisa por id 
 
         self.id_pesquisa = tk.StringVar()
+        w.criar_label(frame_formulario, "ID Funcionário:").pack(side=tk.LEFT, padx=5)
+        self.entry_id = w.criar_entrada(frame_formulario, textvariable=self.id_pesquisa)
+        self.entry_id.pack(side=tk.LEFT, padx=10, pady=10)
 
-        tk.Label(
-            self.frame_filtros,
-            text="ID Funcionário:"
-        ).pack(
-            side="left", padx=5)
-
-
-        entrada_id = tk.Entry(
-            self.frame_filtros,
-            textvariable=self.id_pesquisa,
-            width=10
-        )
-
-        entrada_id.pack(side="left", padx=5)
-
-
-        # botão para pesquisar
-
-        botao_pesquisar = tk.Button(
-            self.frame_filtros,
-            text="Pesquisar",
-            command=self.atualizar_presenca
-        )
-
-        botao_pesquisar.pack(side="left", padx=5)
-
-
-        # filtrar por estado 
 
         self.filtro = tk.StringVar(value="Todos")
-
-
-        tk.Label(
-            self.frame_filtros,
-            text="Estado:"
-        ).pack(
-            side="left",
-            padx=5
-        )
+        w.criar_label(frame_formulario, "Estado").pack(side=tk.LEFT, padx=5)
 
 
         # Caixa para escolher o filtro
         # ("Em Pausa" reposto: sem esta opção, quem está em pausa não
         # aparecia em nenhum filtro específico, só em "Todos".)
 
-        combo_filtro = ttk.Combobox(
-            self.frame_filtros,
-            textvariable=self.filtro,
+        combo_filtro = ttk.Combobox(frame_formulario, textvariable=self.filtro,
             values=(
                 "Todos",
                 "Presentes",
-                "Ausentes"),
+                "Ausentes"
+                ),
                 state="readonly",
-                width=12
-        )
+                width=16)
 
-        combo_filtro.pack(side="left",padx=5)
+        combo_filtro.pack(side=tk.LEFT, padx=10, pady=5)
 
 
-        # escolher opção atualizar tabela
+        # FRAME BOTÃO
+        frame_botoes = tk.Frame(self)
+        frame_botoes.pack(pady=10)
 
-        combo_filtro.bind(
-            "<<ComboboxSelected>>",
-            lambda filtro: self.atualizar_presenca()
+        w.criar_botao(frame_botoes, "Pesquisar", self.atualizar_presenca).pack(side=tk.LEFT, padx=5)
 
-        )
 
+        # FRAME TABELA
+        frame_tabela = tk.Frame(self)
+        frame_tabela.pack(fill="both", expand=True, padx=30, pady=20)
+        
         # Tabela
-        self.tabela = ttk.Treeview(
-            self,
+        self.tabela_presencas = ttk.Treeview(
+            frame_tabela,
             columns=(
                 "id_funcionario",
                 "nome",
                 "estado"
             ),
             show="headings",
-            style="Estilo_tabela"
-        )
+            selectmode="browse",
+            style="Estilo_tabela")
 
-        # cabeçalho 
-        self.tabela.heading("id_funcionario",text="ID_Funcionário")
-        self.tabela.heading("nome",text="Nome")
-        self.tabela.heading("estado",text="Estado")
+        # Cabeçalhos
+        self.tabela_presencas.heading("id_funcionario",text="ID_Funcionário")
+        self.tabela_presencas.heading("nome",text="Funcionário")
+        self.tabela_presencas.heading("estado",text="Estado")
 
 
         # Largura das colunas
-        self.tabela.column("id_funcionario",width=120,anchor="center")
-        self.tabela.column("nome",width=250)
-        self.tabela.column("estado",width=150,anchor="center")
+        self.tabela_presencas.column("id_funcionario",width=60,anchor="center")
+        self.tabela_presencas.column("nome",width=250)
+        self.tabela_presencas.column("estado",width=150,anchor="center")
 
-        self.tabela.pack(
-            fill="both",
-            expand=True,
-            padx=20,
-            pady=10)
 
+        # Scroll 
+        scroll = ttk.Scrollbar(frame_tabela, orient="vertical", command=self.tabela_presencas.yview)
+        self.tabela_presencas.configure(yscrollcommand=scroll.set)
+        self.tabela_presencas.pack(side="left", fill="both", expand=True)
+        scroll.pack(side="right", fill="y")
 
         # Cores da tabela
-        self.tabela.tag_configure("presente",foreground="green")
-        self.tabela.tag_configure("ausente",foreground="red")
+        self.tabela_presencas.tag_configure("presente",foreground="green")
+        self.tabela_presencas.tag_configure("ausente",foreground="red")
 
         self.atualizar_presenca()
 
     def atualizar_presenca(self):
 
-        for linha in self.tabela.get_children():
-              self.tabela.delete(linha)
+        for linha in self.tabela_presencas.get_children():
+              self.tabela_presencas.delete(linha)
 
         # data de hoje
         hoje = date.today()
@@ -293,74 +198,101 @@ class PaginaPresencas(tk.Frame):
                 "tipo": tipo}
 
 
-            # Atualizar os kpis
+        # Atualizar os kpis
         self.atualizar_kpis(dicionario_funcionarios)
 
-        
-            # id que foi pesquisado 
+        # ID que foi pesquisado 
         id_pesquisado = self.id_pesquisa.get()
-            # verificamos se o id existe
 
-        funcionario_encontrado = False
+        # Filtro selecionado
+        filtro = self.filtro.get()
+
+        # verificamos se o id existe
+        if id_pesquisado:
+
+            funcionario_encontrado = False
 
             # percorrer os funcionários 
-        for id_funcionario, dados in dicionario_funcionarios.items():
-            if id_pesquisado and str(id_funcionario) != id_pesquisado:
-                continue
+            for id_funcionario, dados in dicionario_funcionarios.items():
+                if str(id_funcionario) != id_pesquisado:
+                    continue
 
-            # encontramos o funcionario 
-            funcionario_encontrado = True
+                # encontramos o funcionario 
+                funcionario_encontrado = True
 
-            nome = dados["nome"]
-            tipo = dados["tipo"]
-
-
-            # determinar o estado
-            # ENTRADA e VOLTA_ALMOCO: a trabalhar agora (PRESENTE).
-            # SAIDA_ALMOCO: em pausa — nem presente nem ausente.
-            # SAIDA ou nenhuma picagem hoje (None): AUSENTE.
-
-            if tipo in ("ENTRADA", "VOLTA_ALMOCO"):
-                estado = "PRESENTE"
-                tag = "presente"
-
-            else:  # tipo == "SAIDA" ou tipo is None
-                estado = "AUSENTE"
-                tag = "ausente"
+                nome = dados["nome"]
+                tipo = dados["tipo"]
 
 
-            # aplicar o filtro
-            if (
-                self.filtro.get() == "Presentes"
-                and estado != "PRESENTE"
-                ):
+                # determinar o estado
+                # ENTRADA (PRESENTE).
+                # SAIDA (AUSENTE).
 
-                continue
+                if tipo == "ENTRADA":
+                    estado = "PRESENTE"
+                    tag = "presente"
 
+                else: 
+                    estado = "AUSENTE"
+                    tag = "ausente"
 
-            if (self.filtro.get() == "Ausentes"
-                and estado != "AUSENTE"):
+                # Verificar o filtro 
+                if filtro == "Presentes" and estado !="PRESENTE":
+                    continue
 
-                continue
+                if filtro == "Ausentes" and estado != "AUSENTE":
+                    continue
 
-
-            # colocar funcionário na tabela
-            self.tabela.insert(
-                "",
-                "end",
-                values=(
-                    id_funcionario,
-                    nome,
-                    estado),
+                self.tabela_presencas.insert(
+                    "",
+                    "end",
+                    values=(
+                        id_funcionario,
+                        nome,
+                        estado
+                    ),
                     tags=(tag,)
                 )
+                
+            # Verificar se o id pesquisado existe
+            if not funcionario_encontrado:
+                messagebox.showwarning(
+                    "Funcionário", 
+                    "ID não existe.")
 
-            # verificar se o id pesquisado exsite
-        if id_pesquisado and not funcionario_encontrado:
-            messagebox.showwarning(
-                "Funcionário",
-                "ID não existe."
-            )
+        # Se não for introduzido ID utilizar o filtro
+        else:
+            for id_funcionario, dados in dicionario_funcionarios.items():
+
+                nome = dados["nome"]
+                tipo = dados["tipo"]
+
+
+                if tipo == "ENTRADA":
+                    estado = "PRESENTE"
+                    tag = "presente"
+                    
+                else:  # tipo == "SAIDA" ou tipo is None
+                    estado = "AUSENTE"
+                    tag = "ausente"
+
+                # Filtro presente
+                if self.filtro.get() == "Presentes" and estado != "PRESENTE":
+                    continue
+
+                # Filtro ausente
+                if self.filtro.get() == "Ausentes" and estado != "AUSENTE":
+                    continue
+
+                self.tabela_presencas.insert(
+                    "",
+                    "end",
+                    values=(
+                        id_funcionario,
+                        nome,
+                        estado),
+                        tags=(tag,)
+                    )
 
     def atualizar_kpis(self, dicionario_funcionarios):
 
@@ -373,7 +305,7 @@ class PaginaPresencas(tk.Frame):
         for dados in dicionario_funcionarios.values():
             tipo = dados["tipo"]
 
-            if tipo in ("ENTRADA", "VOLTA_ALMOCO"):
+            if tipo == "ENTRADA":
                 presentes += 1
 
             else:
@@ -382,6 +314,6 @@ class PaginaPresencas(tk.Frame):
 
 
         # mostrar os valores nos kpis
-        self.label_total.config(text=str(total))
+        self.label_funcionarios.config(text=str(total))
         self.label_presentes.config(text=str(presentes))
         self.label_ausentes.config(text=str(ausentes))
