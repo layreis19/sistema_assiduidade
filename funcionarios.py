@@ -33,21 +33,21 @@ class PaginaFuncionarios(tk.Frame):
         frame_formulario = tk.Frame(self)
         frame_formulario.pack(pady=10)
  
-        w.criar_label(frame_formulario, "Nome:").pack(pady=5)
+        w.criar_label(frame_formulario, "Nome:").pack(side= tk.LEFT, padx=(0,20), pady=5)
  
         self.entry_nome = w.criar_entrada(frame_formulario,largura=25)
-        self.entry_nome.pack(pady=5)
+        self.entry_nome.pack(side= tk.LEFT, padx=(0,20), pady=5)
  
-        w.criar_label(frame_formulario, "Senha:").pack(pady=5)
+        w.criar_label(frame_formulario, "Senha:").pack(side= tk.LEFT, padx=(0,20), pady=5)
  
         self.entry_senha = w.criar_entrada(frame_formulario, largura=25, senha=True)
-        self.entry_senha.pack(pady=5)
+        self.entry_senha.pack(side= tk.LEFT, padx=(0,20), pady=5)
  
         # Tipo
-        w.criar_label(frame_formulario, "Tipo:").pack(pady=5)
+        w.criar_label(frame_formulario, "Tipo:").pack(side= tk.LEFT, padx=(0,20), pady=5)
  
         self.combo_tipo = ttk.Combobox(frame_formulario, values=["Admin", "Colaborador"],state="readonly", width=22)
-        self.combo_tipo.pack(pady=5)
+        self.combo_tipo.pack(side= tk.LEFT, padx=(0,20), pady=5)
  
         # caixa de botoes para adicionar, alterar e ativar/desativar funcionário
         frame_botoes = tk.Frame(self)
