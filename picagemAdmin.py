@@ -45,23 +45,23 @@ class PaginaPicagensAdmin(tk.Frame):
         self.picagens = {}           # id_picagem -> dados da linha
         self.rotulo_para_tipo = {rotulo_tipo_picagem(t): t for t in TIPOS}
  
-        w.criar_titulo(self, "PICAGENS").pack(pady=15)
-        acoes= tk.Frame(self, bg=cores.CARD)
+        w.criar_titulo(self, "PICAGENS").pack(pady=(30,20))
+        acoes= tk.Frame(self)
         acoes.pack(pady=10)
         
         w.criar_botao(acoes,"Adicionar picagem",self.adicionar_picagem).pack(side="left")
-        w.criar_botao(acoes,"Alterar",self.alterar_picagem).pack(side="left",padx=10)
-        w.criar_botao(acoes,"Eliminar",self.eliminar_picagem).pack(side="left",padx=10)
+        w.criar_botao(acoes,"Alterar",self.alterar_picagem).pack(side="left",padx=5)
+        w.criar_botao(acoes,"Eliminar",self.eliminar_picagem).pack(side="left",padx=5)
         
      
-        self.aplicar_estilo()
+        w.criar_estilo_tabela()
  
         self.tabela = ttk.Treeview(
             self,
             columns=("funcionario", "data", "tipo", "estado", "motivo"),
             show="headings",
             selectmode="browse",
-            style="Pic.Treeview"
+            style="Estilo_tabela"
         )
         self.tabela.heading("funcionario", text="Funcionário")
         self.tabela.heading("data", text="Data e hora")
@@ -74,37 +74,13 @@ class PaginaPicagensAdmin(tk.Frame):
         self.tabela.pack(fill="both", expand=True, padx=30, pady=20)
  
         # reaplica o estilo sempre que a página aparece
-        self.bind("<Map>", self.aplicar_estilo)
+        self.bind("<Map>", w.criar_estilo_tabela)
  
         self.carregar_funcionarios()
         self.atualizar_tabela()
  
     
-    # ESTILO DA TABELA
-   
-    def aplicar_estilo(self, event=None):
-        estilo = ttk.Style()
-        if estilo.theme_use() != "clam":
-            estilo.theme_use("clam")
-        estilo.configure(
-            "Pic.Treeview",
-            background=cores.CARD,
-            foreground=cores.TEXT,
-            fieldbackground=cores.CARD,
-            rowheight=28,
-            font=("Arial", 11)
-        )
-        estilo.configure(
-            "Pic.Treeview.Heading",
-            font=("Arial", 11, "bold"),
-            background=cores.BLUE_VERY_LIGHT,
-            foreground=cores.TEXT
-        )
-        estilo.map(
-            "Pic.Treeview",
-            background=[("selected", cores.PRIMARY)],
-            foreground=[("selected", cores.CARD)]
-        )
+    
  
    
     # CARREGAR A LISTA DE FUNCIONÁRIOS (usada nos formulários)
@@ -217,7 +193,7 @@ class PaginaPicagensAdmin(tk.Frame):
         combo_tipo.pack(padx=20)
  
         w.criar_label(janela, "Motivo (obrigatório):").pack(pady=(10, 2), padx=20)
-        entry_motivo = w.criar_entrada(janela, width=32)
+        entry_motivo = w.criar_entrada(janela, largura=32)
         entry_motivo.pack(padx=20)
  
         def guardar():
@@ -292,17 +268,17 @@ class PaginaPicagensAdmin(tk.Frame):
  
         tk.Label(janela, text=f"Funcionário: {picagem['nome']}").pack(pady=(10, 2), padx=20)
  
-        tk.Label(janela, text="Data (DD/MM/AAAA):").pack(pady=(10, 2), padx=20)
-        entry_data = tk.Entry(janela, width=14)
+        w.criar_label(janela, "Data (DD/MM/AAAA):").pack(pady=(10, 2), padx=20)
+        entry_data = w.criar_entrada(janela, largura=14)
         entry_data.insert(0, picagem["data"].strftime(FORMATO_DATA))
         entry_data.pack(padx=20)
  
-        tk.Label(janela, text="Hora (HH:MM):").pack(pady=(10, 2), padx=20)
-        entry_hora = tk.Entry(janela, width=14)
+        w.criar_label(janela, "Hora (HH:MM):").pack(pady=(10, 2), padx=20)
+        entry_hora = w.criar_entrada(janela, largura=14)
         entry_hora.insert(0, picagem["data"].strftime(FORMATO_HORA))
         entry_hora.pack(padx=20)
  
-        tk.Label(janela, text="Tipo:").pack(pady=(10, 2), padx=20)
+        w.criar_label(janela,"Tipo:").pack(pady=(10, 2), padx=20)
         combo_tipo = ttk.Combobox(
             janela, values=list(self.rotulo_para_tipo.keys()),
             state="readonly", width=20
@@ -310,8 +286,8 @@ class PaginaPicagensAdmin(tk.Frame):
         combo_tipo.set(rotulo_tipo_picagem(picagem["tipo"]))
         combo_tipo.pack(padx=20)
  
-        tk.Label(janela, text="Motivo da correção (obrigatório):").pack(pady=(10, 2), padx=20)
-        entry_motivo = tk.Entry(janela, width=32)
+        w.criar_label(janela,"Motivo da correção (obrigatório):").pack(pady=(10, 2), padx=20)
+        entry_motivo = w.criar_entrada(janela, largura=32)
         entry_motivo.pack(padx=20)
  
         def guardar():
@@ -385,7 +361,7 @@ class PaginaPicagensAdmin(tk.Frame):
             messagebox.showinfo("Sucesso", "Picagem alterada com sucesso!")
             janela.destroy()
  
-        tk.Button(janela, text="Guardar", command=guardar).pack(pady=15)
+        w.criar_botao(janela, "Guardar", guardar).pack(pady=15)
  
     
     # 3. ELIMINAR PICAGEM (anular)

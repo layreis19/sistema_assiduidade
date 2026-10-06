@@ -12,49 +12,41 @@ import bcrypt
 import mysql.connector
 from ligacao import conn
 import cores
+import widgets as w
  
  
 class PaginaFuncionarios(tk.Frame):
  
     def __init__(self, parent):
-        super().__init__(parent, bg=cores.CARD)
+        super().__init__(parent)
         self.parent = parent
  
         # buffered=True para evitar problemas de cursor fechado
         # varias consultas podem ser feitas com o mesmo cursor
         self.cursor = conn.cursor(buffered=True)
  
-        titulo = tk.Label(
+        w.criar_titulo(
             self,
-            text="GESTÃO DE FUNCIONÁRIOS",
-            font=("Arial", 24)
-        )
-        titulo.pack(pady=15)
+            "GESTÃO DE FUNCIONÁRIOS").pack(pady=15)
  
         # formulario para adicionar funcionário
+        frame_formulario = tk.Frame(self)
+        frame_formulario.pack(pady=10)
  
-        nome_label = tk.Label(self, text="Nome:", font=("Arial", 12))
-        nome_label.pack(pady=5)
+        w.criar_label(frame_formulario, "Nome:").pack(pady=5)
  
-        self.entry_nome = tk.Entry(self)
+        self.entry_nome = w.criar_entrada(frame_formulario,largura=25)
         self.entry_nome.pack(pady=5)
  
-        senha_label = tk.Label(
-            self,
-            text="Senha:",
-            font=("Arial", 12)
-        )
-        senha_label.pack(pady=5)
+        w.criar_label(frame_formulario, "Senha:").pack(pady=5)
  
-        self.entry_senha = tk.Entry(self, show="*")
+        self.entry_senha = w.criar_entrada(frame_formulario, largura=25, senha=True)
         self.entry_senha.pack(pady=5)
  
         # Tipo
-        tipo_label = tk.Label(self, text="Tipo:", font=("Arial", 12))
-        tipo_label.pack(pady=5)
+        w.criar_label(frame_formulario, "Tipo:").pack(pady=5)
  
-        self.combo_tipo = ttk.Combobox(self, values=["Admin", "Colaborador"])
-        self.combo_tipo['values'] = ("Admin", "Colaborador")
+        self.combo_tipo = ttk.Combobox(frame_formulario, values=["Admin", "Colaborador"],state="readonly", width=22)
         self.combo_tipo.pack(pady=5)
  
         # caixa de botoes para adicionar, alterar e ativar/desativar funcionário
@@ -62,16 +54,13 @@ class PaginaFuncionarios(tk.Frame):
         frame_botoes.pack(pady=10)
  
         # Botão adicionar funcionário
-        btn_adicionar = tk.Button(frame_botoes, text="Adicionar", command=self.adicionar_funcionario)
-        btn_adicionar.pack(side=tk.LEFT, padx=10, pady=10)
+        w.criar_botao(frame_botoes, "Adicionar", self.adicionar_funcionario).pack(side=tk.LEFT, padx=10, pady=10)
  
         # Botão alterar funcionário
-        btn_alterar = tk.Button(frame_botoes, text="Alterar", command=self.alterar_funcionario)
-        btn_alterar.pack(side=tk.LEFT, padx=10, pady=10)
+        w.criar_botao(frame_botoes,"Alterar", self.alterar_funcionario).pack(side=tk.LEFT, padx=10, pady=10)
  
         # Botão ativar/desativar funcionário
-        btn_ativar_desativar = tk.Button(frame_botoes, text="Ativar/Desativar", command=self.ativar_desativar_funcionario)
-        btn_ativar_desativar.pack(side=tk.LEFT, padx=10, pady=10)
+        w.criar_botao= w.criar_botao(frame_botoes,"Ativar/Desativar",self.ativar_desativar_funcionario).pack(side=tk.LEFT, padx=10, pady=10)
  
         # Estilo da tabela: cores definidas de forma explícita, para o texto
        
@@ -261,33 +250,26 @@ class PaginaFuncionarios(tk.Frame):
         self.janela_alterar.title("Alterar Funcionário")
  
         # Nome
-        nome_label = tk.Label(self.janela_alterar, text="Nome:")
-        nome_label.pack(pady=5)
-        self.entry_nome_alterar = tk.Entry(self.janela_alterar)
+        w.criar_label(self.janela_alterar,"Nome:").pack(pady=5)
+        self.entry_nome_alterar = w.criar_entrada(self.janela_alterar,largura=25)
         self.entry_nome_alterar.insert(0, nome_atual)
         self.entry_nome_alterar.pack(pady=5)
  
         # Tipo
-        tipo_label = tk.Label(self.janela_alterar, text="Tipo:")
-        tipo_label.pack(pady=5)
-        self.combo_tipo_alterar = ttk.Combobox(self.janela_alterar, values=["Admin", "Colaborador"])
+        w.criar_label(self.janela_alterar, "Tipo:").pack(pady=5)
+        self.combo_tipo_alterar = ttk.Combobox(self.janela_alterar, values=["Admin", "Colaborador"], state="readonly", width=22)
         # a tabela mostra ADMIN/COLABORADOR; o combobox usa Admin/Colaborador
         self.combo_tipo_alterar.set(str(tipo_atual).capitalize())
         self.combo_tipo_alterar.pack(pady=5)
  
         # Senha
-        senha_label = tk.Label(self.janela_alterar, text="Senha:")
-        senha_label.pack(pady=5)
-        self.entry_senha_alterar = tk.Entry(self.janela_alterar, show="*")
+        w.criar_label(self.janela_alterar,"Senha:").pack(pady=5)
+        self.entry_senha_alterar = w.criar_entrada(self.janela_alterar,largura=25, senha=True)
         self.entry_senha_alterar.pack(pady=5)
  
         # Botão para guardar as alterações
-        btn_guardar = tk.Button(
-            self.janela_alterar,
-            text="Guardar",
-            command=self.guardar_alteracoes
-        )
-        btn_guardar.pack(pady=10)
+        w.criar_botao(self.janela_alterar,"Guardar",self.guardar_alteracoes
+        ).pack(pady=10)
  
     # função para guardar alterações na base de dados
     def guardar_alteracoes(self):
