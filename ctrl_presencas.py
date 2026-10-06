@@ -94,7 +94,7 @@ class PaginaPresencas(tk.Frame):
                 width=16)
 
         combo_filtro.pack(side=tk.LEFT, padx=10, pady=5)
-
+        combo_filtro.bind("<<ComboboxSelected>>", lambda filtro: (self.id_pesquisa.set(""), self.atualizar_presenca()))
 
         # FRAME BOTÃO
         frame_botoes = tk.Frame(self)
@@ -126,8 +126,8 @@ class PaginaPresencas(tk.Frame):
 
 
         # Largura das colunas
-        self.tabela_presencas.column("id_funcionario",width=60,anchor="center")
-        self.tabela_presencas.column("nome",width=250)
+        self.tabela_presencas.column("id_funcionario",width=60,anchor="w")
+        self.tabela_presencas.column("nome",width=250, anchor="w")
         self.tabela_presencas.column("estado",width=150,anchor="center")
 
 
@@ -138,8 +138,8 @@ class PaginaPresencas(tk.Frame):
         scroll.pack(side="right", fill="y")
 
         # Cores da tabela
-        self.tabela_presencas.tag_configure("presente",foreground="green")
-        self.tabela_presencas.tag_configure("ausente",foreground="red")
+        self.tabela_presencas.tag_configure("presente",foreground="#008000")
+        self.tabela_presencas.tag_configure("ausente",foreground="#d00000")
 
         self.atualizar_presenca()
 
@@ -201,18 +201,15 @@ class PaginaPresencas(tk.Frame):
         # Atualizar os kpis
         self.atualizar_kpis(dicionario_funcionarios)
 
-        # ID que foi pesquisado 
-        id_pesquisado = self.id_pesquisa.get()
+        # Só usamos o ID quando a função for chamada pelo botão
 
-        # Filtro selecionado
-        filtro = self.filtro.get()
+        id_pesquisado = self.id_pesquisa.get().strip()
 
-        # verificamos se o id existe
         if id_pesquisado:
-
+            # encontramos o funcionario 
             funcionario_encontrado = False
 
-            # percorrer os funcionários 
+            # Procurar funcionário pelo ID
             for id_funcionario, dados in dicionario_funcionarios.items():
                 if str(id_funcionario) != id_pesquisado:
                     continue
@@ -220,15 +217,11 @@ class PaginaPresencas(tk.Frame):
                 # encontramos o funcionario 
                 funcionario_encontrado = True
 
-                nome = dados["nome"]
-                tipo = dados["tipo"]
-
-
                 # determinar o estado
                 # ENTRADA (PRESENTE).
                 # SAIDA (AUSENTE).
 
-                if tipo == "ENTRADA":
+                if dados["tipo"] == "ENTRADA":
                     estado = "PRESENTE"
                     tag = "presente"
 
@@ -236,62 +229,64 @@ class PaginaPresencas(tk.Frame):
                     estado = "AUSENTE"
                     tag = "ausente"
 
-                # Verificar o filtro 
-                if filtro == "Presentes" and estado !="PRESENTE":
-                    continue
-
-                if filtro == "Ausentes" and estado != "AUSENTE":
-                    continue
 
                 self.tabela_presencas.insert(
                     "",
                     "end",
                     values=(
                         id_funcionario,
-                        nome,
+                        dados["nome"],
                         estado
                     ),
                     tags=(tag,)
                 )
                 
-            # Verificar se o id pesquisado existe
+            # Verificar se o ID pesquisado existe
             if not funcionario_encontrado:
                 messagebox.showwarning(
                     "Funcionário", 
                     "ID não existe.")
 
+                # limpar o texto do campo ID
+                self.id_pesquisa.set("")
+                self.entry_id.focus()
+
+            return
+
         # Se não for introduzido ID utilizar o filtro
-        else:
-            for id_funcionario, dados in dicionario_funcionarios.items():
 
-                nome = dados["nome"]
-                tipo = dados["tipo"]
+        filtro = self.filtro.get()
+
+        for id_funcionario, dados in dicionario_funcionarios.items():
+
+            nome = dados["nome"]
+            tipo = dados["tipo"]
 
 
-                if tipo == "ENTRADA":
-                    estado = "PRESENTE"
-                    tag = "presente"
+            if tipo == "ENTRADA":
+                estado = "PRESENTE"
+                tag = "presente"
                     
-                else:  # tipo == "SAIDA" ou tipo is None
-                    estado = "AUSENTE"
-                    tag = "ausente"
+            else:  # tipo == "SAIDA" ou tipo is None
+                estado = "AUSENTE"
+                tag = "ausente"
 
-                # Filtro presente
-                if self.filtro.get() == "Presentes" and estado != "PRESENTE":
-                    continue
+            # Filtro presentes
 
-                # Filtro ausente
-                if self.filtro.get() == "Ausentes" and estado != "AUSENTE":
-                    continue
+            if filtro == "Presentes" and estado != "PRESENTE":
+                continue
 
-                self.tabela_presencas.insert(
-                    "",
-                    "end",
-                    values=(
-                        id_funcionario,
-                        nome,
-                        estado),
-                        tags=(tag,)
+            if filtro == "Ausentes" and estado != "AUSENTE":
+                continue
+
+            self.tabela_presencas.insert(
+                "",
+                "end",
+                values=(
+                    id_funcionario,
+                    nome,
+                    estado),
+                    tags=(tag,)
                     )
 
     def atualizar_kpis(self, dicionario_funcionarios):
