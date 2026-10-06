@@ -60,7 +60,7 @@ class PaginaFuncionarios(tk.Frame):
         w.criar_botao(frame_botoes,"Alterar", self.alterar_funcionario).pack(side=tk.LEFT, padx=10, pady=10)
  
         # Botão ativar/desativar funcionário
-        w.criar_botao= w.criar_botao(frame_botoes,"Ativar/Desativar",self.ativar_desativar_funcionario).pack(side=tk.LEFT, padx=10, pady=10)
+        w.criar_botao(frame_botoes,"Ativar/Desativar",self.ativar_desativar_funcionario).pack(side=tk.LEFT, padx=10, pady=10)
  
         # Estilo da tabela: cores definidas de forma explícita, para o texto
        
