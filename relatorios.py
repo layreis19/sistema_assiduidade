@@ -12,68 +12,96 @@ from ligacao import conn
 from ttkbootstrap.widgets import DateEntry
 from datetime import datetime
 import cores
+import widgets as w
 
 
 class PaginaRelatorios(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg=cores.CARD)
+
         self.cursor = conn.cursor(buffered=True)
 
-       
-        frame_topo = tk.Frame(self, bg=cores.BG)
-        frame_topo.pack(fill="x", padx=30, pady=10)
-        tk.Label(frame_topo, text="RELATÓRIOS DE ASSIDUIDADE",
-                 font=("Arial", 24), background=cores.CARD, fg=cores.TEXT).pack(pady=(30,20))
+        w.criar_titulo(self,"RELATÓRIOS DE ASSIDUIDADE").pack(pady=(30,20))
 
         #Filtros 
-        frame_filtros = tk.Frame(self, background=cores.CARD)
-        frame_filtros.pack(pady=10)
+        frame_formulario = tk.Frame(self)
+        frame_formulario.pack(pady=10)
 
-        tk.Label(frame_filtros, text="ID Funcionário:",
-                 font=("Arial", 12), fg=cores.TEXT).pack(side=tk.LEFT, padx=5)
-        self.entry_id = tk.Entry(frame_filtros,font=("Arial", 12))
-        self.entry_id.pack(side=tk.LEFT, padx=(0,20))
+        w.criar_label(frame_formulario,"ID Funcionário:").pack(side=tk.LEFT,pady=5)    
+        self.entry_id = w.criar_entrada(frame_formulario)
+        self.entry_id.pack(side=tk.LEFT, padx=10, pady=10)
 
-        tk.Label(frame_filtros, text="Data de Início:",
-                 font=("Arial", 12), fg=cores.TEXT).pack(side=tk.LEFT, padx=5)
-        self.calendario_inicio = DateEntry(frame_filtros, dateformat="%d/%m/%Y",
-                                           width=15, bootstyle=cores.PRIMARY_DARK)
-        self.calendario_inicio.pack(side=tk.LEFT, padx=(0,20))
+        w.criar_label(frame_formulario, "Data de Início:").pack(side=tk.LEFT, padx=5)
+        self.calendario_inicio = DateEntry(
+            frame_formulario, 
+            dateformat="%d/%m/%Y",
+            width=12,
+            bootstyle=cores.PRIMARY_DARK)
+        self.calendario_inicio.pack(side= tk.LEFT, padx=(0,20), pady=5)
 
-        tk.Label(frame_filtros, text="Data de Fim:",
-                 font=("Arial", 12), fg=cores.TEXT).pack(side=tk.LEFT, padx=5)
-        self.calendario_fim = DateEntry(frame_filtros, dateformat="%d/%m/%Y",
-                                        width=15, bootstyle=cores.PRIMARY_DARK)
-        self.calendario_fim.pack(side=tk.LEFT, padx=(0,20))
+
+        w.criar_label(frame_formulario,"Data de Fim:").pack(side=tk.LEFT, padx=5)
+        self.calendario_fim = DateEntry(
+            frame_formulario,
+            dateformat="%d/%m/%Y",
+            width=12,
+            bootstyle=cores.PRIMARY_DARK)
+        self.calendario_fim.pack(side=tk.LEFT, padx=(0,20), pady=5)
 
         # Botões 
-        tk.Button(frame_filtros, text="Filtrar", font=("Arial", 11),
-                  bg=cores.PRIMARY, fg=cores.CARD, activebackground=cores.PRIMARY_DARK,
-                  activeforeground=cores.CARD, bd=0, cursor="hand2",
-                  command=self.filtrar_relatorio).pack(side=tk.LEFT, padx=14, pady=6)
+        frame_botoes = tk.Frame(self)
+        frame_botoes.pack(pady=10)
 
-        tk.Button(frame_filtros, text="Gerar Relatório", font=("Arial", 11),
-                  bg=cores.PRIMARY, fg=cores.CARD, activebackground=cores.PRIMARY_DARK,
-                  activeforeground=cores.CARD, bd=0, cursor="hand2",
-                  command=self.gerar_relatorio_txt).pack(side=tk.LEFT, padx=14, pady=6)
+        # Botão editar
+        w.criar_botao(frame_botoes, "Editar", self.filtrar_relatorio).pack(side=tk.LEFT, padx=5)
 
-        #Tabela 
-        self.tabela = ttk.Treeview(
-            self,
-            columns=("id", "nome", "data", "atrasos", "extras", "total"),
+        # Botão relatório
+        w.criar_botao(frame_botoes, "Gerar Relatório", self.gerar_relatorio_txt).pack(side=tk.LEFT, padx=5)
+
+
+
+        # FRAME TABELA 
+        frame_tabela = tk.Frame(self)
+        frame_tabela.pack(fill="both", expand=True, padx=30, pady=20)
+       
+        # Tabela 
+        self.tabela_relatorios = ttk.Treeview(
+            frame_tabela,
+            columns=(
+                "id", 
+                "nome", 
+                "data", 
+                "atrasos", 
+                "extras", 
+                "total"),
             show="headings",
             selectmode="browse",
-            style="Pic.Treeview"
-        )
-        self.tabela.heading("id", text="ID")
-        self.tabela.heading("nome", text="Nome")
-        self.tabela.heading("data", text="Data")
-        self.tabela.heading("atrasos", text="Atrasos")
-        self.tabela.heading("extras", text="Horas Extras")
-        self.tabela.heading("total", text="Total Horas")
-        self.tabela.pack(fill="both", expand=True, padx=30, pady=20)
+            style="Estilo_tabela")
 
-   
+
+        # Cabeçalhos
+        self.tabela_relatorios.heading("id", text="ID")
+        self.tabela_relatorios.heading("nome", text="Nome")
+        self.tabela_relatorios.heading("data", text="Data")
+        self.tabela_relatorios.heading("atrasos", text="Atrasos")
+        self.tabela_relatorios.heading("extras", text="Horas Extras")
+        self.tabela_relatorios.heading("total", text="Total Horas")
+
+        # Colunas 
+        self.tabela_relatorios.column("id", width=60,anchor="center")
+        self.tabela_relatorios.column("nome", width=150,anchor="center")
+        self.tabela_relatorios.column("data", width=100,anchor="center")
+        self.tabela_relatorios.column("atrasos", width=100,anchor="center")
+        self.tabela_relatorios.column("extras", width=120,anchor="center")
+        self.tabela_relatorios.column("total", width=120,anchor="center")
+
+
+        # scroll 
+        scroll = ttk.Scrollbar(frame_tabela, orient="vertical", command=self.tabela_relatorios.yview)
+        self.tabela_relatorios.configure(yscrollcommand=scroll.set)
+        self.tabela_relatorios.pack(side="left", fill="both", expand=True)
+        scroll.pack(side="right", fill="y")
+
     def filtrar_relatorio(self):
         id_func = self.entry_id.get().strip()
         data_inicio = self.calendario_inicio.entry.get().strip()
