@@ -74,7 +74,7 @@ class PaginaPicagensAdmin(tk.Frame):
         self.tabela.pack(fill="both", expand=True, padx=30, pady=20)
  
         # reaplica o estilo sempre que a página aparece
-        self.bind("<Map>", w.criar_estilo_tabela)
+        self.bind("<Map>", w.criar_estilo_tabela())
  
         self.carregar_funcionarios()
         self.atualizar_tabela()
