@@ -1,10 +1,9 @@
 import tkinter as tk
 from tkinter import ttk
 from ligacao import conn
-from datetime import date
+from datetime import datetime, timedelta
 from tkinter import messagebox
 import widgets as w 
-from widgets import *
 import cores
 
 
@@ -65,7 +64,7 @@ class PaginaPresencas(tk.Frame):
 
 
         # FRAME FORMULÁRIO
-        frame_formulario = tk.Frame(self)
+        frame_formulario = tk.Frame(self, background=cores.CARD)
         frame_formulario.pack(pady=10)
 
         # pesquisa por id 
@@ -84,7 +83,7 @@ class PaginaPresencas(tk.Frame):
         # ("Em Pausa" reposto: sem esta opção, quem está em pausa não
         # aparecia em nenhum filtro específico, só em "Todos".)
 
-        combo_filtro = ttk.Combobox(frame_formulario, textvariable=self.filtro,
+        combo_filtro = ttk.Combobox(frame_formulario, font=w.FONTE_LABEL,
             values=(
                 "Todos",
                 "Presentes",
@@ -94,17 +93,19 @@ class PaginaPresencas(tk.Frame):
                 width=16)
 
         combo_filtro.pack(side=tk.LEFT, padx=10, pady=5)
-        combo_filtro.bind("<<ComboboxSelected>>", lambda filtro: (self.id_pesquisa.set(""), self.atualizar_presenca()))
+        combo_filtro.bind(
+            "<<ComboboxSelected>>", 
+            lambda filtro: (self.filtro.set(combo_filtro.get()), self.id_pesquisa.set(""), self.atualizar_presenca()))
 
         # FRAME BOTÃO
-        frame_botoes = tk.Frame(self)
+        frame_botoes = tk.Frame(self, background=cores.CARD)
         frame_botoes.pack(pady=10)
 
         w.criar_botao(frame_botoes, "Pesquisar", self.atualizar_presenca).pack(side=tk.LEFT, padx=5)
 
 
         # FRAME TABELA
-        frame_tabela = tk.Frame(self)
+        frame_tabela = tk.Frame(self, background=cores.CARD)
         frame_tabela.pack(fill="both", expand=True, padx=30, pady=20)
         
         # Tabela
@@ -141,16 +142,60 @@ class PaginaPresencas(tk.Frame):
         self.tabela_presencas.tag_configure("presente",foreground="#008000")
         self.tabela_presencas.tag_configure("ausente",foreground="#d00000")
 
+
+        # data do dia de trabalho atual 
+        agora = datetime.now()
+
+        # se for antes das 6 da manhã
+        if agora.hour < 6:
+            self.dia_atual = agora.date() - timedelta(days=1) # é o dia atual - 1 (ou seja, pertence ao dia de trabalho anterior)
+        else:
+            self.dia_atual = agora.date()
+
+        # atualizar a tabela 
         self.atualizar_presenca()
+
+        # automaticamente a cada 1 minuto
+        self.after(60000, self.verificar_dia)
+
+
+    def verificar_dia(self):
+
+        agora = datetime.now()
+        if agora.hour < 6:
+            dia_trabalho = agora.date() - timedelta(days=1)
+        else:
+            dia_trabalho = agora.date()
+
+        # verificar se começou um novo dia de trabalho 
+        if dia_trabalho != self.dia_atual:
+            self.dia_atual = dia_trabalho
+            
+            self.atualizar_presenca()
+            
+         # automaticamente a cada 1 minuto
+        self.after(60000, self.verificar_dia)
 
     def atualizar_presenca(self):
 
         for linha in self.tabela_presencas.get_children():
               self.tabela_presencas.delete(linha)
 
-        # data de hoje
-        hoje = date.today()
+        agora = datetime.now()
 
+        if agora.hour < 6:
+            dia_trabalho = agora.date() - timedelta(days=1)
+
+        else:
+            dia_trabalho = agora.date()
+
+        inicio_turno = datetime.combine(
+            dia_trabalho,
+            datetime.min.time()).replace(hour=6)
+
+        fim_turno = inicio_turno + timedelta(hours=25)
+
+  
 
         # procurar na base de dados
         # (picagem.anulada = 0 no ON, não no WHERE, para continuar a ser um
@@ -168,12 +213,13 @@ class PaginaPresencas(tk.Frame):
         
         LEFT JOIN picagem
         ON funcionarios.id_funcionario = picagem.id_funcionario 
-        AND DATE(picagem.data) = %s
+        AND picagem.data >= %s
+        AND picagem.data < %s
         AND picagem.anulada = 0
             
         ORDER BY 
         funcionarios.id_funcionario,
-        picagem.data""", (hoje,))
+        picagem.data""", (inicio_turno, fim_turno))
 
         # Guardar os resultados
         picagens = self.cursor.fetchall()
@@ -192,11 +238,14 @@ class PaginaPresencas(tk.Frame):
             nome = picagem[1]
             tipo = picagem[2]
 
-            # guardar os dados do funcionário
-            dicionario_funcionarios[id_funcionario] = {
-                "nome": nome,
-                "tipo": tipo}
+            if id_funcionario not in dicionario_funcionarios:
+                
+                dicionario_funcionarios[id_funcionario] = {
+                    "nome": nome,
+                    "numero_picagens": 0}
 
+            if tipo is not None:
+                dicionario_funcionarios[id_funcionario]["numero_picagens"] += 1
 
         # Atualizar os kpis
         self.atualizar_kpis(dicionario_funcionarios)
@@ -221,7 +270,7 @@ class PaginaPresencas(tk.Frame):
                 # ENTRADA (PRESENTE).
                 # SAIDA (AUSENTE).
 
-                if dados["tipo"] == "ENTRADA":
+                if dados["numero_picagens"]  %2 != 0:
                     estado = "PRESENTE"
                     tag = "presente"
 
@@ -260,10 +309,9 @@ class PaginaPresencas(tk.Frame):
         for id_funcionario, dados in dicionario_funcionarios.items():
 
             nome = dados["nome"]
-            tipo = dados["tipo"]
 
 
-            if tipo == "ENTRADA":
+            if dados["numero_picagens"] %2 !=0:
                 estado = "PRESENTE"
                 tag = "presente"
                     
@@ -298,13 +346,13 @@ class PaginaPresencas(tk.Frame):
 
         # percorrer os dados dos funcionários
         for dados in dicionario_funcionarios.values():
-            tipo = dados["tipo"]
+             
+            numero_picagens = dados["numero_picagens"]
 
-            if tipo == "ENTRADA":
+            if numero_picagens %2 !=0:
                 presentes += 1
 
             else:
-
                 ausentes += 1
 
 
