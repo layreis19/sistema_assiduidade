@@ -3,11 +3,14 @@ O QUE ESTE FICHEIRO FAZ?
 É a página onde os funcionários picam o ponto.
 - Mostra um relógio e a lista de funcionários ativos.
 - O funcionário escolhe o nome, escreve a senha e clica em Fazer Picagem.
-- O programa descobre sozinho o tipo de picagem: Entrada, Saída Almoço,
-  Volta Almoço ou Saída (depende do horário e da última picagem).
-- Avisa se o funcionário está de folga e impede picagens a mais no mesmo dia.
-- Grava a picagem na tabela PICAGEM e recalcula os resultados do dia
-  (atrasos, horas extra, total trabalhado).
+- O programa descobre sozinho se é uma ENTRADA ou uma SAÍDA: alterna em
+  relação à última picagem. As pausas (almoço, etc.) são só uma SAÍDA
+  seguida de uma ENTRADA; quem as interpreta é o processamento
+  posterior, não esta página.
+- Usa o horário atual do funcionário (coluna FUNCIONARIOS.horario) para
+  avisar se está de folga e para perceber quando uma entrada ficou
+  "esquecida" (sem saída) e deve ser dada como abandonada.
+- Grava a picagem na tabela PICAGEM.
 """
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -16,20 +19,96 @@ from datetime import datetime, timedelta
 import bcrypt
 import cores 
 from ligacao import conn
-from calculo_assiduidade import combinar_data_hora, calcular_e_guardar_dia, _para_time
+from calculo_assiduidade import combinar_data_hora, _para_time
 from rotulos import rotulo_tipo_picagem
 
 
-# Depois de passar da hora de saída esperada de um turno + esta margem,
-# se ainda não houver SAIDA registada, deixamos de considerar esse turno
-# "em aberto" — passa a ser tratado como abandonado (esquecimento de
-# picar a saída). Isto evita que a entrada do dia seguinte seja mal
-# interpretada como se fosse a saída em falta de ontem. A margem existe
-# para não penalizar quem faz umas horas extra a mais sem ser um
-# esquecimento genuíno.
-
-
+# Se a última picagem foi uma ENTRADA e já passou da hora de saída
+# esperada do horário + esta margem sem haver SAIDA, deixamos de a
+# considerar "em aberto": foi um esquecimento de picar a saída. Assim a
+# primeira picagem do dia seguinte é uma ENTRADA nova, e não a saída em
+# falta de ontem. A margem existe para não penalizar quem faz umas horas
+# extra sem ser um esquecimento genuíno.
 MARGEM_ABANDONO_TURNO = timedelta(hours=4)
+
+# Rede de segurança para quando o horário não dá nenhuma referência de
+# hora (sem horário atribuído, FOLGA, ou entrada fora do horário normal):
+# a entrada é dada como abandonada passadas estas horas.
+LIMITE_SEM_REFERENCIA = timedelta(hours=16)
+
+
+def calcular_limite_turno(entrada_feita_em, horario):
+    """
+    Devolve até que momento uma ENTRADA feita em `entrada_feita_em` ainda
+    conta como turno em curso (depois disso, é um esquecimento).
+
+    `horario` é o dicionário de obter_horario_atual (ou None).
+
+    - FIXO/TURNO: saída esperada + tolerância + MARGEM_ABANDONO_TURNO.
+      Procura-se o turno (de hoje ou de ontem) a que a entrada pertence,
+      o que cobre turnos noturnos: uma entrada às 03:00 depois do almoço
+      do TURNO NOITE pertence ao turno que começou na véspera.
+    - LIVRE: fim da janela + MARGEM_ABANDONO_TURNO.
+    - Sem horário, FOLGA, ou entrada fora de qualquer turno:
+      LIMITE_SEM_REFERENCIA depois da entrada.
+    """
+
+    rede_seguranca = entrada_feita_em + LIMITE_SEM_REFERENCIA
+
+    if horario is None:
+        return rede_seguranca
+
+    limite = None
+    entrada_h, saida_h = horario["entrada"], horario["saida"]
+
+    if entrada_h is not None and saida_h is not None:
+
+        for dias_atras in (0, 1):
+            dia = entrada_feita_em.date() - timedelta(days=dias_atras)
+
+            inicio_janela = datetime.combine(dia, entrada_h) - MARGEM_ABANDONO_TURNO
+            saida_esperada = combinar_data_hora(dia, saida_h, entrada_h)
+            fim_janela = saida_esperada + timedelta(minutes=horario["tolerancia"]) + MARGEM_ABANDONO_TURNO
+
+            if inicio_janela <= entrada_feita_em <= fim_janela:
+                limite = fim_janela
+                break
+
+    elif horario["janela_fim"] is not None:
+        limite = datetime.combine(entrada_feita_em.date(), horario["janela_fim"]) + MARGEM_ABANDONO_TURNO
+
+    if limite is None or limite <= entrada_feita_em:
+        return rede_seguranca
+
+    return limite
+
+
+def proximo_tipo_picagem(ultima, horario, agora):
+    """
+    Decide se a próxima picagem é "ENTRADA" ou "SAIDA". Função "pura" (sem
+    BD nem interface), para poder ser testada isoladamente.
+
+    `ultima` é (tipo, data) da última picagem válida do funcionário, ou
+    None se nunca picou.
+
+    - Nunca picou, ou a última foi SAIDA -> ENTRADA.
+    - A última foi ENTRADA e ainda está dentro do turno -> SAIDA.
+    - A última foi ENTRADA mas já passou do limite (esqueceu-se da saída)
+      -> ENTRADA nova. A entrada antiga fica na BD, para o admin corrigir.
+    """
+
+    if ultima is None:
+        return "ENTRADA"
+
+    tipo_ultima, data_ultima = ultima
+
+    if tipo_ultima == "SAIDA":
+        return "ENTRADA"
+
+    if agora <= calcular_limite_turno(data_ultima, horario):
+        return "SAIDA"
+
+    return "ENTRADA"
 
 
 class PaginaPonto(tk.Frame):
@@ -186,112 +265,44 @@ class PaginaPonto(tk.Frame):
         self.combo_funcionarios["values"] = list(self.funcionarios_map.keys())
 
 
-    def obter_horario_do_dia(self, id_funcionario, data):
+    def obter_horario_atual(self, id_funcionario):
         """
-        Devolve (tipo, entrada, saida, inicio_almoco, fim_almoco, tolerancia,
-        janela_fim) para o horário atribuído a este funcionário nesta data,
-        ou None se não houver nenhum horário atribuído para essa data.
-        janela_fim só é relevante para tipo == 'LIVRE' (onde entrada/saida
-        são NULL); serve de referência alternativa para saber quando um
-        turno livre deixa de estar "em aberto".
+        Devolve o horário que está atribuído ao funcionário neste momento
+        (coluna FUNCIONARIOS.horario) como dicionário:
+            {"tipo", "entrada", "saida", "tolerancia", "janela_fim"}
+        ou None se não tiver nenhum horário atribuído.
         """
 
         self.cursor.execute(
             """
-            SELECT h.tipo, h.entrada, h.saida, h.inicio_almoco, h.fim_almoco,
-                   h.tolerancia, h.janela_fim
-            FROM funcionario_horario fh
-            JOIN horario h ON h.id_horario = fh.id_horario
-            WHERE fh.id_funcionario = %s
-              AND fh.data = %s
+            SELECT h.tipo, h.entrada, h.saida, h.tolerancia, h.janela_fim
+            FROM funcionarios f
+            JOIN horario h ON h.id_horario = f.horario
+            WHERE f.id_funcionario = %s
             """,
-            (id_funcionario, data)
+            (id_funcionario,)
         )
 
-        horario = self.cursor.fetchone()
+        linha = self.cursor.fetchone()
 
-        if horario is None:
+        if linha is None:
             return None
 
+        tipo, entrada_h, saida_h, tolerancia, janela_fim_h = linha
+
         # Colunas TIME vêm da BD como timedelta — converter antes de usar
-        # em combinar_data_hora()/datetime.combine() mais à frente.
-        tipo, entrada_h, saida_h, inicio_almoco_h, fim_almoco_h, tolerancia, janela_fim_h = horario
-
-        return (
-            tipo,
-            _para_time(entrada_h),
-            _para_time(saida_h),
-            _para_time(inicio_almoco_h),
-            _para_time(fim_almoco_h),
-            tolerancia,
-            _para_time(janela_fim_h),
-        )
+        # em datetime.combine() mais à frente.
+        return {
+            "tipo": tipo,
+            "entrada": _para_time(entrada_h),
+            "saida": _para_time(saida_h),
+            "tolerancia": tolerancia or 0,
+            "janela_fim": _para_time(janela_fim_h),
+        }
 
 
-    def _turno_ainda_em_curso(self, data_turno, horario_turno, agora):
-        """
-        Decide se um turno candidato a "em aberto" ainda é plausível, ou
-        se já passou tanto tempo da hora de saída esperada que deve ser
-        tratado como abandonado (esquecimento de picar a saída).
-
-        - Se o horário tem 'saida' definida (FIXO/TURNO): o limite é a
-          saída esperada (já corrigida para turnos noturnos) + tolerância
-          + MARGEM_ABANDONO_TURNO.
-        - Se for LIVRE (sem 'saida', só janela): o limite é o fim da
-          janela desse dia + MARGEM_ABANDONO_TURNO.
-        - Sem horário atribuído nesse dia, ou sem nenhuma referência de
-          hora: usa um limite fixo generoso (16h desde a entrada) só como
-          rede de segurança, para nunca ficar "aberto" indefinidamente.
-        """
-
-        if horario_turno is None:
-            return False  # sem horário atribuído: não faz sentido manter aberto
-
-        tipo, entrada_h, saida_h, _inicio_almoco_h, _fim_almoco_h, tolerancia, janela_fim_h = horario_turno
-
-        if entrada_h is None:
-            return False
-
-        if saida_h is not None:
-            saida_esperada = combinar_data_hora(data_turno, saida_h, entrada_h)
-            limite = saida_esperada + timedelta(minutes=tolerancia or 0) + MARGEM_ABANDONO_TURNO
-
-        elif janela_fim_h is not None:
-            limite = datetime.combine(data_turno, janela_fim_h) + MARGEM_ABANDONO_TURNO
-
-        else:
-            limite = datetime.combine(data_turno, entrada_h) + timedelta(hours=16)
-
-        return agora <= limite
-
-
-    def obter_turno_ativo(self, id_funcionario):
-        """
-        Descobre se há um turno "em aberto" para este funcionário — ou
-        seja, já houve ENTRADA mas ainda não a SAIDA final, e ainda não
-        passou tempo de mais desde a hora de saída esperada (ver
-        _turno_ainda_em_curso — isto é o que distingue "ainda a decorrer"
-        de "esquecimento de picar a saída, já há muito tempo").
-
-        Sem esta segunda verificação, um funcionário que se esquecesse de
-        picar a SAIDA no fim do dia veria a sua entrada do dia SEGUINTE
-        interpretada como se fosse a saída em falta de ontem — em vez de
-        começar um turno novo hoje.
-
-        Devolve (data_turno, horario_turno, ultima_picagem_tipo):
-        - data_turno: a data em FUNCIONARIO_HORARIO a que este turno
-          pertence (hoje, se não houver nenhum turno em aberto).
-        - horario_turno: o resultado de obter_horario_do_dia para essa data.
-        - ultima_picagem_tipo: o tipo da última picagem deste turno, ou
-          None se ainda não houve nenhuma (primeira picagem do turno).
-        """
-
-        agora = datetime.now()
-
-        # Janela ampla só para ter candidatos a analisar — a decisão real
-        # de "ainda em curso vs. abandonado" acontece a seguir, com base
-        # no horário específico de cada turno, não nesta constante.
-        rede_seguranca = agora - timedelta(hours=48)
+    def obter_ultima_picagem(self, id_funcionario):
+        """Devolve (tipo, data) da última picagem válida (não anulada), ou None."""
 
         self.cursor.execute(
             """
@@ -299,94 +310,13 @@ class PaginaPonto(tk.Frame):
             FROM picagem
             WHERE id_funcionario = %s
               AND anulada = 0
-              AND data >= %s
-            ORDER BY data DESC
+            ORDER BY data DESC, id_picagem DESC
             LIMIT 1
             """,
-            (id_funcionario, rede_seguranca)
+            (id_funcionario,)
         )
 
-        ultima = self.cursor.fetchone()
-
-        turno_em_aberto = False
-
-        if ultima is not None and ultima[0] != "SAIDA":
-
-            # Candidato a turno em aberto: descobrir a que dia pertence
-            # (a data da ENTRADA mais recente dentro da rede de segurança).
-            self.cursor.execute(
-                """
-                SELECT DATE(data)
-                FROM picagem
-                WHERE id_funcionario = %s
-                  AND anulada = 0
-                  AND tipo = 'ENTRADA'
-                  AND data >= %s
-                ORDER BY data DESC
-                LIMIT 1
-                """,
-                (id_funcionario, rede_seguranca)
-            )
-
-            row = self.cursor.fetchone()
-
-            if row is not None:
-                data_candidata = row[0]
-                horario_candidato = self.obter_horario_do_dia(id_funcionario, data_candidata)
-
-                if self._turno_ainda_em_curso(data_candidata, horario_candidato, agora):
-                    turno_em_aberto = True
-                    data_turno = data_candidata
-                    horario_turno = horario_candidato
-                    ultima_tipo = ultima[0]
-
-        if not turno_em_aberto:
-            # Sem turno em aberto (ou o candidato já foi dado como
-            # abandonado): a próxima picagem começa um turno novo, hoje.
-            # O turno antigo incompleto (se existir) fica na BD tal como
-            # está, para o admin corrigir depois.
-            data_turno = agora.date()
-            horario_turno = self.obter_horario_do_dia(id_funcionario, data_turno)
-            ultima_tipo = None
-
-        return data_turno, horario_turno, ultima_tipo
-
-
-    def proximo_tipo_picagem(self, horario_turno, ultima_tipo):
-        """
-        Decide qual o próximo tipo de picagem, com base na última picagem
-        do turno em curso e em o horário ter (ou não) pausa de almoço
-        configurada. Função "pura" (sem consultas à BD), para poder ser
-        testada isoladamente e reaproveitada facilmente.
-
-        Devolve None se o ciclo do turno já estiver completo (já houve a
-        SAIDA final) — nesse caso, não deve ser registada mais nenhuma
-        picagem automática; só o admin pode corrigir/adicionar.
-
-        Sem almoço configurado (ou sem horário atribuído): ENTRADA -> SAIDA.
-        Com almoço configurado: ENTRADA -> SAIDA_ALMOCO -> VOLTA_ALMOCO -> SAIDA.
-        """
-
-        tem_almoco = bool(
-            horario_turno and horario_turno[3] is not None and horario_turno[4] is not None
-        )
-
-        if ultima_tipo is None:
-            return "ENTRADA"
-
-        if not tem_almoco:
-            if ultima_tipo == "ENTRADA":
-                return "SAIDA"
-            return None  # já saiu, ciclo completo
-
-        sequencia = {
-            "ENTRADA": "SAIDA_ALMOCO",
-            "SAIDA_ALMOCO": "VOLTA_ALMOCO",
-            "VOLTA_ALMOCO": "SAIDA",
-            "SAIDA": None,  # já completou o turno todo, ciclo completo
-        }
-
-        return sequencia[ultima_tipo]
+        return self.cursor.fetchone()
 
 
     def registar_picagem(self):
@@ -465,39 +395,30 @@ class PaginaPonto(tk.Frame):
 
 
             # --------------------------------
-            # DESCOBRIR O TURNO EM CURSO (avisar se for folga)
+            # DETERMINAR O TIPO DE PICAGEM (ENTRADA ou SAIDA)
             # --------------------------------
 
             agora = datetime.now()
 
-            data_turno, horario_turno, ultima_tipo = self.obter_turno_ativo(funcionario_id)
+            horario = self.obter_horario_atual(funcionario_id)
+            ultima = self.obter_ultima_picagem(funcionario_id)
 
-            if horario_turno and horario_turno[0] == "FOLGA":
+            tipo = proximo_tipo_picagem(ultima, horario, agora)
+
+
+            # --------------------------------
+            # AVISAR SE ESTÁ DE FOLGA (só ao começar, não ao sair)
+            # --------------------------------
+
+            if tipo == "ENTRADA" and horario and horario["tipo"] == "FOLGA":
 
                 continuar = messagebox.askyesno(
                     "Funcionário de folga",
-                    "Este funcionário está de folga hoje. Registar a picagem mesmo assim?"
+                    "Este funcionário tem o horário FOLGA atribuído. Registar a entrada mesmo assim?"
                 )
 
                 if not continuar:
                     return
-
-
-            # --------------------------------
-            # DETERMINAR O TIPO DE PICAGEM
-            # --------------------------------
-
-            tipo = self.proximo_tipo_picagem(horario_turno, ultima_tipo)
-
-            if tipo is None:
-
-                messagebox.showerror(
-                    "Ciclo do dia concluído",
-                    "Este funcionário já completou o horário de hoje.\n"
-                    "Qualquer correção deve ser feita pelo administrador."
-                )
-
-                return
 
 
             # --------------------------------
@@ -521,24 +442,6 @@ class PaginaPonto(tk.Frame):
             conn.commit()
 
 
-            # --------------------------------
-            # ATUALIZAR RESULTADOS (atraso/horas extra/horas trabalhadas)
-            # --------------------------------
-            # Isolado num try/except próprio: um erro aqui não deve impedir
-            # a confirmação da picagem, que já está gravada com sucesso.
-            # Recalcula sempre o turno todo (não só a picagem de agora),
-            # porque só no fim do turno é que "horas_trabalhadas" e
-            # "horas_extra_min" ficam completos — chamar isto a cada
-            # picagem mantém RESULTADOS sempre atualizado com o que já é
-            # possível saber até ao momento.
-
-            try:
-                calcular_e_guardar_dia(self.cursor, conn, funcionario_id, data_turno)
-            except Exception as erro_resultados:
-                print(erro_resultados)
-
-
-            
             messagebox.showinfo(
                 "Picagem registada",
                 f"{rotulo_tipo_picagem(tipo)} registada com sucesso!"
