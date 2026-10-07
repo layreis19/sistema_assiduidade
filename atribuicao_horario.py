@@ -1,7 +1,7 @@
 # Pra que serve esse ficheiro?
 # Este ficheiro é responsável pela página de atribuição de horários a funcionários.
 # Permite ao admin escolher um funcionário, uma data e um horário (do catálogo já
-# existente na tabela HORARIO) e gravar essa atribuição em FUNCIONARIO_HORARIO.
+# existente na tabela HORARIO) e gravar essa atribuiç
 # Também mostra, para o funcionário selecionado, os horários já atribuídos.
 #
 # A atribuição é sempre por UM dia (não por intervalo). Isto é proposital: a
@@ -309,17 +309,12 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             # com erro de duplicado.
             self.cursor.execute(
                 """
-                INSERT INTO funcionario_horario
-                    (id_funcionario, id_horario, data)
-                VALUES (%s, %s, %s)
-                ON DUPLICATE KEY UPDATE
-                    id_horario = VALUES(id_horario)
+                UPDATE funcionarios
+                SET horario = %s
+                WHERE id_funcionario = %s
+                
                 """,
-                (
-                    id_funcionario,
-                    id_horario,
-                    data
-                )
+                (id_funcionario,id_horario)
             )
 
             conn.commit()
@@ -358,9 +353,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
 
         funcionario_sel = self.combo_funcionario.get().strip()
 
-        id_funcionario = self.funcionarios_map.get(
-            funcionario_sel
-        )
+        id_funcionario = self.funcionarios_map.get( funcionario_sel)
 
         if id_funcionario is None:
             return
@@ -368,16 +361,14 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         self.cursor.execute(
             """
             SELECT
-                fh.data,
                 h.nome,
                 h.tipo,
                 h.entrada,
                 h.saida
-            FROM funcionario_horario fh
+            FROM funcionario f
             JOIN horario h
-                ON h.id_horario = fh.id_horario
-            WHERE fh.id_funcionario = %s
-            ORDER BY fh.data DESC
+                ON h.id_horario = f.horario
+            WHERE f.id_funcionario = %s
             """,
             (id_funcionario,)
         )

@@ -368,4 +368,24 @@ class PaginaPicagensAdmin(tk.Frame):
    
     def eliminar_picagem(self):
  
-      pass
+        picagem = self.obter_selecionada()
+        if not picagem:
+            return
+        
+        motivo = simpledialog.askstring("Eliminar picagem", "Motivo (obrigatório):", parent=self)
+        if not motivo or not motivo.strip():
+            messagebox.showerror("Erro", "O motivo é obrigatório.")
+            return
+        
+        self.cursor.execute(
+            """
+            UPDATE picagem
+            SET anulada = 1, id_admin_retificacao = %s, motivo_retificacao = %s
+            WHERE id_picagem = %s
+            """,
+            (self.obter_id_admin(), motivo.strip(), picagem["id"])
+            )
+        conn.commit()
+        self.recalcular(picagem["id_funcionario"], picagem["data"], picagem["tipo"])
+        self.atualizar_tabela()
+    
