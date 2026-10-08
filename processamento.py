@@ -9,8 +9,8 @@ def processar_dados_funcionario(data_inicio, data_fim):
         SELECT 
             id_funcionario,
             data_adesao,
-            estado, 
-            horario
+            estado,
+            horario 
         FROM FUNCIONARIOS
         """)
 
@@ -18,17 +18,13 @@ def processar_dados_funcionario(data_inicio, data_fim):
     
     for funcionario in funcionarios:
 
-        # se o funcionário tiver inativo ignora
-        if funcionario["estado"] == "INATIVO":
-            continue
-
-        # se o funcionário não tiver horário ignora
-        if funcionario["horario"] is None:
-            continue
-
+        id_funcionario = funcionario["id_funcionario"]
         data_adesao = funcionario["data_adesao"].date()
+        estado = funcionario["estado"]
 
-        print(data_adesao)
+        # se o funcionário tiver inativo ignora
+        if estado == "INATIVO":
+            continue
 
         dia = data_inicio # está no relatórios nos calendários
 
@@ -39,8 +35,82 @@ def processar_dados_funcionario(data_inicio, data_fim):
                 dia += timedelta(days=1) 
                 continue
 
-            dia += timedelta(days=1)
 
-processar_dados_funcionario()
+            # verificar ausências
+            cursor.execute("""
+            SELECT 
+                tipo
+            FROM AUSENCIAS
+            WHERE id_funcionario = %s
+            AND data_inicio <= %s
+            AND data_fim >= %s
+        """, (id_funcionario, dia, dia))
+
+            ausencia = cursor.fetchone()
+
+            if ausencia:
+
+                cursor.execute("""
+                    INSERT INTO RESULTADOS
+                        (id_funcionario, data, tipo)
+                    VALUES(%s,%s,%s)
+                    ON DUPLICATE KEY UPDATE
+                        tipo = VALUES(tipo)
+                """, (id_funcionario, dia, ausencia["tipo"]))
+
+                conn.commit()
+
+                dia += timedelta(days=1)
+                continue
+
+            # verificar os feriados
+            cursor.execute("""
+            SELECT
+                data, descricao
+            FROM FERIADOS
+            WHERE data = %s
+            """, (dia, ))
+
+            feriado = cursor.fetchone()
+
+            if feriado:
+                cursor.execute("""
+                INSERT INTO RESULTADOS
+                    (id_funcionario, data, tipo)
+                VALUES(%s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                    tipo = VALUES(tipo)
+            """, (id_funcionario, dia, "FERIADO"))
+
+                conn.commit()
+
+                dia += timedelta(days=1)
+                continue
 
 
+            # se o funcionário não tiver horário
+            if funcionario["horario"] is None:
+
+                cursor.execute("""
+                INSERT INTO RESULTADOS
+                    (id_funcionario, data, tipo)
+                VALUES(%s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                    tipo = VALUES(tipo)
+                """, (
+                    id_funcionario,
+                    dia,
+                    "SEM_HORÁRIO"
+                ))
+                conn.commit()
+
+                dia += timedelta(days=1)
+                continue
+
+
+    
+
+    
+
+            
+           
