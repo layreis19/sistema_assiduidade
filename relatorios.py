@@ -167,6 +167,7 @@ class PaginaRelatorios(tk.Frame):
             messagebox.showerror("Erro", "A data de início não pode ser depois da data de fim!")
             return
 
+        processar_dados_funcionario(data_inicio, data_fim)
         # Procurar na base de dados
         sql = """
             SELECT r.id_funcionario, f.nome, r.data,
@@ -175,6 +176,7 @@ class PaginaRelatorios(tk.Frame):
             JOIN FUNCIONARIOS f ON f.id_funcionario = r.id_funcionario
             WHERE r.data BETWEEN %s AND %s
         """
+        
         valores = [data_inicio, data_fim]
         
         # Algum funcionario selecionario?
