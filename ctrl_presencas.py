@@ -85,7 +85,6 @@ class PaginaPresencas(tk.Frame):
 
         combo_filtro = ttk.Combobox(frame_formulario, font=w.FONTE_LABEL,
             values=(
-                "Todos",
                 "Presentes",
                 "Ausentes"
                 ),
@@ -102,7 +101,7 @@ class PaginaPresencas(tk.Frame):
         frame_botoes.pack(pady=10)
 
         w.criar_botao(frame_botoes, "Pesquisar", self.atualizar_presenca).pack(side=tk.LEFT, padx=5)
-
+        w.criar_botao(frame_botoes,"Mostrar Todos",self.mostrar_todos).pack(side=tk.LEFT, padx=5)
 
         # FRAME TABELA
         frame_tabela = tk.Frame(self, background=cores.CARD)
@@ -162,6 +161,7 @@ class PaginaPresencas(tk.Frame):
     def verificar_dia(self):
 
         agora = datetime.now()
+
         if agora.hour < 6:
             dia_trabalho = agora.date() - timedelta(days=1)
         else:
@@ -169,6 +169,7 @@ class PaginaPresencas(tk.Frame):
 
         # verificar se começou um novo dia de trabalho 
         if dia_trabalho != self.dia_atual:
+            
             self.dia_atual = dia_trabalho
             
             self.atualizar_presenca()
@@ -176,10 +177,16 @@ class PaginaPresencas(tk.Frame):
          # automaticamente a cada 1 minuto
         self.after(60000, self.verificar_dia)
 
+
+    def mostrar_todos(self):
+        self.id_pesquisa.set("")
+        self.filtro.set("Todos")
+        self.atualizar_presenca()
+
+
     def atualizar_presenca(self):
 
-        for linha in self.tabela_presencas.get_children():
-              self.tabela_presencas.delete(linha)
+        id_pesquisado = self.id_pesquisa.get().strip()
 
         agora = datetime.now()
 
@@ -250,31 +257,49 @@ class PaginaPresencas(tk.Frame):
         # Atualizar os kpis
         self.atualizar_kpis(dicionario_funcionarios)
 
-        # Só usamos o ID quando a função for chamada pelo botão
-
-        id_pesquisado = self.id_pesquisa.get().strip()
-
         if id_pesquisado:
             # encontramos o funcionario 
             funcionario_encontrado = False
-
+            
             # Procurar funcionário pelo ID
             for id_funcionario, dados in dicionario_funcionarios.items():
+                
+                if str(id_funcionario) == id_pesquisado:
+                
+                # encontramos o funcionario 
+                    funcionario_encontrado = True
+                    break
+
+            if not funcionario_encontrado:
+                messagebox.showwarning(
+                    "Funcionário",
+                    "ID não existe")
+
+                self.id_pesquisa.set("")
+                self.entry_id.focus()
+
+                return
+
+            for linha in self.tabela_presencas.get_children():
+                self.tabela_presencas.delete(linha)
+
+            for id_funcionario, dados in dicionario_funcionarios.items():
+                
                 if str(id_funcionario) != id_pesquisado:
                     continue
 
-                # encontramos o funcionario 
-                funcionario_encontrado = True
 
                 # determinar o estado
                 # ENTRADA (PRESENTE).
                 # SAIDA (AUSENTE).
 
                 if dados["numero_picagens"]  %2 != 0:
+                    
                     estado = "PRESENTE"
                     tag = "presente"
 
                 else: 
+                    
                     estado = "AUSENTE"
                     tag = "ausente"
 
@@ -289,18 +314,15 @@ class PaginaPresencas(tk.Frame):
                     ),
                     tags=(tag,)
                 )
-                
-            # Verificar se o ID pesquisado existe
-            if not funcionario_encontrado:
-                messagebox.showwarning(
-                    "Funcionário", 
-                    "ID não existe.")
+                break
 
-                # limpar o texto do campo ID
-                self.id_pesquisa.set("")
-                self.entry_id.focus()
+            self.id_pesquisa.set("")
 
             return
+
+        for linha in self.tabela_presencas.get_children():
+            self.tabela_presencas.delete(linha)  
+
 
         # Se não for introduzido ID utilizar o filtro
 
