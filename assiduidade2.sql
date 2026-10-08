@@ -167,7 +167,7 @@ CREATE TABLE RESULTADOS (
     horas_extra_minutos INT NOT NULL DEFAULT 0,
     total_minutos_trabalhados INT NOT NULL DEFAULT 0,
     calculado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
+    tipo VARCHAR(20) NOT NULL, -- NORMAL, FERIADO, FOLGA, AUSENCIA
     FOREIGN KEY (id_funcionario)
         REFERENCES FUNCIONARIOS(id_funcionario)
         ON DELETE CASCADE,
