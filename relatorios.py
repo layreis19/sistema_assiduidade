@@ -23,6 +23,8 @@ class PaginaRelatorios(tk.Frame):
         super().__init__(parent, bg=cores.CARD)
 
         self.cursor = conn.cursor(buffered=True)
+        
+        #mostra o mes atual
         hoje = date.today()
         primeiro_dia = hoje.replace(day=1)
         ultimo_dia = hoje.replace(day=calendar.monthrange(hoje.year, hoje.month)[1])
@@ -35,6 +37,7 @@ class PaginaRelatorios(tk.Frame):
 
         w.criar_label(frame_formulario, "Funcionários:").pack(side=tk.LEFT, pady=5)
 
+        #lista de funcionarios
         self.lista_funcionarios = tk.Listbox(
             frame_formulario,
             selectmode=tk.SINGLE,
@@ -43,8 +46,8 @@ class PaginaRelatorios(tk.Frame):
             exportselection=False
         )
         self.lista_funcionarios.pack(side=tk.LEFT, padx=10)
-
-        self.ids_funcionarios = []                 
+        
+                
 
         w.criar_label(frame_formulario, "Data de Início:").pack(side=tk.LEFT, padx=5)
         self.calendario_inicio = DateEntry(
@@ -68,9 +71,12 @@ class PaginaRelatorios(tk.Frame):
         # Botões 
         frame_botoes = tk.Frame(self, background=cores.CARD)
         frame_botoes.pack(pady=10)
-
+        
         # Botão editar
         w.criar_botao(frame_botoes, "Filtrar", self.filtrar_relatorio).pack(side=tk.LEFT, padx=5)
+        
+        # Botãomostrar todos
+        w.criar_botao(frame_botoes, "Mostrar Todos", self.mostrar_todos).pack(side=tk.LEFT, padx=5)
 
         # Botão relatório
         w.criar_botao(frame_botoes, "Gerar Relatório", self.gerar_relatorio_txt).pack(side=tk.LEFT, padx=5)
@@ -119,16 +125,18 @@ class PaginaRelatorios(tk.Frame):
         self.tabela_relatorios.pack(side="left", fill="both", expand=True)
         scroll.pack(side="right", fill="y")
         
-        
+        # mostrar  todos do mes e encher a lista
         self.carregar_funcionarios()
+        self.filtrar_relatorio(avisar=False)
         
         
-        
+      #  
     def carregar_funcionarios(self):
         self.cursor.execute(
             "SELECT id_funcionario, nome, estado FROM funcionarios ORDER BY nome"
         )
         self.funcionarios_map = {}
+        
         for id_, nome, estado in self.cursor.fetchall():
             sufixo = "" if estado == "ATIVO" else " - inativo"
             self.funcionarios_map[f"{nome} (#{id_}){sufixo}"] = id_
@@ -136,8 +144,14 @@ class PaginaRelatorios(tk.Frame):
         # novo: mostrar os nomes na lista
         for nome in self.funcionarios_map:
             self.lista_funcionarios.insert(tk.END, nome)
+            
+            
+    def mostrar_todos(self):
+        self.lista_funcionarios.selection_clear(0, tk.END)
+        self.filtrar_relatorio()        
+            
         
-    def filtrar_relatorio(self):
+    def filtrar_relatorio(self, avisar=True):
         
         data_inicio = self.calendario_inicio.entry.get().strip()
         data_fim = self.calendario_fim.entry.get().strip()
@@ -164,29 +178,33 @@ class PaginaRelatorios(tk.Frame):
         """
         valores = [data_inicio, data_fim]
         
+        # Algum funcionario selecionario?
+        escolhido = self.lista_funcionarios.curselection()
         
-        escolhidos = []
-        for posicao in self.lista_funcionarios.curselection():
-            nome = self.lista_funcionarios.get(posicao)
-            escolhidos.append(self.funcionarios_map[nome])
-
-        if escolhidos:
-            marcadores = []
-            for id_f in escolhidos:
-                marcadores.append("%s")        # um %s por cada funcionário escolhido
-
-            texto = ",".join(marcadores)        # junta com vírgulas: "%s,%s,%s"
-
-            sql += " AND r.id_funcionario IN (" + texto + ")"
-            valores += escolhidos
-
+        if escolhido:
+            #
+            nome_escolhido = self.lista_funcionarios.get(escolhido[0])
+            id_func = self.funcionarios_map[nome_escolhido] 
+            sql += " AND r.id_funcionario = %s "
+            valores.append(id_func)
+            
+        #mostra todos os funcionarios ativos
+        else: sql += " AND f.estado = 'ATIVO'"
+            
+        #ordem
+        sql += " ORDER BY r.data DESC, f.nome"
+          
+            
         self.cursor.execute(sql, valores)
         registos = self.cursor.fetchall()
-
+            
+        
+    
         # Limpar a tabela e mostrar os novos dados
         self.tabela_relatorios.delete(*self.tabela_relatorios.get_children())
 
         for id_f, nome, data, atraso, extra, total in registos:
+            total= total or 0
             self.tabela_relatorios.insert("", tk.END, values=(
                 id_f,
                 nome,
@@ -196,7 +214,7 @@ class PaginaRelatorios(tk.Frame):
                 f"{total // 60}h{total % 60:02d}",
             ))
 
-        if not registos:
+        if not registos and avisar:
             messagebox.showinfo("Sem resultados", "Não há dados para este período.")
 
     
