@@ -1,17 +1,29 @@
 # Pra que serve esse ficheiro?
-# Este módulo calcula, para um funcionário e um dia (o dia a que um turno foi
-# ATRIBUÍDO em FUNCIONARIO_HORARIO — não necessariamente a data civil das
-# picagens, por causa de turnos noturnos que atravessam a meia-noite),
-# se houve falta, atraso na entrada, atraso a voltar do almoço, horas extra
-# e horas efetivamente trabalhadas. Também sabe gravar esse resultado na
-# tabela RESULTADOS, para os relatórios lerem diretamente de lá em vez de
-# recalcularem tudo a cada pedido.
+# Este módulo faz UMA coisa: comparar as picagens de um funcionário, num
+# dia, com o horário que ele devia cumprir, e dizer se houve falta, atraso
+# na entrada, atraso a voltar do almoço, horas extra e horas trabalhadas.
 #
-# Não depende de tkinter nem de nenhuma página em concreto: recebe um cursor
-# já aberto (buffered=True) e devolve um dicionário simples. Isto permite
-# que tanto relatorios.py como ctrl_presencas.py e relogio_ponto.py (e
-# testes soltos) usem a mesma lógica, sem duplicar queries nem regras de
-# negócio.
+# O que NÃO faz (é responsabilidade de quem o chama, o processamento):
+# - decidir se o dia conta: funcionário inativo, antes da data de adesão,
+#   sem horário, FOLGA, ausência justificada, feriado, dia ainda por
+#   acontecer, dia de descanso...
+# - percorrer funcionários ou intervalos de datas.
+# Isto só deve ser chamado para dias em que havia mesmo expectativa de
+# trabalho.
+#
+# Como funciona com o esquema atual:
+# - A tabela PICAGEM só tem ENTRADA e SAIDA genéricas. Aqui emparelham-se
+#   em "períodos de trabalho" (ENTRADA -> SAIDA seguinte); as pausas são
+#   os intervalos entre períodos.
+#
+# Uso típico (no processamento):
+#     horario = carregar_horario(cursor, id_horario_do_funcionario)
+#     resumo  = calcular_picagens(cursor, id_funcionario, dia, horario)
+#     guardar_resultado(cursor, conn, id_funcionario, dia, resumo)
+#
+# Não depende de tkinter nem de nenhuma página: recebe um cursor normal
+# (buffered=True, que devolve tuplos — NÃO usar dictionary=True) e devolve
+# um dicionário simples.
 
 from datetime import datetime, timedelta, time
 
@@ -59,15 +71,68 @@ def combinar_data_hora(data_base, hora, hora_entrada):
 
 def _resultado_vazio():
     return {
-        "tipo_horario": None,
-        "motivo_sem_avaliacao": None,
         "falta": None,
         "atraso_entrada_min": None,
         "atraso_volta_almoco_min": None,
         "horas_trabalhadas": None,
         "horas_extra_min": None,
-        "picagens": {"entrada": None, "saida_almoco": None, "volta_almoco": None, "saida": None},
+        "periodos": [],
     }
+
+
+def _ler_periodos(cursor, id_funcionario, janela_inicio, janela_fim):
+    """
+    Lê as picagens válidas entre janela_inicio e janela_fim e emparelha-as
+    em períodos de trabalho: cada ENTRADA abre um período e a SAIDA seguinte
+    fecha-o.
+
+    Devolve uma lista de tuplos (entrada, saida) por ordem cronológica.
+    `saida` é None quando o período ficou em aberto (só pode acontecer no
+    último).
+
+    Regras para picagens fora do padrão (podem vir de correções do admin):
+    - ENTRADA quando já há um período em aberto: ignorada.
+    - SAIDA quando não há período em aberto: ignorada.
+    """
+
+    cursor.execute(
+        """
+        SELECT tipo, data
+        FROM picagem
+        WHERE id_funcionario = %s
+          AND anulada = 0
+          AND data BETWEEN %s AND %s
+        ORDER BY data ASC, id_picagem ASC
+        """,
+        (id_funcionario, janela_inicio, janela_fim)
+    )
+
+    periodos = []
+
+    for tipo, quando in cursor.fetchall():
+        em_aberto = bool(periodos) and periodos[-1][1] is None
+
+        if tipo == "ENTRADA" and not em_aberto:
+            periodos.append([quando, None])
+        elif tipo == "SAIDA" and em_aberto:
+            periodos[-1][1] = quando
+
+    return [tuple(p) for p in periodos]
+
+
+def _horas_dos_periodos(periodos):
+    """
+    Soma das horas de todos os períodos (as pausas ficam de fora, porque
+    são o intervalo entre períodos). Devolve None se não houver períodos
+    ou se algum não tiver SAIDA: dia incompleto, não dá para calcular.
+    """
+
+    if not periodos or any(saida is None for _, saida in periodos):
+        return None
+
+    total_segundos = sum((saida - entrada).total_seconds() for entrada, saida in periodos)
+
+    return round(total_segundos / 3600, 2)
 
 
 def _calcular_fixo_ou_turno(cursor, id_funcionario, data_turno, resultado,
@@ -95,33 +160,16 @@ def _calcular_fixo_ou_turno(cursor, id_funcionario, data_turno, resultado,
     janela_inicio = entrada_esperada - timedelta(hours=4)
     janela_fim = entrada_esperada + timedelta(hours=20)
 
-    cursor.execute(
-        """
-        SELECT tipo, data
-        FROM picagem
-        WHERE id_funcionario = %s
-          AND anulada = 0
-          AND data BETWEEN %s AND %s
-        ORDER BY data ASC
-        """,
-        (id_funcionario, janela_inicio, janela_fim)
-    )
+    periodos = _ler_periodos(cursor, id_funcionario, janela_inicio, janela_fim)
+    resultado["periodos"] = periodos
 
-    for tipo, quando in cursor.fetchall():
-        chave = tipo.lower()  # "entrada", "saida_almoco", "volta_almoco", "saida"
-        if resultado["picagens"].get(chave) is None:
-            resultado["picagens"][chave] = quando
+    resultado["falta"] = not periodos
 
-    entrada_real = resultado["picagens"]["entrada"]
-    saida_almoco_real = resultado["picagens"]["saida_almoco"]
-    volta_almoco_real = resultado["picagens"]["volta_almoco"]
-    saida_real = resultado["picagens"]["saida"]
-
-    resultado["falta"] = entrada_real is None
-
-    if entrada_real is None:
+    if not periodos:
         # Sem nenhuma picagem, não há mais nada a calcular.
         return resultado
+
+    entrada_real = periodos[0][0]  # a primeira ENTRADA do dia
 
     def minutos_de_atraso(real, esperado, tolerancia_min):
         if real is None or esperado is None:
@@ -135,29 +183,42 @@ def _calcular_fixo_ou_turno(cursor, id_funcionario, data_turno, resultado,
         entrada_real, entrada_esperada, tolerancia or 0
     )
 
-    if tem_almoco:
-        resultado["atraso_volta_almoco_min"] = minutos_de_atraso(
-            volta_almoco_real, fim_almoco_esperado, tolerancia or 0
-        )
+    # Pausa de almoço: as pausas são os intervalos entre períodos
+    # (SAIDA de um, ENTRADA do seguinte). Se houver mais do que uma
+    # (ex: almoço e um café), a do almoço é a que começou mais perto da
+    # hora de início de almoço esperada.
+    houve_pausa = False
 
-    # Horas trabalhadas
     if tem_almoco:
-        if saida_almoco_real and volta_almoco_real and saida_real:
-            periodo_manha = (saida_almoco_real - entrada_real).total_seconds()
-            periodo_tarde = (saida_real - volta_almoco_real).total_seconds()
-            resultado["horas_trabalhadas"] = round((periodo_manha + periodo_tarde) / 3600, 2)
-    else:
-        if saida_real:
-            resultado["horas_trabalhadas"] = round(
-                (saida_real - entrada_real).total_seconds() / 3600, 2
+        pausas = [
+            (periodos[i][1], periodos[i + 1][0])
+            for i in range(len(periodos) - 1)
+        ]
+
+        if pausas:
+            houve_pausa = True
+
+            _, volta_almoco_real = min(
+                pausas,
+                key=lambda p: abs((p[0] - inicio_almoco_esperado).total_seconds())
             )
 
-    # Horas extra: excesso face à duração esperada do turno (já descontado
-    # o almoço, se aplicável). Só é possível calcular com o turno completo.
+            resultado["atraso_volta_almoco_min"] = minutos_de_atraso(
+                volta_almoco_real, fim_almoco_esperado, tolerancia or 0
+            )
+
+    # Horas trabalhadas: soma dos períodos (a pausa fica de fora sozinha).
+    resultado["horas_trabalhadas"] = _horas_dos_periodos(periodos)
+
+    # Horas extra: excesso face à duração esperada do turno. O almoço só
+    # é descontado à duração esperada se houve uma pausa registada; se o
+    # funcionário não picou o almoço, o dia é um único período contínuo e
+    # compara-se com o turno inteiro (senão a hora de almoço apareceria
+    # como hora extra). Só é possível calcular com o turno completo.
     if resultado["horas_trabalhadas"] is not None and saida_esperada is not None:
         duracao_esperada_min = (saida_esperada - entrada_esperada).total_seconds() / 60
 
-        if tem_almoco:
+        if houve_pausa:
             duracao_almoco_min = (fim_almoco_esperado - inicio_almoco_esperado).total_seconds() / 60
             duracao_esperada_min -= duracao_almoco_min
 
@@ -171,218 +232,140 @@ def _calcular_livre(cursor, id_funcionario, data_turno, resultado,
                      janela_inicio_h, janela_fim_h, horas_diarias_exigidas):
     """
     Cálculo para LIVRE: sem hora de entrada fixa, por isso não há "atraso"
-    a medir (só interessa se cumpriu a janela e as horas exigidas). Um
-    único par ENTRADA/SAIDA por dia (decisão já tomada no relógio de
-    ponto), dentro do mesmo dia civil — horário livre não atravessa a
-    meia-noite, ao contrário de TURNO.
+    a medir (só interessa se cumpriu as horas exigidas). As horas são a
+    soma dos períodos ENTRADA/SAIDA do dia (as pausas ficam de fora), dentro
+    do mesmo dia civil — horário livre não atravessa a meia-noite, ao
+    contrário de TURNO.
     """
 
-    cursor.execute(
-        """
-        SELECT tipo, data
-        FROM picagem
-        WHERE id_funcionario = %s
-          AND anulada = 0
-          AND DATE(data) = %s
-          AND tipo IN ('ENTRADA', 'SAIDA')
-        ORDER BY data ASC
-        """,
-        (id_funcionario, data_turno)
-    )
+    inicio_dia = datetime.combine(data_turno, time.min)
+    fim_dia = datetime.combine(data_turno, time(23, 59, 59))
 
-    for tipo, quando in cursor.fetchall():
-        chave = tipo.lower()
-        if resultado["picagens"].get(chave) is None:
-            resultado["picagens"][chave] = quando
+    periodos = _ler_periodos(cursor, id_funcionario, inicio_dia, fim_dia)
+    resultado["periodos"] = periodos
 
-    entrada_real = resultado["picagens"]["entrada"]
-    saida_real = resultado["picagens"]["saida"]
+    resultado["falta"] = not periodos
 
-    resultado["falta"] = entrada_real is None
-
-    if entrada_real is None:
+    if not periodos:
         return resultado
 
     # Sem hora de entrada fixa não há atraso a medir — fica sempre None
     # (não é 0, porque 0 significaria "avaliado e sem atraso"; None
     # significa "este conceito não se aplica a este tipo de horário").
 
-    if saida_real:
-        resultado["horas_trabalhadas"] = round(
-            (saida_real - entrada_real).total_seconds() / 3600, 2
-        )
+    resultado["horas_trabalhadas"] = _horas_dos_periodos(periodos)
 
-        if horas_diarias_exigidas is not None:
-            excesso_min = round(resultado["horas_trabalhadas"] * 60 - float(horas_diarias_exigidas) * 60)
-            resultado["horas_extra_min"] = max(0, excesso_min)
+    if resultado["horas_trabalhadas"] is not None and horas_diarias_exigidas is not None:
+        excesso_min = round(resultado["horas_trabalhadas"] * 60 - float(horas_diarias_exigidas) * 60)
+        resultado["horas_extra_min"] = max(0, excesso_min)
 
     return resultado
 
 
-def calcular_dia(cursor, id_funcionario, data_turno):
+# ======================================================================
+# API PÚBLICA
+# ======================================================================
+
+def carregar_horario(cursor, id_horario):
     """
-    Calcula o resumo de assiduidade de um funcionário para o turno que lhe
-    foi atribuído em `data_turno` (FUNCIONARIO_HORARIO.data).
+    Lê um horário da tabela HORARIO e devolve-o como dicionário (com as
+    colunas TIME já convertidas para datetime.time), pronto a passar a
+    calcular_picagens. Devolve None se o id não existir.
+
+    Há poucos horários no catálogo: se o processamento chamar isto para
+    muitos funcionários, pode guardar o resultado num dicionário
+    {id_horario: horario} e só ler cada um uma vez.
+    """
+
+    cursor.execute(
+        """
+        SELECT tipo, entrada, saida, inicio_almoco, fim_almoco,
+               tolerancia, janela_inicio, janela_fim, horas_diarias_exigidas
+        FROM horario
+        WHERE id_horario = %s
+        """,
+        (id_horario,)
+    )
+
+    linha = cursor.fetchone()
+
+    if linha is None:
+        return None
+
+    (tipo, entrada_h, saida_h, inicio_almoco_h, fim_almoco_h,
+     tolerancia, janela_inicio_h, janela_fim_h, horas_diarias_exigidas) = linha
+
+    # Colunas TIME vêm da BD como timedelta — converter antes de usar.
+    return {
+        "tipo": tipo,
+        "entrada": _para_time(entrada_h),
+        "saida": _para_time(saida_h),
+        "inicio_almoco": _para_time(inicio_almoco_h),
+        "fim_almoco": _para_time(fim_almoco_h),
+        "tolerancia": tolerancia or 0,
+        "janela_inicio": _para_time(janela_inicio_h),
+        "janela_fim": _para_time(janela_fim_h),
+        "horas_diarias_exigidas": horas_diarias_exigidas,
+    }
+
+
+def calcular_picagens(cursor, id_funcionario, data_turno, horario):
+    """
+    Compara as picagens do funcionário no turno que começou em `data_turno`
+    com o `horario` (dicionário de carregar_horario).
 
     Devolve um dicionário:
     {
-        "tipo_horario": "FIXO" / "TURNO" / "LIVRE" / "FOLGA" / None,
-        "motivo_sem_avaliacao": None / "SEM_HORARIO" / "FOLGA" / "AUSENCIA" / "FERIADO",
-        "falta": bool ou None (None = não avaliável, ver motivo_sem_avaliacao),
+        "falta": bool (True = não picou nada nesse turno),
         "atraso_entrada_min": int ou None,
         "atraso_volta_almoco_min": int ou None,
-        "horas_trabalhadas": float ou None (horas, arredondado a 2 casas),
+        "horas_trabalhadas": float ou None (horas, 2 casas; None se algum
+                             período ficou sem SAIDA ou não há picagens),
         "horas_extra_min": int ou None,
-        "picagens": {"entrada": ..., "saida_almoco": ..., "volta_almoco": ..., "saida": ...},
+        "periodos": [(entrada, saida), ...]  (saida = None se ficou em aberto),
     }
+
+    Levanta ValueError se o horário não tiver nada que se possa comparar
+    com picagens: tipo FOLGA, ou FIXO/TURNO sem hora de entrada (erro no
+    catálogo HORARIO). Quem chama deve ter tratado a FOLGA antes.
     """
 
     resultado = _resultado_vazio()
 
-    # --------------------------------
-    # 1. HORÁRIO ATRIBUÍDO NESSE DIA
-    # --------------------------------
+    tipo = horario["tipo"]
 
-    cursor.execute(
-        """
-        SELECT h.tipo, h.entrada, h.saida, h.inicio_almoco, h.fim_almoco,
-               h.tolerancia, h.janela_inicio, h.janela_fim, h.horas_diarias_exigidas
-        FROM funcionarios f
-        JOIN horario h ON h.id_horario = f.horario
-        WHERE f.id_funcionario = %s
-        """,
-        (id_funcionario,)
-    )
+    if tipo == "FOLGA":
+        raise ValueError("calcular_picagens não se aplica a horários FOLGA: trate a folga antes de chamar.")
 
-    horario = cursor.fetchone()
-
-    if horario is None:
-        resultado["motivo_sem_avaliacao"] = "SEM_HORARIO"
-        return resultado
-
-    (tipo_horario, entrada_h, saida_h, inicio_almoco_h, fim_almoco_h,
-     tolerancia, janela_inicio_h, janela_fim_h, horas_diarias_exigidas) = horario
-
-    # Colunas TIME vêm da BD como timedelta — converter antes de usar.
-    entrada_h = _para_time(entrada_h)
-    saida_h = _para_time(saida_h)
-    inicio_almoco_h = _para_time(inicio_almoco_h)
-    fim_almoco_h = _para_time(fim_almoco_h)
-    janela_inicio_h = _para_time(janela_inicio_h)
-    janela_fim_h = _para_time(janela_fim_h)
-
-    resultado["tipo_horario"] = tipo_horario
-
-    if tipo_horario == "FOLGA":
-        resultado["motivo_sem_avaliacao"] = "FOLGA"
-        resultado["falta"] = False
-        return resultado
-
-    # --------------------------------
-    # 2. AUSÊNCIA JUSTIFICADA OU FERIADO
-    # --------------------------------
-
-    cursor.execute(
-        """
-        SELECT 1 FROM ausencias
-        WHERE id_funcionario = %s
-          AND %s BETWEEN data_inicio AND data_fim
-        LIMIT 1
-        """,
-        (id_funcionario, data_turno)
-    )
-
-    if cursor.fetchone():
-        resultado["motivo_sem_avaliacao"] = "AUSENCIA"
-        resultado["falta"] = False
-        return resultado
-
-    cursor.execute("SELECT 1 FROM feriados WHERE data = %s", (data_turno,))
-
-    if cursor.fetchone():
-        resultado["motivo_sem_avaliacao"] = "FERIADO"
-        resultado["falta"] = False
-        return resultado
-
-    # --------------------------------
-    # 3. CÁLCULO ESPECÍFICO DO TIPO DE HORÁRIO
-    # --------------------------------
-
-    if tipo_horario == "LIVRE":
+    if tipo == "LIVRE":
         return _calcular_livre(
             cursor, id_funcionario, data_turno, resultado,
-            janela_inicio_h, janela_fim_h, horas_diarias_exigidas
+            horario["janela_inicio"], horario["janela_fim"], horario["horas_diarias_exigidas"]
         )
 
-    if entrada_h is None:
-        # FIXO/TURNO sem entrada definida não devia acontecer (erro de
-        # configuração no catálogo HORARIO) — fica sinalizado em vez de
-        # rebentar mais à frente com uma comparação a None.
-        resultado["motivo_sem_avaliacao"] = "HORARIO_MAL_CONFIGURADO"
-        return resultado
+    if horario["entrada"] is None:
+        raise ValueError(f"Horário {tipo} sem hora de entrada: verifique a tabela HORARIO.")
 
     return _calcular_fixo_ou_turno(
         cursor, id_funcionario, data_turno, resultado,
-        entrada_h, saida_h, inicio_almoco_h, fim_almoco_h, tolerancia
+        horario["entrada"], horario["saida"],
+        horario["inicio_almoco"], horario["fim_almoco"], horario["tolerancia"]
     )
 
 
-def calcular_periodo(cursor, id_funcionario, data_inicio, data_fim):
+def guardar_resultado(cursor, conn, id_funcionario, data_turno, resumo):
     """
-    Aplica calcular_dia a cada dia entre data_inicio e data_fim (inclusive),
-    devolvendo uma lista de dicionários no formato:
-        [{"data": date, **resultado_de_calcular_dia}, ...]
+    Grava (ou atualiza) em RESULTADOS o `resumo` devolvido por
+    calcular_picagens. Usa ON DUPLICATE KEY UPDATE, apoiado na UNIQUE
+    (id_funcionario, data): gravar várias vezes o mesmo dia só atualiza a
+    mesma linha, sem criar duplicados. Faz commit próprio.
 
-    Serve de base direta para relatórios por semana/mês — quem chamar esta
-    função é que decide como agregar (somar atrasos, contar faltas, etc.).
-    Não grava nada em RESULTADOS; para isso, ver calcular_e_guardar_dia.
+    Convenção da tabela: só deve haver linha nos dias em que se esperava
+    trabalho (ficar sem linha = "não se esperava trabalho"; linha com 0
+    minutos trabalhados = falta real). Quem chama é que decide não gravar
+    os outros dias. Um dia incompleto (período sem SAIDA) fica gravado com
+    0 minutos, igual a uma falta.
     """
-
-    resultados = []
-    dia_atual = data_inicio
-
-    while dia_atual <= data_fim:
-        resumo = calcular_dia(cursor, id_funcionario, dia_atual)
-        resumo["data"] = dia_atual
-        resultados.append(resumo)
-        dia_atual += timedelta(days=1)
-
-    return resultados
-
-
-# ======================================================================
-# GRAVAÇÃO EM RESULTADOS
-# ======================================================================
-#
-# Só é gravada uma linha em RESULTADOS quando havia mesmo expectativa de
-# trabalho nesse dia (FIXO/TURNO/LIVRE com horário atribuído). Dias de
-# FOLGA, AUSENCIA, FERIADO ou sem horário atribuído não geram linha — a
-# ausência de linha significa "não se esperava trabalho"; uma linha com
-# total_minutos_trabalhados = 0 significa sempre uma falta real. Sem esta
-# distinção, os dois casos ficariam indistinguíveis para quem lesse só a
-# tabela RESULTADOS (que não tem nenhuma coluna de estado/motivo).
-
-DIAS_SEM_EXPECTATIVA_DE_TRABALHO = ("SEM_HORARIO", "FOLGA", "AUSENCIA", "FERIADO", "HORARIO_MAL_CONFIGURADO")
-
-
-def calcular_e_guardar_dia(cursor, conn, id_funcionario, data_turno):
-    """
-    Calcula o resumo do dia (calcular_dia) e grava/atualiza a linha
-    correspondente em RESULTADOS. Usa ON DUPLICATE KEY UPDATE, apoiado na
-    UNIQUE (id_funcionario, data) da tabela — chamar esta função várias
-    vezes para o mesmo dia (ex: a cada picagem) simplesmente atualiza a
-    mesma linha, sem criar duplicados.
-
-    Devolve sempre o resumo (dicionário de calcular_dia), para quem chamar
-    poder decidir se quer mostrar alguma mensagem, sem repetir o cálculo.
-    Faz commit próprio, para poder ser chamada de forma independente de
-    quem a invoca (ex: logo a seguir a uma picagem).
-    """
-
-    resumo = calcular_dia(cursor, id_funcionario, data_turno)
-
-    if resumo["motivo_sem_avaliacao"] in DIAS_SEM_EXPECTATIVA_DE_TRABALHO:
-        return resumo  # nada a gravar neste dia
 
     atraso_minutos = (resumo["atraso_entrada_min"] or 0) + (resumo["atraso_volta_almoco_min"] or 0)
     horas_extra_minutos = resumo["horas_extra_min"] or 0
@@ -405,25 +388,3 @@ def calcular_e_guardar_dia(cursor, conn, id_funcionario, data_turno):
     )
 
     conn.commit()
-
-    return resumo
-
-
-def calcular_e_guardar_periodo(cursor, conn, id_funcionario, data_inicio, data_fim):
-    """
-    Aplica calcular_e_guardar_dia a cada dia entre data_inicio e data_fim
-    (inclusive). Útil para recalcular retroativamente (ex: depois de uma
-    retificação de picagem pelo admin, ou para preencher RESULTADOS pela
-    primeira vez com dias que já tinham picagens antes desta tabela existir).
-    """
-
-    resultados = []
-    dia_atual = data_inicio
-
-    while dia_atual <= data_fim:
-        resumo = calcular_e_guardar_dia(cursor, conn, id_funcionario, dia_atual)
-        resumo["data"] = dia_atual
-        resultados.append(resumo)
-        dia_atual += timedelta(days=1)
-
-    return resultados
