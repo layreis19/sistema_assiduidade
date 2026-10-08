@@ -21,7 +21,6 @@ import widgets as w
 import mysql.connector
 import cores
 from ligacao import conn
-from calculo_assiduidade import calcular_e_guardar_dia
 from rotulos import rotulo_tipo_picagem
  
 # Tipos de picagem usados pelo relogio_ponto.py
