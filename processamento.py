@@ -87,6 +87,28 @@ def processar_dados_funcionario(data_inicio, data_fim):
                 dia += timedelta(days=1)
                 continue
 
+            # verificar folga
+
+        
+
+            folga = cursor.fetchone()
+
+            if folga:
+                cursor.execute("""
+                INSERT INTO RESULTADOS
+                    (id_funcionario, data, tipo)
+                VALUES(%s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                    tipo = VALUES(tipo)
+                """, (
+                    id_funcionario,
+                    dia,
+                    "FOLGA"))
+
+                conn.commit()
+
+                dia += timedelta(days=1)
+                continue
 
             # se o funcionário não tiver horário
             if funcionario["horario"] is None:
