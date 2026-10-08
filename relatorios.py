@@ -10,9 +10,12 @@ import tkinter as tk
 from tkinter import messagebox, ttk, filedialog
 from ligacao import conn
 from ttkbootstrap.widgets import DateEntry
-from datetime import datetime
+from datetime import datetime, date
+import calendar
 import cores
 import widgets as w
+
+
 
 
 class PaginaRelatorios(tk.Frame):
@@ -20,6 +23,9 @@ class PaginaRelatorios(tk.Frame):
         super().__init__(parent, bg=cores.CARD)
 
         self.cursor = conn.cursor(buffered=True)
+        hoje = date.today()
+        primeiro_dia = hoje.replace(day=1)
+        ultimo_dia = hoje.replace(day=calendar.monthrange(hoje.year, hoje.month)[1])
 
         w.criar_titulo(self,"RELATÓRIOS DE ASSIDUIDADE").pack(pady=(30,20))
 
@@ -27,14 +33,24 @@ class PaginaRelatorios(tk.Frame):
         frame_formulario = tk.Frame(self, background=cores.CARD)
         frame_formulario.pack(pady=10)
 
-        w.criar_label(frame_formulario,"ID Funcionário:").pack(side=tk.LEFT,pady=5)    
-        self.entry_id = w.criar_entrada(frame_formulario)
-        self.entry_id.pack(side=tk.LEFT, padx=10, pady=10)
+        w.criar_label(frame_formulario, "Funcionários:").pack(side=tk.LEFT, pady=5)
+
+        self.lista_funcionarios = tk.Listbox(
+            frame_formulario,
+            selectmode=tk.SINGLE,
+            height=4,
+            width=25,
+            exportselection=False
+        )
+        self.lista_funcionarios.pack(side=tk.LEFT, padx=10)
+
+        self.ids_funcionarios = []                 
 
         w.criar_label(frame_formulario, "Data de Início:").pack(side=tk.LEFT, padx=5)
         self.calendario_inicio = DateEntry(
             frame_formulario, 
             dateformat="%d/%m/%Y",
+            startdate=primeiro_dia,
             width=12,
             bootstyle=cores.PRIMARY_DARK)
         self.calendario_inicio.pack(side= tk.LEFT, padx=(0,20), pady=5)
@@ -44,6 +60,7 @@ class PaginaRelatorios(tk.Frame):
         self.calendario_fim = DateEntry(
             frame_formulario,
             dateformat="%d/%m/%Y",
+             startdate=ultimo_dia,
             width=12,
             bootstyle=cores.PRIMARY_DARK)
         self.calendario_fim.pack(side=tk.LEFT, padx=(0,20), pady=5)
@@ -53,7 +70,7 @@ class PaginaRelatorios(tk.Frame):
         frame_botoes.pack(pady=10)
 
         # Botão editar
-        w.criar_botao(frame_botoes, "Editar", self.filtrar_relatorio).pack(side=tk.LEFT, padx=5)
+        w.criar_botao(frame_botoes, "Filtrar", self.filtrar_relatorio).pack(side=tk.LEFT, padx=5)
 
         # Botão relatório
         w.criar_botao(frame_botoes, "Gerar Relatório", self.gerar_relatorio_txt).pack(side=tk.LEFT, padx=5)
@@ -101,9 +118,27 @@ class PaginaRelatorios(tk.Frame):
         self.tabela_relatorios.configure(yscrollcommand=scroll.set)
         self.tabela_relatorios.pack(side="left", fill="both", expand=True)
         scroll.pack(side="right", fill="y")
+        
+        
+        self.carregar_funcionarios()
+        
+        
+        
+    def carregar_funcionarios(self):
+        self.cursor.execute(
+            "SELECT id_funcionario, nome, estado FROM funcionarios ORDER BY nome"
+        )
+        self.funcionarios_map = {}
+        for id_, nome, estado in self.cursor.fetchall():
+            sufixo = "" if estado == "ATIVO" else " - inativo"
+            self.funcionarios_map[f"{nome} (#{id_}){sufixo}"] = id_
 
+        # novo: mostrar os nomes na lista
+        for nome in self.funcionarios_map:
+            self.lista_funcionarios.insert(tk.END, nome)
+        
     def filtrar_relatorio(self):
-        id_func = self.entry_id.get().strip()
+        
         data_inicio = self.calendario_inicio.entry.get().strip()
         data_fim = self.calendario_fim.entry.get().strip()
 
@@ -119,10 +154,6 @@ class PaginaRelatorios(tk.Frame):
             messagebox.showerror("Erro", "A data de início não pode ser depois da data de fim!")
             return
 
-        if id_func and not id_func.isdigit():
-            messagebox.showerror("Erro", "O ID deve ser um número!")
-            return
-
         # Procurar na base de dados
         sql = """
             SELECT r.id_funcionario, f.nome, r.data,
@@ -132,21 +163,31 @@ class PaginaRelatorios(tk.Frame):
             WHERE r.data BETWEEN %s AND %s
         """
         valores = [data_inicio, data_fim]
+        
+        
+        escolhidos = []
+        for posicao in self.lista_funcionarios.curselection():
+            nome = self.lista_funcionarios.get(posicao)
+            escolhidos.append(self.funcionarios_map[nome])
 
-        if id_func:
-            sql += " AND r.id_funcionario = %s"
-            valores.append(int(id_func))
+        if escolhidos:
+            marcadores = []
+            for id_f in escolhidos:
+                marcadores.append("%s")        # um %s por cada funcionário escolhido
 
-        sql += " ORDER BY r.data DESC, f.nome"
+            texto = ",".join(marcadores)        # junta com vírgulas: "%s,%s,%s"
+
+            sql += " AND r.id_funcionario IN (" + texto + ")"
+            valores += escolhidos
 
         self.cursor.execute(sql, valores)
         registos = self.cursor.fetchall()
 
         # Limpar a tabela e mostrar os novos dados
-        self.tabela.delete(*self.tabela.get_children())
+        self.tabela_relatorios.delete(*self.tabela_relatorios.get_children())
 
         for id_f, nome, data, atraso, extra, total in registos:
-            self.tabela.insert("", tk.END, values=(
+            self.tabela_relatorios.insert("", tk.END, values=(
                 id_f,
                 nome,
                 data.strftime("%d/%m/%Y"),
@@ -160,7 +201,7 @@ class PaginaRelatorios(tk.Frame):
 
     
     def gerar_relatorio_txt(self):
-        linhas = self.tabela.get_children()
+        linhas = self.tabela_relatorios.get_children()
 
         if not linhas:
             messagebox.showwarning("Aviso", "Primeiro clica em Filtrar!")
@@ -180,7 +221,7 @@ class PaginaRelatorios(tk.Frame):
             f.write("-" * 70 + "\n")
 
             for item in linhas:
-                id_f, nome, data, atraso, extra, total = self.tabela.item(item)["values"]
+                id_f, nome, data, atraso, extra, total = self.tabela_relatorios.item(item)["values"]
                 f.write(f"{id_f:<6}{nome:<22}{data:<13}{atraso:<11}{extra:<11}{total}\n")
 
             f.write("=" * 70 + "\n")
