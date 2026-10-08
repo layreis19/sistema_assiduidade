@@ -247,12 +247,11 @@ def calcular_dia(cursor, id_funcionario, data_turno):
         """
         SELECT h.tipo, h.entrada, h.saida, h.inicio_almoco, h.fim_almoco,
                h.tolerancia, h.janela_inicio, h.janela_fim, h.horas_diarias_exigidas
-        FROM funcionario_horario fh
-        JOIN horario h ON h.id_horario = fh.id_horario
-        WHERE fh.id_funcionario = %s
-          AND fh.data = %s
+        FROM funcionarios f
+        JOIN horario h ON h.id_horario = f.horario
+        WHERE f.id_funcionario = %s
         """,
-        (id_funcionario, data_turno)
+        (id_funcionario,)
     )
 
     horario = cursor.fetchone()

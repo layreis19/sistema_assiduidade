@@ -1,0 +1,123 @@
+FUNÇÃO processar_mes(id_funcionario, ano, mes):
+
+    funcionario ← obter_funcionario(id_funcionario)   # inclui horario atribuído, data_adesao
+    horario ← funcionario.horario                      # FIXO / TURNO / LIVRE / FOLGA, ou NULO
+
+    dias_do_mes ← listar_dias(ano, mes)
+
+    PARA CADA dia EM dias_do_mes:
+
+        SE dia < funcionario.data_adesao:
+            SALTAR dia                      # ainda não era funcionário, nada a avaliar
+
+        SE horario É NULO:
+            GRAVAR_RESULTADO(dia, motivo="SEM_HORARIO")
+            SALTAR dia
+
+        SE horario.tipo == FOLGA:
+            GRAVAR_RESULTADO(dia, motivo="FOLGA", falta=FALSO)
+            SALTAR dia
+
+        SE existe_feriado(dia):
+            GRAVAR_RESULTADO(dia, motivo="FERIADO", falta=FALSO)
+            SALTAR dia
+
+        SE existe_ausencia_justificada(id_funcionario, dia):
+            GRAVAR_RESULTADO(dia, motivo="AUSENCIA", falta=FALSO)
+            SALTAR dia
+
+        SE horario.tipo == FIXO E dia.dia_semana NÃO está em horario.dias_trabalho:
+            SALTAR dia                      # dia de folga fixa (ex: fim de semana), nem conta
+
+        # --- a partir daqui, era mesmo suposto haver trabalho neste dia ---
+
+        picagens ← obter_picagens_do_dia(id_funcionario, dia, horario)
+        # nota: para TURNO que atravessa a meia-noite, "picagens do dia"
+        # tem de ir buscar janela [entrada_esperada - margem, entrada_esperada + 20h],
+        # não filtrar só por DATE(data) = dia (mesmo problema do turno noturno
+        # que já resolvemos no relógio de ponto)
+
+        SE picagens está vazia:
+            GRAVAR_RESULTADO(dia, falta=VERDADEIRO)
+            SALTAR dia
+
+        resultado_dia ← avaliar_picagens_do_dia(picagens, horario, dia)
+        GRAVAR_RESULTADO(dia, resultado_dia)
+
+FIM FUNÇÃO
+
+
+FUNÇÃO avaliar_picagens_do_dia(picagens, horario, dia):
+
+    # picagens vem ordenada por hora, alternando ENTRADA/SAIDA
+    # ex: [ENTRADA 08:45, SAIDA 12:30, ENTRADA 13:40, SAIDA 17:35]
+
+    entrada_real ← primeira picagem (deve ser ENTRADA)
+    saida_real   ← última picagem (deve ser SAIDA; se não for, dia incompleto)
+
+    SE última picagem NÃO é SAIDA:
+        MARCAR dia_incompleto = VERDADEIRO   # esqueceu-se de picar a saída
+        # não dá para calcular horas trabalhadas nem horas extra com confiança
+
+    pausas ← todos os pares (SAIDA, ENTRADA) ENTRE a primeira entrada e a última saída
+    # ex: (SAIDA 12:30, ENTRADA 13:40) é uma pausa de 1h10
+
+    # --- 1. Atraso na entrada ---
+    SE horario.tipo != LIVRE:
+        entrada_esperada ← combinar(dia, horario.entrada)
+        atraso_entrada ← minutos(entrada_real − entrada_esperada) − horario.tolerancia
+        SE atraso_entrada < 0: atraso_entrada ← 0
+    SENÃO:
+        atraso_entrada ← NÃO_APLICÁVEL      # LIVRE não tem hora de entrada fixa
+
+    # --- 2. Atraso(s) a voltar de pausa ---
+    atraso_pausas ← 0
+    PARA CADA (saida_pausa, volta_pausa) EM pausas:
+        SE horario tem pausa prevista (inicio_almoco/fim_almoco definidos):
+            fim_pausa_esperado ← combinar(dia, horario.fim_almoco)
+            atraso ← minutos(volta_pausa − fim_pausa_esperado) − horario.tolerancia
+            SE atraso > 0:
+                atraso_pausas ← atraso_pausas + atraso
+        SENÃO:
+            # horário sem pausa prevista mas o funcionário fez uma pausa à mesma
+            # (decisão a tomar: contar como tempo não trabalhado e já está,
+            # ou marcar como uma anomalia a rever?)
+            MARCAR pausa_nao_prevista = VERDADEIRO
+
+    # --- 3. Horas trabalhadas ---
+    SE dia_incompleto:
+        horas_trabalhadas ← NULO            # não se pode confiar no total
+    SENÃO:
+        tempo_total ← saida_real − entrada_real
+        tempo_pausas ← soma(volta_pausa − saida_pausa PARA CADA pausa EM pausas)
+        horas_trabalhadas ← tempo_total − tempo_pausas
+
+    # --- 4. Horas extra ---
+    SE horas_trabalhadas NÃO é NULO:
+        horas_esperadas ← calcular_horas_esperadas(horario)   # ver abaixo
+        horas_extra ← MÁXIMO(0, horas_trabalhadas − horas_esperadas)
+    SENÃO:
+        horas_extra ← NULO
+
+    DEVOLVER {
+        falta: FALSO,
+        atraso_entrada,
+        atraso_pausas,
+        horas_trabalhadas,
+        horas_extra,
+        dia_incompleto,
+        pausa_nao_prevista
+    }
+
+FIM FUNÇÃO
+
+
+FUNÇÃO calcular_horas_esperadas(horario):
+    SE horario.tipo == LIVRE:
+        DEVOLVER horario.horas_diarias_exigidas
+    SENÃO:
+        duracao ← horario.saida − horario.entrada     # já com correção de turno noturno
+        SE horario tem pausa prevista:
+            duracao ← duracao − (horario.fim_almoco − horario.inicio_almoco)
+        DEVOLVER duracao
+FIM FUNÇÃO
