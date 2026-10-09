@@ -181,10 +181,12 @@ def processar_dados_funcionario(data_inicio, data_fim):
                         continue
 
                     # 4. Verificar se era dia de trabalho.
-                    dias_trabalho = horario.get("dias_trabalho") or ""
-                    dias_trabalho = {
-                        d.strip() for d in dias_trabalho.split(",") if d.strip()
-                    }
+                    dias_trabalho = horario.get("dias_trabalho") or set()
+                    if isinstance(dias_trabalho, str):
+                        dias_trabalho = {d.strip().upper() for d in dias_trabalho.split(",") if d.strip()}
+                    else:
+                        dias_trabalho = {str(d).strip().upper() for d in dias_trabalho if str(d).strip()}
+
                     dia_semana = DIAS_SEMANA[dia.weekday()]
 
                     if dia_semana not in dias_trabalho:
