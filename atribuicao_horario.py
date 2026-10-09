@@ -24,10 +24,11 @@ import widgets as w
 
 
 class PaginaAtribuicaoHorarios(tk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent, id_admin):
 
         super().__init__(parent, bg=cores.CARD)
 
+        self.id_admin = id_admin
         # buffered = true (guarda os resultados da consulta no cursor)
         self.cursor = conn.cursor(buffered=True)
 
@@ -47,6 +48,125 @@ class PaginaAtribuicaoHorarios(tk.Frame):
 
         self.carregar_funcionarios()
         self.carregar_horarios()
+
+    def adicionar_ferias(self):
+        janela = tk.Toplevel(self)
+        janela.title("Adicionar Férias")
+        janela.transient(self)
+
+        # funcionário
+        w.criar_label(janela, "Funcionário").pack(pady=(10,2), padx=20)
+        combo = ttk.Combobox(janela, font=w.FONTE_LABEL, state="readonly", width=28, values=list(self.funcionarios_map.keys()),)
+
+        combo.set(self.combo_funcionario.get())
+        combo.pack(pady=20)
+
+        # data início 
+        w.criar_label(janela, "Data de início:").pack(pady=(10,2), padx=20)
+        entry_inicio = DateEntry(janela, date_format="%Y-%m-%d", width=14, bootstyle=cores.PRIMARY_DARK)
+        entry_inicio.pack(padx=20)
+
+        # data fim
+        w.criar_label(janela, "Data de Fim:").pack(pady=(10,2), padx=20)
+        entry_fim = DateEntry(janela, date_format="%Y-%m-%d", width=14, bootstyle=cores.PRIMARY_DARK)
+        entry_fim.pack(padx=20)
+
+        w.criar_botao(janela,
+                      "Guardar",
+                      lambda: self.guardar_ferias(
+                          combo.get().strip(),
+                          entry_inicio.get().strip(),
+                          entry_fim.get().strip(),
+                          janela,
+                      ),
+                      ).pack(pady=15)
+
+    def guardar_ferias(self, id_funcionario, inicio_data, fim_data, janela):
+        if not id_funcionario:
+            messagebox.showwarning(
+                "Campos em falta", 
+                "Selecione o funcionário.",
+                parent=janela,)
+            return
+
+        id_funcionario = self.funcionarios_map.get(id_funcionario)
+
+        try: 
+            inicio = datetime.strptime(inicio_data, "%Y-%m-%d").date()
+            fim = datetime.strptime(fim_data, "%Y-%m-%d").date()
+
+
+            # não permitir que a data do fim seja anterior à data de início
+            if fim < inicio:
+                messagebox.showwarning(
+                    "A data de fim não pode ser anterior à data de início.",
+                    parent=janela,)
+                return
+
+            # dias que o funcionário trabalha
+            self.cursor.execute(
+                """
+                SELECT dias_trabalho
+                FROM funcionarios 
+                WHERE id_funcionario = %s
+                """,
+                (id_funcionario,),
+                )
+            
+            linha = self.cursor.fetchone()
+            valor = linha[0] if linha else None
+
+            if not valor:
+                messagebox.showwarning(
+                    "Dias de trabalho em falta",
+                    "Este funcionário não tem dias de trabalho definidos.",
+                    parent=janela,)
+
+                return
+            
+            self.cursor.execute("""
+            SELECT 1 FROM AUSENCIAS
+            WHERE id_funcionario = %s
+                AND data_inicio <= %s
+                AND data_fim >= %s
+            """,
+            (id_funcionario, fim, inicio),)
+
+            if self.cursor.fetchone():
+                messagebox.showwarning(
+                    "Ausência já registada",
+                    "Este funcionário já tem uma ausência neste período.",
+                    parent=janela,)
+
+                return
+
+            self.cursor.execute("""
+                INSERT INTO AUSENCIAS
+                    (id_funcionario, data_inicio, data_fim, tipo, aprovado_por)
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                (id_funcionario, inicio, fim, "FÉRIAS", self.id_admin),)
+            
+            conn.commit()
+            janela.destroy()
+            messagebox.showinfo(
+                "Férias guardadas com sucesso!",
+                parent=self,)
+
+        except ValueError:
+            messagebox.showerror(
+                "Data inválida",
+                "Selecione datas válidas.",
+                parent=janela,)
+
+        except mysql.connector.Error as erro:
+            conn.rollback()
+            print(erro)
+            messagebox.showerror(
+                "Erro",
+                "Não foi possível registar as férias. Tente novamente.",
+                parent=janela,
+            )
 
     def construir_atribuicao_horarios(self):
 
@@ -84,13 +204,14 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         frame_botoes = tk.Frame(self.pagina_atribuir_horarios, background=cores.CARD)
         frame_botoes.pack(pady=10)
 
+        # botão criar férias
+        w.criar_botao(frame_botoes, "Férias", self.adicionar_ferias).pack(side=tk.LEFT, pady=5)
+
         # Botão atribuir
         w.criar_botao(frame_botoes,"Atribuir Horário",self.atribuir_horario).pack(side=tk.LEFT,padx=10)
 
-
         # botão para ir para a página de edição de horários 
         w.criar_botao(frame_botoes, "Editar Horários", self.mostrar_pagina2).pack(side=tk.LEFT,padx=5)
-
 
         # FRAME TABELA
         frame_tabela = tk.Frame(self.pagina_atribuir_horarios, background=cores.CARD)
@@ -167,6 +288,9 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         frame_botoes = tk.Frame(self.pagina_editar_horarios, background=cores.CARD)
         frame_botoes.pack(pady=10)
 
+        # Botão 
+        w.criar_botao(frame_botoes, "Feriados", self.adicionar_feriado). pack(side=tk.LEFT, pady=5)
+
         # Botão criar 
         w.criar_botao(frame_botoes, "Criar", self.pagina_editar_horarios).pack(side=tk.LEFT, padx=5)
             
@@ -225,6 +349,73 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         self.tabela_horarios.configure(yscrollcommand=scroll.set)
         self.tabela_horarios.pack(side="left", fill="both", expand=True)
         scroll.pack(side="right", fill="y")
+
+ 
+    def adicionar_feriado(self):
+        janela = tk.Toplevel(self)
+        janela.title("Adicionar Feriado")
+        janela.transient(self)
+
+        # data
+        w.criar_label(janela, "Data:").pack(pady=(10,2), padx=20)
+        entry_data = DateEntry(
+            janela, date_format="%Y-%m-%d", width=14, bootstyle=cores.PRIMARY_DARK)
+        entry_data.pack(padx=20)
+
+        # descrição
+        w.criar_label(janela, "Descrição:").pack(pady=(10,2), padx=20)
+        entry_descricao = w.criar_entrada(janela, largura=32)
+        entry_descricao.pack(padx=20)
+
+        w.criar_botao(janela, 
+                    "Guardar", 
+                    lambda: self.guardar_feriados(
+                        entry_data.entry.get().strip(),
+                        entry_descricao.get().strip(), 
+                        janela,),).pack(pady=15)
+
+
+    def guardar_feriados(self, data, descricao, janela):
+        if not descricao:
+            messagebox.showwarning(
+                "Campos em falta",
+                "Introduza a descrição do feriado.",
+                parent=janela
+            )
+            return
+        try:
+            data_validada = datetime.strptime(data, "%Y-%m-%d").date()
+
+            self.cursor.execute("""
+                INSERT INTO FERIADOS (data,descricao)
+                VALUES (%s, %s)
+            """, (data_validada, descricao))
+
+            conn.commit()
+
+            janela.destroy()
+
+            messagebox.showinfo(
+                "Sucesso",
+                "Feriado guardado com sucesso!",
+                parent=self,)
+
+        except ValueError:
+            messagebox.showerror(
+                "Data Inválida",
+                "Selecione uma data válida.",
+                parent=janela,)
+                
+        except mysql.connector.Error as erro:
+            conn.rollback()
+            print(erro)
+
+            messagebox.showerror(
+                "Erro",
+                "Não foi possível registar o feriado."
+                "Verifique se já existe um registo para essa data.",
+                parent=janela,)
+   
 
 
     def carregar_funcionarios(self):
