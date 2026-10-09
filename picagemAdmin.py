@@ -22,6 +22,7 @@ import mysql.connector
 import cores
 from ligacao import conn
 from rotulos import rotulo_tipo_picagem
+from ttkbootstrap.widgets import DateEntry
  
 # Tipos de picagem usados pelo relogio_ponto.py
 TIPOS = ["ENTRADA", "SAIDA_ALMOCO", "VOLTA_ALMOCO", "SAIDA"]
@@ -176,8 +177,7 @@ class PaginaPicagensAdmin(tk.Frame):
         combo_func.pack(padx=20)
         
         w.criar_label(janela, "Data (DD/MM/AAAA):").pack(pady=(10, 2), padx=20)
-        entry_data = w.criar_entrada(janela, largura=14)
-        entry_data.insert(0, datetime.now().strftime(FORMATO_DATA))
+        entry_data = DateEntry(janela,dateformat="%d/%m/%Y",width=12, bootstyle=cores.PRIMARY_DARK)
         entry_data.pack(padx=20)
  
         w.criar_label(janela, "Hora (HH:MM):").pack(pady=(10, 2), padx=20)
@@ -203,7 +203,7 @@ class PaginaPicagensAdmin(tk.Frame):
  
             try:
                 data_hora = datetime.strptime(
-                    f"{entry_data.get().strip()} {entry_hora.get().strip()}",
+                    f"{entry_data.entry.get().strip()} {entry_hora.get().strip()}",
                     f"{FORMATO_DATA} {FORMATO_HORA}"
                 )
             except ValueError:
@@ -268,8 +268,7 @@ class PaginaPicagensAdmin(tk.Frame):
         tk.Label(janela, text=f"Funcionário: {picagem['nome']}").pack(pady=(10, 2), padx=20)
  
         w.criar_label(janela, "Data (DD/MM/AAAA):").pack(pady=(10, 2), padx=20)
-        entry_data = w.criar_entrada(janela, largura=14)
-        entry_data.insert(0, picagem["data"].strftime(FORMATO_DATA))
+        entry_data =DateEntry(janela, dateformat="%d/%m/%Y", startdate=picagem["data"],width=12, bootstyle=cores.PRIMARY_DARK)
         entry_data.pack(padx=20)
  
         w.criar_label(janela, "Hora (HH:MM):").pack(pady=(10, 2), padx=20)
@@ -292,7 +291,7 @@ class PaginaPicagensAdmin(tk.Frame):
         def guardar():
             try:
                 nova_data = datetime.strptime(
-                    f"{entry_data.get().strip()} {entry_hora.get().strip()}",
+                    f"{entry_data.entry.get().strip()} {entry_hora.get().strip()}",
                     f"{FORMATO_DATA} {FORMATO_HORA}"
                 )
             except ValueError:
