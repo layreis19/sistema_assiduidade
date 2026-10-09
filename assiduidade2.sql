@@ -21,7 +21,7 @@ USE ASSIDUIDADE2;
 CREATE TABLE HORARIO (
     id_horario INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(50) NOT NULL,
-    tipo ENUM('FIXO', 'TURNO', 'LIVRE', 'FOLGA') NOT NULL,
+    tipo ENUM('FIXO', 'TURNO', 'LIVRE') NOT NULL,
 
     -- relevante para FIXO e TURNO
     entrada TIME NULL,
@@ -33,7 +33,8 @@ CREATE TABLE HORARIO (
     -- relevante para LIVRE
     janela_inicio TIME NULL,
     janela_fim TIME NULL,
-    horas_diarias_exigidas DECIMAL(4,2) NULL
+    horas_diarias_exigidas DECIMAL(4,2) NULL,
+    dias_trabalho SET('SEG','TER','QUA','QUI','SEX','SAB','DOM') NOT NULL DEFAULT 'SEG,TER,QUA,QUI,SEX'
 );
 
 INSERT INTO horario (nome, tipo, entrada, saida, inicio_almoco, fim_almoco, tolerancia) VALUES 
@@ -42,14 +43,12 @@ INSERT INTO horario (nome, tipo, entrada, saida, inicio_almoco, fim_almoco, tole
 ('TURNO TARDE', 'TURNO', '14:00:00', '23:00:00', '18:00:00', '19:00:00', 5),
 ('TURNO NOITE', 'TURNO', '22:00:00', '07:00:00', '02:00:00', '03:00:00', 5);
 
-INSERT INTO horario (nome, tipo, janela_inicio, janela_fim, horas_diarias_exigidas) VALUES
-('LIVRE PADRÃO', 'LIVRE', '09:00:00', '20:00:00', 8.0);
+INSERT INTO horario (nome, tipo, tolerancia, janela_inicio, janela_fim, horas_diarias_exigidas) VALUES
+('LIVRE PADRÃO', 'LIVRE', 5, '09:00:00', '20:00:00', 8.0);
 
 INSERT INTO horario (nome, tipo, entrada, saida, tolerancia) VALUES
 ('MEIO DIA TARDE', 'TURNO', '13:30:00', '17:30:00', 5),
 ('MEIO DIA MANHÃ', 'TURNO', '08:30:00', '12:30:00', 5);
-
-INSERT INTO horario (nome, tipo) VALUES ('FOLGA', 'FOLGA');
 
 -- ============================================================
 -- FUNCIONARIOS
