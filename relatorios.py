@@ -80,6 +80,8 @@ class PaginaRelatorios(tk.Frame):
         # Botão relatório
         w.criar_botao(frame_botoes, "Gerar Relatório", self.gerar_relatorio_txt).pack(side=tk.LEFT, padx=5)
 
+        #Botão processar dados
+        w.criar_botao(frame_botoes, "Processar Assiduidade", self.processar_assiduidade).pack(side=tk.LEFT, padx=5)
 
 
         # FRAME TABELA 
@@ -149,7 +151,72 @@ class PaginaRelatorios(tk.Frame):
         self.lista_funcionarios.selection_clear(0, tk.END)
         self.filtrar_relatorio()        
             
-        
+    
+    def processar_assiduidade(self):
+        """Executa o processamento e atualiza o relatório."""
+
+        try:
+            data_inicio = datetime.strptime(self.calendario_inicio.entry.get().strip(),"%d/%m/%Y").date()
+
+            data_fim = datetime.strptime(
+                self.calendario_fim.entry.get().strip(),
+                "%d/%m/%Y"
+            ).date()
+
+            if data_inicio > data_fim:
+                messagebox.showerror(
+                    "Erro",
+                    "A data inicial não pode ser posterior à data final."
+                )
+                return
+
+            confirmar = messagebox.askyesno(
+                "Confirmar processamento",
+                f"Processar a assiduidade de {data_inicio:%d/%m/%Y} "
+                f"a {data_fim:%d/%m/%Y}?"
+            )
+
+            if not confirmar:
+                return
+
+            resultado = processar_dados_funcionario(
+                data_inicio,
+                data_fim
+            )
+
+            self.filtrar_relatorio(avisar=False)
+
+            mensagem = (
+                "Processamento concluído.\n\n"
+                f"Funcionários: {resultado['funcionarios']}\n"
+                f"Dias analisados: {resultado['dias_analisados']}\n"
+                f"Resultados gravados: {resultado['resultados_gravados']}\n"
+                f"Faltas identificadas: {resultado['faltas']}\n"
+                f"Ausências: {resultado['ausencias']}\n"
+                f"Feriados: {resultado['feriados']}\n"
+                f"Dias sem horário: {resultado['dias_sem_horario']}\n"
+                f"Dias sem trabalho previsto: {resultado['dias_sem_trabalho']}"
+            )
+
+            if resultado["erros"]:
+                mensagem += (
+                    f"\n\nOcorreram {len(resultado['erros'])} erros."
+                    "\nPrimeiro erro:\n"
+                    + resultado["erros"][0]
+                )
+                messagebox.showwarning("Processamento com erros", mensagem)
+            else:
+                messagebox.showinfo("Sucesso", mensagem)
+
+        except ValueError as erro:
+            messagebox.showerror("Erro", str(erro))
+
+        except Exception as erro:
+            messagebox.showerror(
+                "Erro de processamento",
+                f"Não foi possível concluir o processamento:\n{erro}"
+            )
+ 
     def filtrar_relatorio(self, avisar=True):
         
         data_inicio = self.calendario_inicio.entry.get().strip()
@@ -167,7 +234,6 @@ class PaginaRelatorios(tk.Frame):
             messagebox.showerror("Erro", "A data de início não pode ser depois da data de fim!")
             return
 
-        processar_dados_funcionario(data_inicio, data_fim)
         # Procurar na base de dados
         sql = """
             SELECT r.id_funcionario, f.nome, r.data,

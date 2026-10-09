@@ -280,7 +280,7 @@ def carregar_horario(cursor, id_horario):
     cursor.execute(
         """
         SELECT tipo, entrada, saida, inicio_almoco, fim_almoco,
-               tolerancia, janela_inicio, janela_fim, horas_diarias_exigidas
+               tolerancia, janela_inicio, janela_fim, horas_diarias_exigidas, dias_trabalho
         FROM horario
         WHERE id_horario = %s
         """,
@@ -293,7 +293,7 @@ def carregar_horario(cursor, id_horario):
         return None
 
     (tipo, entrada_h, saida_h, inicio_almoco_h, fim_almoco_h,
-     tolerancia, janela_inicio_h, janela_fim_h, horas_diarias_exigidas) = linha
+     tolerancia, janela_inicio_h, janela_fim_h, horas_diarias_exigidas, dias_trabalho) = linha
 
     # Colunas TIME vêm da BD como timedelta — converter antes de usar.
     return {
@@ -306,6 +306,7 @@ def carregar_horario(cursor, id_horario):
         "janela_inicio": _para_time(janela_inicio_h),
         "janela_fim": _para_time(janela_fim_h),
         "horas_diarias_exigidas": horas_diarias_exigidas,
+        "dias_trabalho": dias_trabalho,
     }
 
 
@@ -354,37 +355,56 @@ def calcular_picagens(cursor, id_funcionario, data_turno, horario):
 
 
 def guardar_resultado(cursor, conn, id_funcionario, data_turno, resumo):
-    """
-    Grava (ou atualiza) em RESULTADOS o `resumo` devolvido por
-    calcular_picagens. Usa ON DUPLICATE KEY UPDATE, apoiado na UNIQUE
-    (id_funcionario, data): gravar várias vezes o mesmo dia só atualiza a
-    mesma linha, sem criar duplicados. Faz commit próprio.
+    """Insere ou atualiza o resultado diário de assiduidade."""
 
-    Convenção da tabela: só deve haver linha nos dias em que se esperava
-    trabalho (ficar sem linha = "não se esperava trabalho"; linha com 0
-    minutos trabalhados = falta real). Quem chama é que decide não gravar
-    os outros dias. Um dia incompleto (período sem SAIDA) fica gravado com
-    0 minutos, igual a uma falta.
-    """
+    atraso_minutos = (
+        (resumo["atraso_entrada_min"] or 0)
+        + (resumo["atraso_volta_almoco_min"] or 0)
+    )
 
-    atraso_minutos = (resumo["atraso_entrada_min"] or 0) + (resumo["atraso_volta_almoco_min"] or 0)
     horas_extra_minutos = resumo["horas_extra_min"] or 0
 
     horas_trabalhadas = resumo["horas_trabalhadas"]
-    total_minutos_trabalhados = round(horas_trabalhadas * 60) if horas_trabalhadas is not None else 0
+    total_minutos_trabalhados = (
+        round(horas_trabalhadas * 60)
+        if horas_trabalhadas is not None
+        else 0
+    )
+
+    # Distinguir uma falta de um dia com picagens incompletas.
+    if resumo["falta"]:
+        tipo = "FALTA"
+    elif resumo["periodos"] and horas_trabalhadas is None:
+        tipo = "INCOMPLETO"
+    else:
+        tipo = "NORMAL"
 
     cursor.execute(
         """
-        INSERT INTO resultados
-            (id_funcionario, data, atraso_minutos, horas_extra_minutos, total_minutos_trabalhados)
-        VALUES (%s, %s, %s, %s, %s)
+        INSERT INTO RESULTADOS (
+            id_funcionario,
+            data,
+            atraso_minutos,
+            horas_extra_minutos,
+            total_minutos_trabalhados,
+            tipo
+        )
+        VALUES (%s, %s, %s, %s, %s, %s)
         ON DUPLICATE KEY UPDATE
             atraso_minutos = VALUES(atraso_minutos),
             horas_extra_minutos = VALUES(horas_extra_minutos),
             total_minutos_trabalhados = VALUES(total_minutos_trabalhados),
+            tipo = VALUES(tipo),
             calculado_em = CURRENT_TIMESTAMP
         """,
-        (id_funcionario, data_turno, atraso_minutos, horas_extra_minutos, total_minutos_trabalhados)
+        (
+            id_funcionario,
+            data_turno,
+            atraso_minutos,
+            horas_extra_minutos,
+            total_minutos_trabalhados,
+            tipo,
+        ),
     )
 
     conn.commit()
