@@ -21,6 +21,7 @@ class PaginaAdministrador(tk.Frame):
         self.mostrar_botoes_admin= mostrar_botoes_admin
         self.cursor = conn.cursor(buffered=True)
 
+        self.id_admin = None
 
        #mostrar a tela login
         self.tela_login()
@@ -54,6 +55,8 @@ class PaginaAdministrador(tk.Frame):
         
         if self.frame_login is not None and self.frame_login.winfo_exists():
             self.frame_login.destroy()
+        
+        self.id_admin = None
         self.tela_login()
 
         #função autenticar
@@ -77,7 +80,7 @@ class PaginaAdministrador(tk.Frame):
             # consulta, porque só candidatos a admin são considerados.
             self.cursor.execute(
                 """
-                SELECT nome, senha, estado
+                SELECT id_funcionario, nome, senha, estado
                 FROM funcionarios
                 WHERE LOWER(nome) = LOWER(%s)
                   AND tipo = 'ADMIN'
@@ -90,7 +93,7 @@ class PaginaAdministrador(tk.Frame):
                 messagebox.showerror("Erro", "Funcionario não encontrado!")
                 return
 
-            nome_real, senha, estado = resultado
+            id_admin, nome_real, senha, estado = resultado
 
             # Comparar sempre com o valor real do ENUM ("ATIVO"/"INATIVO"),
             # nunca com "Inativo" — a comparação anterior nunca disparava
@@ -100,11 +103,15 @@ class PaginaAdministrador(tk.Frame):
                 return
 
             if bcrypt.checkpw(senha_digitada.encode('utf-8'), senha.encode('utf-8')):
+               
+                # guarda o id do administrador autenticado
+                self.id_admin = id_admin
                 messagebox.showinfo("Sucesso", f"Bem-Vindo, {nome_real}!")
 
                 self.frame_login.destroy()
-                
-                self.mostrar_botoes_admin()
+
+                # envia o id para o main
+                self.mostrar_botoes_admin(self.id_admin)
                 
               
             else:
