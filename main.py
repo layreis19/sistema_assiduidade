@@ -38,7 +38,8 @@ pagina_ponto = PaginaPonto(conteudo)
 pagina_funcionarios = PaginaFuncionarios(conteudo)
 pagina_presencas = PaginaPresencas(conteudo)
 pagina_relatorios = PaginaRelatorios(conteudo)
-pagina_atribuicao_horarios = PaginaAtribuicaoHorarios(conteudo)
+pagina_atribuicao_horarios = PaginaAtribuicaoHorarios(
+    conteudo, lambda: getattr(pagina_administrador, "id_admin", None))
 pagina_picagens_admin = PaginaPicagensAdmin(
     conteudo,
     lambda: getattr(pagina_administrador, "id_admin_logado", None)
@@ -75,7 +76,7 @@ def mostrar_pagina(pagina):
         pagina_picagens_admin.carregar_funcionarios()
         pagina_picagens_admin.atualizar_tabela()
 
-def mostrar_botoes_admin():
+def mostrar_botoes_admin(id_admin=None):
     # chamada quando o login corre bem
     btn_administrador.pack_forget()
 
