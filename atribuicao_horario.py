@@ -85,15 +85,14 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             "Guardar",
             lambda: self.guardar_ferias(
                 combo.get().strip(),
-                entry_inicio.get().strip(),
-                entry_fim.get().strip(),
+                entry_inicio.entry.get().strip(),
+                entry_fim.entry.get().strip(),
                 janela
             )
         ).pack(pady=15)
 
     def guardar_ferias(
-        self, funcionario_sel, inicio_data, fim_data, janela
-    ):
+        self, funcionario_sel, inicio_data, fim_data, janela):
         if not funcionario_sel:
             messagebox.showwarning(
                 "Campos em falta",
@@ -122,9 +121,11 @@ class PaginaAtribuicaoHorarios(tk.Frame):
 
             self.cursor.execute(
                 """
-                SELECT dias_trabalho
-                FROM funcionarios
-                WHERE id_funcionario = %s
+                SELECT h.dias_trabalho
+                FROM funcionarios AS f
+                INNER JOIN horario AS h 
+                    ON f.horario = h.id_horario
+                WHERE f.id_funcionario = %s
                 """,
                 (id_funcionario,)
             )
@@ -158,7 +159,16 @@ class PaginaAtribuicaoHorarios(tk.Frame):
                     parent=janela
                 )
                 return
-
+            
+            id_admin = self.id_admin() if callable(self.id_admin) else self.id_admin
+            if self.id_admin is None:
+                messagebox.showerror(
+                    "Erro",
+                    "Não foi possível identificar o administrador autenticado.",
+                    parent=janela
+                )
+                return
+            
             self.cursor.execute(
                 """
                 INSERT INTO AUSENCIAS
@@ -170,8 +180,8 @@ class PaginaAtribuicaoHorarios(tk.Frame):
                     id_funcionario,
                     inicio,
                     fim,
-                    "FÉRIAS",
-                    self.id_admin
+                    "FERIAS",
+                    id_admin
                 )
             )
 
@@ -198,6 +208,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             messagebox.showerror(
                 "Erro",
                 "Não foi possível registar as férias. Tente novamente.",
+                str(erro),
                 parent=janela
             )
 
