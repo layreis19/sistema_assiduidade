@@ -24,7 +24,7 @@ class PaginaFuncionarios(tk.Frame):
         # buffered=True para evitar problemas de cursor fechado
         # varias consultas podem ser feitas com o mesmo cursor
         self.cursor = conn.cursor(buffered=True)
- 
+        w.criar_estilo_tabela()
         w.criar_titulo(
             self,
             "GESTÃO DE FUNCIONÁRIOS").pack(pady=15)
@@ -62,37 +62,14 @@ class PaginaFuncionarios(tk.Frame):
         # Botão ativar/desativar funcionário
         w.criar_botao(frame_botoes,"Ativar/Desativar",self.ativar_desativar_funcionario).pack(side=tk.LEFT, padx=10, pady=10)
  
-        # Estilo da tabela: cores definidas de forma explícita, para o texto
-       
-        estilo = ttk.Style()
-        estilo.theme_use("clam")
-        estilo.configure(
-            "Func.Treeview",
-            background=cores.CARD,
-            foreground=cores.TEXT,
-            fieldbackground=cores.CARD,
-            rowheight=28,
-            font=("Arial", 11)
-        )
-        estilo.configure(
-            "Func.Treeview.Heading",
-            font=("Arial", 11, "bold"),
-            background=cores.BLUE_VERY_LIGHT,
-            foreground=cores.TEXT
-        )
-        estilo.map(
-            "Func.Treeview",
-            background=[("selected", cores.PRIMARY)],
-            foreground=[("selected", cores.CARD)]
-        )
- 
+
         # Tabela para exibir os funcionários
         self.tabela = ttk.Treeview(
             self,
             columns=("id_funcionario", "nome", "tipo", "estado", "data_adesao"),
             show="headings",
             selectmode="browse",
-            style="Func.Treeview"
+            style="Estilo_tabela"
         )
         self.tabela.heading("id_funcionario", text="ID")
         self.tabela.heading("nome", text="Funcionário")

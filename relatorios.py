@@ -39,7 +39,7 @@ class PaginaRelatorios(tk.Frame):
         #lista de funcionarios
         self.lista_funcionarios = tk.Listbox(
             frame_formulario,
-            selectmode=tk.SINGLE,
+            selectmode=tk.EXTENDED,
             height=4,
             width=25,
             exportselection=False
