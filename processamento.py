@@ -1,3 +1,25 @@
+# Pra que serve esse ficheiro?
+# Percorre os funcionários e os dias de um intervalo e decide o que fica
+# registado em RESULTADOS para cada dia: folga semanal (nada), ausência,
+# feriado, sem horário, ou dia de trabalho (calculado por
+# calculo_assiduidade.py, que compara as picagens com o horário).
+#
+# Regras importantes:
+# - Só se processam dias que já terminaram (até ontem). Hoje ainda está a
+#   decorrer: quem ainda não chegou ficaria registado como falta.
+# - Antes de processar cada funcionário apagam-se os resultados antigos do
+#   período e voltam a gerar-se. Assim, se o horário, as ausências ou as
+#   picagens mudaram desde a última vez, nunca sobram linhas de regras
+#   antigas.
+# - Os dias em que a pessoa não trabalha (fora de HORARIO.dias_trabalho) não
+#   geram linha nenhuma, mesmo que caiam dentro de umas férias ou num
+#   feriado: férias e feriados contam-se em dias de trabalho.
+# - Só contam ausências com estado CONFIRMADO.
+# - No dia de adesão só entra se a pessoa picou (a data_adesao tem hora: quem
+#   é criado à tarde não deve ter falta nessa manhã).
+#
+# Usa um único cursor com tuplos (é o que o calculo_assiduidade espera:
+# com dictionary=True o desempacotamento das picagens parte-se sem avisar).
 
 from datetime import date, datetime, timedelta
 
@@ -20,6 +42,24 @@ DIAS_SEMANA = {
 }
 
 
+def _para_date(valor):
+    return valor.date() if isinstance(valor, datetime) else valor
+
+
+def _normalizar_dias_trabalho(dias):
+    """
+    O driver devolve a coluna SET como set (ou como texto "SEG,TER").
+    Devolve sempre um set de strings em maiúsculas.
+    """
+    if not dias:
+        return set()
+
+    if isinstance(dias, str):
+        dias = dias.split(",")
+
+    return {str(d).strip().upper() for d in dias if str(d).strip()}
+
+
 def _guardar_estado(cursor, id_funcionario, dia, tipo):
     """Guarda um estado diário sem manter valores de cálculos antigos."""
     cursor.execute(
@@ -40,19 +80,53 @@ def _guardar_estado(cursor, id_funcionario, dia, tipo):
     )
 
 
+def _processar_dia(cursor, id_funcionario, dia, e_dia_de_adesao,
+                   horario, dias_trabalho, ausencias, feriados):
+    """
+    Decide o que acontece neste dia e grava o resultado.
+    Devolve (contador_do_resumo, gravou_linha).
+    """
+
+    # 1. Folga semanal: a pessoa não trabalha neste dia da semana.
+    #    (Só se sabe quando há horário; sem horário, não há folgas definidas.)
+    if horario is not None and DIAS_SEMANA[dia.weekday()] not in dias_trabalho:
+        return "dias_sem_trabalho", False
+
+    # 2. Ausências confirmadas.
+    for inicio, fim, tipo in ausencias:
+        if inicio <= dia <= fim:
+            _guardar_estado(cursor, id_funcionario, dia, tipo)
+            return "ausencias", True
+
+    # 3. Feriados.
+    if dia in feriados:
+        _guardar_estado(cursor, id_funcionario, dia, "FERIADO")
+        return "feriados", True
+
+    # 4. Sem horário atribuído.
+    if horario is None:
+        _guardar_estado(cursor, id_funcionario, dia, "SEM_HORÁRIO")
+        return "dias_sem_horario", True
+
+    # 5. Dia de trabalho: comparar as picagens com o horário.
+    resultado = calcular_picagens(cursor, id_funcionario, dia, horario)
+
+    if resultado["falta"] and e_dia_de_adesao:
+        return None, False
+
+    guardar_resultado(cursor, conn, id_funcionario, dia, resultado)
+
+    return ("faltas" if resultado["falta"] else None), True
+
+
 def processar_dados_funcionario(data_inicio, data_fim):
     """
-    Processa a assiduidade no intervalo indicado.
-
-    O processamento decide quais os dias aplicáveis.
-    O módulo calculo_assiduidade calcula e grava os dias de trabalho.
-    Devolve um resumo para apresentar na interface.
+    Processa a assiduidade no intervalo indicado e devolve um resumo para
+    apresentar na interface. Só processa dias até ontem.
     """
 
-    if isinstance(data_inicio, datetime):
-        data_inicio = data_inicio.date()
-    if isinstance(data_fim, datetime):
-        data_fim = data_fim.date()
+    data_inicio = _para_date(data_inicio)
+    data_fim = _para_date(data_fim)
 
     if not isinstance(data_inicio, date) or not isinstance(data_fim, date):
         raise ValueError("As datas devem ser objetos date ou datetime.")
@@ -60,7 +134,13 @@ def processar_dados_funcionario(data_inicio, data_fim):
     if data_inicio > data_fim:
         raise ValueError("A data inicial não pode ser posterior à final.")
 
-    hoje = date.today()
+    # Hoje ainda não terminou: não se pode dizer que alguém faltou.
+    ultimo_dia = min(data_fim, date.today() - timedelta(days=1))
+
+    if data_inicio > ultimo_dia:
+        raise ValueError(
+            "Só é possível processar dias que já terminaram (até ontem)."
+        )
 
     resumo = {
         "funcionarios": 0,
@@ -74,146 +154,91 @@ def processar_dados_funcionario(data_inicio, data_fim):
         "erros": [],
     }
 
-    cursor = conn.cursor(dictionary=True, buffered=True)
-    cursor_calculo = conn.cursor(buffered=True)
+    cursor = conn.cursor(buffered=True)
 
     try:
         cursor.execute(
             """
-            SELECT id_funcionario, data_adesao, estado, horario
+            SELECT id_funcionario, data_adesao, horario
             FROM FUNCIONARIOS
             WHERE estado = 'ATIVO'
+            ORDER BY id_funcionario
             """
         )
         funcionarios = cursor.fetchall()
 
+        cursor.execute(
+            "SELECT data FROM FERIADOS WHERE data BETWEEN %s AND %s",
+            (data_inicio, ultimo_dia),
+        )
+        feriados = {linha[0] for linha in cursor.fetchall()}
+
         # Cache: cada horário só precisa de ser lido uma vez.
         horarios = {}
 
-        for funcionario in funcionarios:
-            id_funcionario = funcionario["id_funcionario"]
-            adesao = funcionario["data_adesao"]
-            data_adesao = (
-                adesao.date() if isinstance(adesao, datetime) else adesao
+        for id_funcionario, adesao, id_horario in funcionarios:
+            resumo["funcionarios"] += 1
+            data_adesao = _para_date(adesao)
+
+            horario = None
+            if id_horario is not None:
+                if id_horario not in horarios:
+                    horarios[id_horario] = carregar_horario(cursor, id_horario)
+                horario = horarios[id_horario]
+
+            # Horário mal configurado: um único erro, em vez de um por dia.
+            if (horario is not None
+                    and horario["tipo"] in ("FIXO", "TURNO")
+                    and horario["entrada"] is None):
+                resumo["erros"].append(
+                    f"Funcionário {id_funcionario}: o horário atribuído não "
+                    "tem hora de entrada (verifique a tabela HORARIO)."
+                )
+                continue
+
+            dias_trabalho = (
+                _normalizar_dias_trabalho(horario["dias_trabalho"])
+                if horario is not None else set()
             )
 
-            resumo["funcionarios"] += 1
+            # Apagar os resultados antigos do período e gerá-los de novo.
+            cursor.execute(
+                """
+                DELETE FROM RESULTADOS
+                WHERE id_funcionario = %s AND data BETWEEN %s AND %s
+                """,
+                (id_funcionario, data_inicio, ultimo_dia),
+            )
+            conn.commit()
 
-            dia = data_inicio
+            cursor.execute(
+                """
+                SELECT data_inicio, data_fim, tipo
+                FROM AUSENCIAS
+                WHERE id_funcionario = %s
+                  AND estado = 'CONFIRMADO'
+                  AND data_inicio <= %s
+                  AND data_fim >= %s
+                ORDER BY data_inicio
+                """,
+                (id_funcionario, ultimo_dia, data_inicio),
+            )
+            ausencias = cursor.fetchall()
 
-            while dia <= data_fim:
-                # Não processar dias futuros.
-                if dia > hoje:
-                    dia += timedelta(days=1)
-                    continue
+            # Antes da adesão a pessoa ainda não fazia parte do sistema.
+            dia = max(data_inicio, data_adesao)
 
-                # O funcionário ainda não fazia parte do sistema.
-                if dia < data_adesao:
-                    dia += timedelta(days=1)
-                    continue
-
+            while dia <= ultimo_dia:
                 resumo["dias_analisados"] += 1
 
                 try:
-                    # 1. Ausências registadas.
-                    cursor.execute(
-                        """
-                        SELECT tipo
-                        FROM AUSENCIAS
-                        WHERE id_funcionario = %s
-                          AND data_inicio <= %s
-                          AND data_fim >= %s
-                        LIMIT 1
-                        """,
-                        (id_funcionario, dia, dia),
+                    contador, gravou = _processar_dia(
+                        cursor, id_funcionario, dia, dia == data_adesao,
+                        horario, dias_trabalho, ausencias, feriados,
                     )
-                    ausencia = cursor.fetchone()
-
-                    if ausencia:
-                        _guardar_estado(
-                            cursor, id_funcionario, dia, ausencia["tipo"]
-                        )
-                        resumo["ausencias"] += 1
-                        resumo["resultados_gravados"] += 1
-                        dia += timedelta(days=1)
-                        continue
-
-                    # 2. Feriados.
-                    cursor.execute(
-                        "SELECT data FROM FERIADOS WHERE data = %s",
-                        (dia,),
-                    )
-                    if cursor.fetchone():
-                        _guardar_estado(
-                            cursor, id_funcionario, dia, "FERIADO"
-                        )
-                        resumo["feriados"] += 1
-                        resumo["resultados_gravados"] += 1
-                        dia += timedelta(days=1)
-                        continue
-
-                    # 3. Horário atribuído.
-                    id_horario = funcionario["horario"]
-
-                    if id_horario is None:
-                        _guardar_estado(
-                            cursor, id_funcionario, dia, "SEM_HORÁRIO"
-                        )
-                        resumo["dias_sem_horario"] += 1
-                        resumo["resultados_gravados"] += 1
-                        dia += timedelta(days=1)
-                        continue
-
-                    if id_horario not in horarios:
-                        horarios[id_horario] = carregar_horario(
-                            cursor_calculo, id_horario
-                        )
-
-                    horario = horarios[id_horario]
-
-                    if horario is None:
-                        _guardar_estado(
-                            cursor, id_funcionario, dia, "SEM_HORÁRIO"
-                        )
-                        resumo["dias_sem_horario"] += 1
-                        resumo["resultados_gravados"] += 1
-                        dia += timedelta(days=1)
-                        continue
-
-                    # 4. Verificar se era dia de trabalho.
-                    dias_trabalho = horario.get("dias_trabalho") or set()
-                    if isinstance(dias_trabalho, str):
-                        dias_trabalho = {d.strip().upper() for d in dias_trabalho.split(",") if d.strip()}
-                    else:
-                        dias_trabalho = {str(d).strip().upper() for d in dias_trabalho if str(d).strip()}
-
-                    dia_semana = DIAS_SEMANA[dia.weekday()]
-
-                    if dia_semana not in dias_trabalho:
-                        resumo["dias_sem_trabalho"] += 1
-                        dia += timedelta(days=1)
-                        continue
-
-                    # 5. Calcular e guardar as picagens.
-                    resultado = calcular_picagens(
-                        cursor_calculo,
-                        id_funcionario,
-                        dia,
-                        horario,
-                    )
-
-                    guardar_resultado(
-                        cursor_calculo,
-                        conn,
-                        id_funcionario,
-                        dia,
-                        resultado,
-                    )
-
-                    resumo["resultados_gravados"] += 1
-
-                    if resultado["falta"]:
-                        resumo["faltas"] += 1
+                    # Um commit por dia: se um dia falhar, o rollback só
+                    # desfaz esse dia e nunca os anteriores.
+                    conn.commit()
 
                 except Exception as erro:
                     conn.rollback()
@@ -222,9 +247,14 @@ def processar_dados_funcionario(data_inicio, data_fim):
                         f"{dia.strftime('%d/%m/%Y')}: {erro}"
                     )
 
+                else:
+                    if contador:
+                        resumo[contador] += 1
+                    if gravou:
+                        resumo["resultados_gravados"] += 1
+
                 dia += timedelta(days=1)
 
-        conn.commit()
         return resumo
 
     except Exception:
@@ -233,4 +263,3 @@ def processar_dados_funcionario(data_inicio, data_fim):
 
     finally:
         cursor.close()
-        cursor_calculo.close()

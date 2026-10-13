@@ -120,17 +120,30 @@ def _ler_periodos(cursor, id_funcionario, janela_inicio, janela_fim):
     return [tuple(p) for p in periodos]
 
 
-def _horas_dos_periodos(periodos):
+def _horas_dos_periodos(periodos, limite_inicio=None, limite_fim=None):
     """
     Soma das horas de todos os períodos (as pausas ficam de fora, porque
     são o intervalo entre períodos). Devolve None se não houver períodos
     ou se algum não tiver SAIDA: dia incompleto, não dá para calcular.
+
+    limite_inicio / limite_fim (opcionais): só contam as horas dentro deste
+    intervalo; o tempo fora dele é cortado. Usado pelo horário LIVRE, cuja
+    janela delimita as horas válidas.
     """
 
     if not periodos or any(saida is None for _, saida in periodos):
         return None
 
-    total_segundos = sum((saida - entrada).total_seconds() for entrada, saida in periodos)
+    total_segundos = 0
+
+    for entrada, saida in periodos:
+        if limite_inicio is not None:
+            entrada = max(entrada, limite_inicio)
+        if limite_fim is not None:
+            saida = min(saida, limite_fim)
+
+        if saida > entrada:  # período inteiro fora da janela conta 0
+            total_segundos += (saida - entrada).total_seconds()
 
     return round(total_segundos / 3600, 2)
 
@@ -231,11 +244,16 @@ def _calcular_fixo_ou_turno(cursor, id_funcionario, data_turno, resultado,
 def _calcular_livre(cursor, id_funcionario, data_turno, resultado,
                      janela_inicio_h, janela_fim_h, horas_diarias_exigidas):
     """
-    Cálculo para LIVRE: sem hora de entrada fixa, por isso não há "atraso"
-    a medir (só interessa se cumpriu as horas exigidas). As horas são a
-    soma dos períodos ENTRADA/SAIDA do dia (as pausas ficam de fora), dentro
-    do mesmo dia civil — horário livre não atravessa a meia-noite, ao
-    contrário de TURNO.
+    Cálculo para LIVRE: o funcionário pode entrar e sair a qualquer hora
+    dentro da janela do horário (ex: 09:00-20:00), desde que cumpra as
+    horas exigidas. Por isso:
+    - não há hora de entrada fixa, logo não há "atraso" a medir;
+    - só contam as horas dentro da janela (quem entra às 08:00 conta a
+      partir das 09:00; quem sai às 21:00 conta até às 20:00);
+    - as horas são a soma dos períodos ENTRADA/SAIDA do dia (as pausas
+      ficam de fora), dentro do mesmo dia civil — horário livre não
+      atravessa a meia-noite, ao contrário de TURNO.
+    Se o horário não tiver janela definida, não há corte desse lado.
     """
 
     inicio_dia = datetime.combine(data_turno, time.min)
@@ -253,7 +271,10 @@ def _calcular_livre(cursor, id_funcionario, data_turno, resultado,
     # (não é 0, porque 0 significaria "avaliado e sem atraso"; None
     # significa "este conceito não se aplica a este tipo de horário").
 
-    resultado["horas_trabalhadas"] = _horas_dos_periodos(periodos)
+    limite_inicio = datetime.combine(data_turno, janela_inicio_h) if janela_inicio_h else None
+    limite_fim = datetime.combine(data_turno, janela_fim_h) if janela_fim_h else None
+
+    resultado["horas_trabalhadas"] = _horas_dos_periodos(periodos, limite_inicio, limite_fim)
 
     if resultado["horas_trabalhadas"] is not None and horas_diarias_exigidas is not None:
         excesso_min = round(resultado["horas_trabalhadas"] * 60 - float(horas_diarias_exigidas) * 60)
