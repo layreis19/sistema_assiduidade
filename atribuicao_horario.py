@@ -406,7 +406,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
 
         w.criar_botao(frame_botoes, 
                       "Cancelar",
-                      None).pack(side=tk.LEFT, padx=5)
+                      self.cancelar_ferias).pack(side=tk.LEFT, padx=5)
 
         w.criar_botao(self.pagina_ferias,
                       "Voltar",
@@ -417,7 +417,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
 
         self.tabela_ferias= ttk.Treeview(
             frame_tabela,
-            columns=("id_aus", "id_func" "nome", "inicio_ferias", "fim_ferias", "estado"),
+            columns=("id_aus", "id_func", "nome", "inicio_ferias", "fim_ferias", "estado"),
             show="headings",
             selectmode="browse",
             style="Estilo_tabela"
@@ -433,7 +433,8 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         }
 
         larguras = {
-            "id": 60,
+            "id_aus": 60,
+            "id_func": 60,
             "nome": 150,
             "entrada": 100,
             "inicio_ferias": 120,
@@ -472,10 +473,12 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         try:
             self.cursor.execute("""
             SELECT
+                a.id,
                 f.id_funcionario,
                 f.nome,
                 a.data_inicio,
-                a.data_fim
+                a.data_fim,
+                a.estado
             FROM AUSENCIAS AS a
             INNER JOIN funcionarios AS f
                 ON a.id_funcionario = f.id_funcionario
@@ -486,15 +489,17 @@ class PaginaAtribuicaoHorarios(tk.Frame):
 
             ferias = self.cursor.fetchall()
 
-            for id_funcionario, nome, inicio, fim in ferias:
+            for id, id_funcionario, nome, inicio, fim, estado in ferias:
                 self.tabela_ferias.insert(
                     "",
                     tk.END,
                     values=(
+                        id,
                         id_funcionario,
                         nome, 
                         inicio.strftime("%d-%m-%Y"), 
-                        fim.strftime("%d-%m-%Y")
+                        fim.strftime("%d-%m-%Y"),
+                        estado
                     )
                 )
         except mysql.connector.Error as erro:
@@ -515,12 +520,17 @@ class PaginaAtribuicaoHorarios(tk.Frame):
                 "Selecione um funcionário para alterar!"
             )
             return
-
+        
+                
         # obter os dados da linha selecionada
         valores = self.tabela_ferias.item(item_selecionado[0], "values")
 
-        inicio = datetime.strptime(valores[2], "%d-%m-%Y").date()
-        fim = datetime.strptime(valores[3], "%d-%m-%Y").date()
+        if valores[-1] == "CANCELADO":
+            messagebox.showwarning("AVISO!", "Não pode alterar férias canceladas!", parent = self)
+            return
+        
+        inicio = datetime.strptime(valores[3], "%d-%m-%Y").date()
+        fim = datetime.strptime(valores[4], "%d-%m-%Y").date()
         
         self.janela_alterar = tk.Toplevel(self)
         self.janela_alterar.title("Alterar Férias")
@@ -559,9 +569,10 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         if not item_selecionado:
             return
 
+       
         valores = self.tabela_ferias.item(item_selecionado[0], "values")
 
-        id_funcionario = valores[0]
+        id_ausencia = valores[0]
 
         inicio = self.entry_inicio_alterar.entry.get().strip()
         fim = self.entry_fim_alterar.entry.get().strip()
@@ -583,16 +594,11 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             SET 
                 data_inicio = %s,
                 data_fim = %s
-            WHERE id_funcionario = %s
-                AND tipo = "FERIAS"
-                AND data_inicio = %s
-                AND data_fim = %s
+            WHERE id = %s
             """, (
                 data_inicio,
                 data_fim,
-                id_funcionario,
-                datetime.strptime(valores[2], "%d-%m-%Y").date(),
-                datetime.strptime(valores[3], "%d-%m-%Y").date()
+                id_ausencia
             ))
 
             conn.commit()
@@ -754,16 +760,53 @@ class PaginaAtribuicaoHorarios(tk.Frame):
                 f"Não foi possível registar as férias. Tente novamente.\n{erro}",
                 parent=janela
             )
+
     def cancelar_ferias(self):
-        item_selecionado = self.tabela_ferias.selection()
-        if not item_selecionado:
-            messagebox.showerror(
-                "Erro",
-                "Selecione um funcionário para cancelar as férias!"
-            )
-            return
-        
-        
+            item_selecionado = self.tabela_ferias.selection()
+            if not item_selecionado:
+                messagebox.showerror(
+                    "Erro",
+                    "Selecione um funcionário para cancelar as férias!"
+                )
+                return
+
+            valores = self.tabela_ferias.item(item_selecionado[0], "values")
+
+            if valores[-1]=="CANCELADO":
+                messagebox.showwarning("AVISO!", "Férias já canceladas!!", parent=self)
+                return
+
+            
+            id_ausencia = valores[0]
+
+            try:
+                self.cursor.execute(
+                    '''UPDATE ausencias
+                    SET estado = 'CANCELADO'
+                    WHERE id = %s''',
+                    (id_ausencia,)
+                )
+                conn.commit()
+            
+            
+                self.carregar_ferias()
+                
+                messagebox.showinfo(
+                    "Sucesso!",
+                    "Cancelado com sucesso!",
+                    parent=self
+                )
+
+            
+
+            except mysql.connector.Error as erro:
+                conn.rollback()
+                messagebox.showerror(
+                    "Erro",
+                    f"Não foi possível cancelar as férias. \n{erro}",
+                    parent=self
+                )
+            
     # ==================================================
     # FERIADOS
     # ==================================================
