@@ -112,7 +112,7 @@ class PaginaPresencas(tk.Frame):
             frame_tabela,
             columns=(
                 "id_funcionario",
-                "nome",
+                "funcionario",
                 "estado"
             ),
             show="headings",
@@ -120,14 +120,14 @@ class PaginaPresencas(tk.Frame):
             style="Estilo_tabela")
 
         # Cabeçalhos
-        self.tabela_presencas.heading("id_funcionario",text="ID_Funcionário")
-        self.tabela_presencas.heading("nome",text="Funcionário")
+        self.tabela_presencas.heading("id_funcionario",text="ID")
+        self.tabela_presencas.heading("funcionario",text="Funcionario")
         self.tabela_presencas.heading("estado",text="Estado")
 
 
         # Largura das colunas
         self.tabela_presencas.column("id_funcionario",width=60,anchor="center")
-        self.tabela_presencas.column("nome",width=250, anchor="center")
+        self.tabela_presencas.column("funcionario",width=250, anchor="center")
         self.tabela_presencas.column("estado",width=150,anchor="center")
 
 

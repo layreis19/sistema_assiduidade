@@ -58,16 +58,26 @@ class PaginaPicagensAdmin(tk.Frame):
  
         self.tabela = ttk.Treeview(
             self,
-            columns=("funcionario", "data", "tipo", "estado", "motivo"),
+            columns=("ID_funcionario","funcionario", "data", "tipo", "estado", "motivo"),
             show="headings",
             selectmode="browse",
             style="Estilo_tabela"
         )
+        self.tabela.heading("ID_funcionario", text="ID")
         self.tabela.heading("funcionario", text="Funcionário")
         self.tabela.heading("data", text="Data e hora")
         self.tabela.heading("tipo", text="Tipo")
         self.tabela.heading("estado", text="Estado")
         self.tabela.heading("motivo", text="Motivo da correção")
+        
+        
+        self.tabela.column("ID_funcionario", width=60, anchor="center")
+        self.tabela.column("funcionario", width=180, anchor="center")
+        self.tabela.column("data", width=150, anchor="center")
+        self.tabela.column("tipo", width=140, anchor="center")
+        self.tabela.column("estado", width=100, anchor="center")
+        self.tabela.column("motivo", width=250, anchor="w")
+
  
         self.tabela.tag_configure("anulada", foreground="#9aa5b1")
  
@@ -119,7 +129,7 @@ class PaginaPicagensAdmin(tk.Frame):
  
         for id_p, id_f, nome, data, tipo, anulada, motivo in resultados:
             self.picagens[id_p] = {
-                "id": id_p,
+                "id": id_f,
                 "id_funcionario": id_f,
                 "nome": nome,
                 "data": data,
@@ -129,6 +139,7 @@ class PaginaPicagensAdmin(tk.Frame):
             self.tabela.insert(
                 "", "end", iid=str(id_p),
                 values=(
+                    id_f,
                     nome,
                     data.strftime("%d/%m/%Y %H:%M"),
                     rotulo_tipo_picagem(tipo),
