@@ -417,14 +417,15 @@ class PaginaAtribuicaoHorarios(tk.Frame):
 
         self.tabela_ferias= ttk.Treeview(
             frame_tabela,
-            columns=("id", "nome", "inicio_ferias", "fim_ferias", "estado"),
+            columns=("id_aus", "id_func" "nome", "inicio_ferias", "fim_ferias", "estado"),
             show="headings",
             selectmode="browse",
             style="Estilo_tabela"
         )
 
         cabecalhos = {
-            "id": "ID",
+            "id_aus": "ID Ausência",
+            "id_func": "ID Funcionário",
             "nome": "Nome",
             "inicio_ferias": "Início Férias",
             "fim_ferias": "Fim Férias",
@@ -753,7 +754,16 @@ class PaginaAtribuicaoHorarios(tk.Frame):
                 f"Não foi possível registar as férias. Tente novamente.\n{erro}",
                 parent=janela
             )
-
+    def cancelar_ferias(self):
+        item_selecionado = self.tabela_ferias.selection()
+        if not item_selecionado:
+            messagebox.showerror(
+                "Erro",
+                "Selecione um funcionário para cancelar as férias!"
+            )
+            return
+        
+        
     # ==================================================
     # FERIADOS
     # ==================================================
