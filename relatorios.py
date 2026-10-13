@@ -97,6 +97,7 @@ class PaginaRelatorios(tk.Frame):
                 "data", 
                 "atrasos", 
                 "extras", 
+                "resultado",
                 "total"),
             show="headings",
             selectmode="browse",
@@ -109,6 +110,7 @@ class PaginaRelatorios(tk.Frame):
         self.tabela_relatorios.heading("data", text="Data")
         self.tabela_relatorios.heading("atrasos", text="Atrasos")
         self.tabela_relatorios.heading("extras", text="Horas Extras")
+        self.tabela_relatorios.heading("resultado", text="Resultado")
         self.tabela_relatorios.heading("total", text="Total Horas")
 
         # Colunas 
@@ -117,8 +119,9 @@ class PaginaRelatorios(tk.Frame):
         self.tabela_relatorios.column("data", width=100,anchor="center")
         self.tabela_relatorios.column("atrasos", width=100,anchor="center")
         self.tabela_relatorios.column("extras", width=120,anchor="center")
+        self.tabela_relatorios.column("resultado", width=120, anchor="center")
         self.tabela_relatorios.column("total", width=120,anchor="center")
-
+       
 
         # scroll 
         scroll = ttk.Scrollbar(frame_tabela, orient="vertical", command=self.tabela_relatorios.yview)
@@ -237,7 +240,7 @@ class PaginaRelatorios(tk.Frame):
         # Procurar na base de dados
         sql = """
             SELECT r.id_funcionario, f.nome, r.data,
-                   r.atraso_minutos, r.horas_extra_minutos, r.total_minutos_trabalhados
+                   r.atraso_minutos, r.horas_extra_minutos, r.total_minutos_trabalhados, r.tipo
             FROM RESULTADOS r
             JOIN FUNCIONARIOS f ON f.id_funcionario = r.id_funcionario
             WHERE r.data BETWEEN %s AND %s
@@ -270,7 +273,7 @@ class PaginaRelatorios(tk.Frame):
         # Limpar a tabela e mostrar os novos dados
         self.tabela_relatorios.delete(*self.tabela_relatorios.get_children())
 
-        for id_f, nome, data, atraso, extra, total in registos:
+        for id_f, nome, data, atraso, extra, total, tipo in registos:
             total= total or 0
             self.tabela_relatorios.insert("", tk.END, values=(
                 id_f,
@@ -278,7 +281,9 @@ class PaginaRelatorios(tk.Frame):
                 data.strftime("%d/%m/%Y"),
                 f"{atraso} min" if atraso else "-",
                 f"{extra} min" if extra else "-",
-                f"{total // 60}h{total % 60:02d}",
+                tipo or "-",
+                f"{total // 60}h{total % 60:02d}"
+                
             ))
 
         if not registos and avisar:
@@ -301,15 +306,15 @@ class PaginaRelatorios(tk.Frame):
 
         with open(caminho, "w", encoding="utf-8") as f:
             f.write("RELATÓRIO DE ASSIDUIDADE\n")
-            f.write("=" * 70 + "\n")
-            f.write(f"{'ID':<6}{'NOME':<22}{'DATA':<13}{'ATRASOS':<11}{'EXTRAS':<11}{'TOTAL'}\n")
-            f.write("-" * 70 + "\n")
+            f.write("=" * 85 + "\n")
+            f.write(f"{'ID':<6}{'NOME':<22}{'DATA':<13}{'ATRASOS':<11}{'EXTRAS':<11}{'RESULTADO': <16}{'TOTAL'}\n")
+            f.write("-" * 85 + "\n")
 
             for item in linhas:
-                id_f, nome, data, atraso, extra, total = self.tabela_relatorios.item(item)["values"]
-                f.write(f"{id_f:<6}{nome:<22}{data:<13}{atraso:<11}{extra:<11}{total}\n")
+                id_f, nome, data, atraso, extra, tipo, total = self.tabela_relatorios.item(item)["values"]
+                f.write(f"{id_f:<6}{nome:<22}{data:<13}{atraso:<11}{extra:<11}{tipo:<16}{total}\n")
 
-            f.write("=" * 70 + "\n")
+            f.write("=" * 85 + "\n")
             f.write(f"Total de registos: {len(linhas)}\n")
 
         messagebox.showinfo("Sucesso", "Relatório guardado!")
