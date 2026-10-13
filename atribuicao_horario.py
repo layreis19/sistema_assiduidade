@@ -191,39 +191,59 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         frame_formulario.pack(pady=10)
 
         w.criar_label(
-            frame_formulario, "Nome:"
+            frame_formulario, "Designação:"
         ).pack(side=tk.LEFT, pady=5)
 
         self.entry_nome = w.criar_entrada(frame_formulario)
         self.entry_nome.pack(side=tk.LEFT, padx=10, pady=10)
 
         w.criar_label(
-            frame_formulario, "Entrada:"
+            frame_formulario, "Entrada (HH:MM):"
         ).pack(side=tk.LEFT, padx=10, pady=10)
 
         self.entry_entrada = w.criar_entrada(frame_formulario)
         self.entry_entrada.pack(side=tk.LEFT, padx=10, pady=10)
 
         w.criar_label(
-            frame_formulario, "Início Pausa:"
-        ).pack(side=tk.LEFT, padx=10, pady=10)
-
-        self.entry_pausa = w.criar_entrada(frame_formulario)
-        self.entry_pausa.pack(side=tk.LEFT, padx=10, pady=10)
-
-        w.criar_label(
-            frame_formulario, "Fim Pausa:"
-        ).pack(side=tk.LEFT, padx=10, pady=10)
-
-        self.entry_fim_pausa = w.criar_entrada(frame_formulario)
-        self.entry_fim_pausa.pack(side=tk.LEFT, padx=10, pady=10)
-
-        w.criar_label(
-            frame_formulario, "Saída:"
+            frame_formulario, "Saída (HH:MM):"
         ).pack(side=tk.LEFT, padx=10, pady=10)
 
         self.entry_saida = w.criar_entrada(frame_formulario)
         self.entry_saida.pack(side=tk.LEFT, padx=10, pady=10)
+
+        frame_formulario_2 = tk.Frame(
+            self.pagina_editar_horarios,
+            background=cores.CARD)
+
+        frame_formulario_2.pack(pady=10)
+
+        w.criar_label(
+            frame_formulario_2, "Início Pausa (HH:MM):"
+        ).pack(side=tk.LEFT, padx=10, pady=10)
+
+        self.entry_pausa = w.criar_entrada(frame_formulario_2)
+        self.entry_pausa.pack(side=tk.LEFT, padx=10, pady=10)
+
+        w.criar_label(
+            frame_formulario_2, "Fim Pausa (HH:MM):"
+        ).pack(side=tk.LEFT, padx=10, pady=10)
+
+        self.entry_fim_pausa = w.criar_entrada(frame_formulario_2)
+        self.entry_fim_pausa.pack(side=tk.LEFT, padx=10, pady=10)
+
+
+        w.criar_label(
+            frame_formulario_2, "Tolerância:"
+            ).pack(side=tk.LEFT, padx=10, pady=10)
+        self.entry_tolerancia = w.criar_entrada(frame_formulario_2)
+        self.entry_tolerancia.pack(side=tk.LEFT, padx=10, pady=10)
+
+
+        w.criar_label(frame_formulario_2, "Tipo:"
+        ).pack(side=tk.LEFT, padx=10, pady=10)
+
+        self.entry_tipo = ttk.Combobox(frame_formulario_2, values=["FIXO", "TURNO"], state="readonly", width=22)
+        self.entry_tipo.pack(pady=5)
 
         frame_botoes = tk.Frame(
             self.pagina_editar_horarios,
@@ -243,10 +263,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         w.criar_botao(
             frame_botoes,
             "Criar",
-            lambda: messagebox.showinfo(
-                "Informação",
-                "A funcionalidade de criação de horários ainda não está implementada."
-            )
+            self.criar_horario
         ).pack(side=tk.LEFT, padx=5)
 
         w.criar_botao(
@@ -287,7 +304,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             frame_tabela,
             columns=(
                 "id", "nome", "tipo", "entrada",
-                "inicio_pausa", "fim_pausa", "saida"
+                "inicio_pausa", "fim_pausa", "saida", "tolerancia"
             ),
             show="headings",
             selectmode="browse",
@@ -301,7 +318,8 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             "entrada": "Entrada",
             "inicio_pausa": "Início Pausa",
             "fim_pausa": "Fim Pausa",
-            "saida": "Saída"
+            "saida": "Saída",
+            "tolerancia": "Tolerância"
         }
 
         larguras = {
@@ -311,7 +329,8 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             "entrada": 100,
             "inicio_pausa": 120,
             "fim_pausa": 120,
-            "saida": 100
+            "saida": 100,
+            "tolerancia": 100
         }
 
         for coluna, titulo in cabecalhos.items():
@@ -337,6 +356,92 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             side="left", fill="both", expand=True
         )
         scroll.pack(side="right", fill="y")
+
+    def criar_horario(self):
+
+        nome = self.entry_nome.get().strip().upper()
+        entrada = self.entry_entrada.get().strip()
+        inicio_pausa = self.entry_pausa.get().strip()
+        fim_pausa = self.entry_fim_pausa.get().strip()
+        tolerancia = self.entry_tolerancia.get().strip()
+        saida = self.entry_saida.get().strip()
+        tipo = self.entry_tipo.get()
+
+        if not nome or not entrada or not inicio_pausa or not fim_pausa or not tolerancia or not saida or not tipo:
+            messagebox.showerror(
+                "Erro",
+                "Todos os campos são obrigatórios!"
+            )
+            return
+
+        if inicio_pausa <= entrada: 
+            messagebox.showerror(
+                "Erro!",
+                "A hora da Início de Pausa tem que ser superior à hora de Entrada!")
+            return
+
+        elif fim_pausa <= inicio_pausa:
+            messagebox.showerror(
+                "Erro!",
+                "A hora de Fim de Pausa tem que ser superior à hora de Início de Pausa!")
+            return
+
+        elif saida <= fim_pausa:
+            messagebox.showerror(
+                "Erro!",
+                "A hora de Saída tem que ser superior à hora de Fim de Pausa!")
+            return
+
+        try:
+            tolerancia = int(tolerancia)
+
+            if tolerancia <0:
+                messagebox.showerror(
+                    "Erro", 
+                    "A tolerância não pode ser negativa!")
+                return
+        except ValueError:
+            messagebox.showerror(
+                "Erro",
+                "A tolerância tem que ser um número inteiro!")
+            return
+       
+        try:
+            self.cursor.execute(
+                """
+                INSERT INTO HORARIO
+                (nome, entrada, inicio_almoco, fim_almoco, saida, tolerancia, tipo)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """,
+                (nome, entrada, inicio_pausa, fim_pausa, saida, tolerancia, tipo,)
+            )
+
+            conn.commit()
+
+            # limpar campos
+            self.entry_nome.delete(0, tk.END)
+            self.entry_entrada.delete(0, tk.END)
+            self.entry_pausa.delete(0,tk.END)
+            self.entry_fim_pausa.delete(0, tk.END)
+            self.entry_saida.delete(0, tk.END)
+            self.entry_tolerancia.delete(0, tk.END)
+            self.entry_tipo.delete(0, tk.END)
+
+            messagebox.showinfo(
+                "Sucesso",
+                "Horário criado com sucesso!"
+            )
+            
+
+
+        except mysql.connector.Error as erro:
+            conn.rollback()
+
+            messagebox.showerror(
+                "Erro",
+                f"Erro ao adicionar horário: {erro}"
+            )
+
 
 
     def criar_pagina_ferias(self):
@@ -790,7 +895,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             
             
                 self.carregar_ferias()
-                
+
                 messagebox.showinfo(
                     "Sucesso!",
                     "Cancelado com sucesso!",
