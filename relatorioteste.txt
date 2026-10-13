@@ -1,0 +1,208 @@
+RELATÓRIO DE ASSIDUIDADE
+======================================================================
+ID    NOME                  DATA         ATRASOS    EXTRAS     TOTAL
+----------------------------------------------------------------------
+2     Ana Ferreira          30/09/2026   -          23 min     8h23
+3     Bruno Costa           30/09/2026   -          25 min     8h25
+4     Carla Mendes          30/09/2026   -          -          7h49
+5     Eduardo Lopes         30/09/2026   -          -          0h00
+6     Filipa Rocha          30/09/2026   -          90 min     10h30
+7     Gonçalo Pires         30/09/2026   14 min     -          7h31
+8     Helena Dias           30/09/2026   -          76 min     9h16
+9     Inês Carvalho         30/09/2026   -          10 min     8h10
+11    Luís Martins          30/09/2026   -          79 min     5h19
+12    Marta Pinto           30/09/2026   -          11 min     4h11
+2     Ana Ferreira          29/09/2026   3 min      -          7h54
+3     Bruno Costa           29/09/2026   -          21 min     8h21
+4     Carla Mendes          29/09/2026   -          17 min     8h17
+5     Eduardo Lopes         29/09/2026   -          -          0h00
+6     Filipa Rocha          29/09/2026   -          -          0h00
+7     Gonçalo Pires         29/09/2026   7 min      18 min     8h18
+8     Helena Dias           29/09/2026   -          -          7h55
+9     Inês Carvalho         29/09/2026   -          35 min     8h35
+11    Luís Martins          29/09/2026   -          17 min     4h17
+12    Marta Pinto           29/09/2026   11 min     -          3h52
+2     Ana Ferreira          28/09/2026   -          20 min     8h20
+3     Bruno Costa           28/09/2026   12 min     6 min      8h06
+4     Carla Mendes          28/09/2026   3 min      14 min     8h14
+5     Eduardo Lopes         28/09/2026   -          -          0h00
+6     Filipa Rocha          28/09/2026   -          25 min     8h25
+7     Gonçalo Pires         28/09/2026   18 min     -          7h31
+8     Helena Dias           28/09/2026   5 min      -          7h55
+9     Inês Carvalho         28/09/2026   -          4 min      8h04
+11    Luís Martins          28/09/2026   -          94 min     5h34
+12    Marta Pinto           28/09/2026   18 min     -          3h54
+2     Ana Ferreira          25/09/2026   -          14 min     8h14
+3     Bruno Costa           25/09/2026   -          56 min     9h56
+4     Carla Mendes          25/09/2026   -          8 min      8h08
+5     Eduardo Lopes         25/09/2026   -          19 min     8h19
+6     Filipa Rocha          25/09/2026   1 min      13 min     8h13
+7     Gonçalo Pires         25/09/2026   -          29 min     8h29
+8     Helena Dias           25/09/2026   9 min      7 min      8h07
+9     Inês Carvalho         25/09/2026   -          43 min     8h43
+11    Luís Martins          25/09/2026   13 min     -          3h52
+12    Marta Pinto           25/09/2026   3 min      44 min     4h44
+2     Ana Ferreira          24/09/2026   -          20 min     8h20
+3     Bruno Costa           24/09/2026   -          14 min     8h14
+4     Carla Mendes          24/09/2026   -          10 min     8h10
+5     Eduardo Lopes         24/09/2026   -          -          8h00
+6     Filipa Rocha          24/09/2026   9 min      -          7h55
+7     Gonçalo Pires         24/09/2026   3 min      17 min     8h17
+8     Helena Dias           24/09/2026   -          9 min      8h09
+9     Inês Carvalho         24/09/2026   -          113 min    9h53
+11    Luís Martins          24/09/2026   -          9 min      4h09
+12    Marta Pinto           24/09/2026   -          16 min     4h16
+2     Ana Ferreira          23/09/2026   -          -          7h51
+3     Bruno Costa           23/09/2026   -          8 min      9h08
+4     Carla Mendes          23/09/2026   -          26 min     8h26
+5     Eduardo Lopes         23/09/2026   -          16 min     8h16
+6     Filipa Rocha          23/09/2026   14 min     39 min     8h39
+7     Gonçalo Pires         23/09/2026   2 min      11 min     8h11
+8     Helena Dias           23/09/2026   -          23 min     8h23
+9     Inês Carvalho         23/09/2026   -          24 min     8h24
+11    Luís Martins          23/09/2026   -          18 min     4h18
+12    Marta Pinto           23/09/2026   -          71 min     5h11
+2     Ana Ferreira          22/09/2026   -          28 min     8h28
+3     Bruno Costa           22/09/2026   -          20 min     8h20
+4     Carla Mendes          22/09/2026   1 min      12 min     8h12
+5     Eduardo Lopes         22/09/2026   -          5 min      9h05
+6     Filipa Rocha          22/09/2026   -          22 min     8h22
+7     Gonçalo Pires         22/09/2026   -          12 min     8h12
+8     Helena Dias           22/09/2026   -          -          0h00
+9     Inês Carvalho         22/09/2026   -          1 min      8h01
+11    Luís Martins          22/09/2026   -          17 min     4h17
+12    Marta Pinto           22/09/2026   -          7 min      4h07
+2     Ana Ferreira          21/09/2026   -          10 min     8h10
+3     Bruno Costa           21/09/2026   -          14 min     8h14
+4     Carla Mendes          21/09/2026   15 min     -          7h48
+5     Eduardo Lopes         21/09/2026   -          9 min      8h09
+6     Filipa Rocha          21/09/2026   -          9 min      8h09
+7     Gonçalo Pires         21/09/2026   3 min      5 min      8h05
+8     Helena Dias           21/09/2026   1 min      7 min      8h07
+9     Inês Carvalho         21/09/2026   -          33 min     8h33
+11    Luís Martins          21/09/2026   -          20 min     4h20
+12    Marta Pinto           21/09/2026   14 min     -          3h44
+2     Ana Ferreira          18/09/2026   3 min      -          7h59
+3     Bruno Costa           18/09/2026   -          -          0h00
+4     Carla Mendes          18/09/2026   -          29 min     8h29
+5     Eduardo Lopes         18/09/2026   23 min     -          0h00
+7     Gonçalo Pires         18/09/2026   1 min      1 min      8h01
+8     Helena Dias           18/09/2026   -          29 min     8h29
+9     Inês Carvalho         18/09/2026   -          63 min     9h03
+11    Luís Martins          18/09/2026   -          17 min     4h17
+12    Marta Pinto           18/09/2026   -          23 min     4h23
+2     Ana Ferreira          17/09/2026   14 min     -          7h46
+3     Bruno Costa           17/09/2026   -          -          0h00
+4     Carla Mendes          17/09/2026   -          9 min      8h09
+5     Eduardo Lopes         17/09/2026   -          16 min     8h16
+7     Gonçalo Pires         17/09/2026   -          10 min     8h10
+8     Helena Dias           17/09/2026   18 min     -          7h47
+9     Inês Carvalho         17/09/2026   -          27 min     8h27
+11    Luís Martins          17/09/2026   -          8 min      4h08
+12    Marta Pinto           17/09/2026   19 min     -          3h51
+2     Ana Ferreira          16/09/2026   -          56 min     8h56
+3     Bruno Costa           16/09/2026   -          -          0h00
+4     Carla Mendes          16/09/2026   -          12 min     8h12
+5     Eduardo Lopes         16/09/2026   -          80 min     9h20
+7     Gonçalo Pires         16/09/2026   2 min      11 min     8h11
+8     Helena Dias           16/09/2026   -          21 min     8h21
+9     Inês Carvalho         16/09/2026   -          104 min    9h44
+11    Luís Martins          16/09/2026   -          -          0h00
+12    Marta Pinto           16/09/2026   -          82 min     5h22
+2     Ana Ferreira          15/09/2026   -          29 min     8h29
+3     Bruno Costa           15/09/2026   -          -          0h00
+4     Carla Mendes          15/09/2026   15 min     -          7h37
+5     Eduardo Lopes         15/09/2026   2 min      12 min     8h12
+7     Gonçalo Pires         15/09/2026   8 min      -          7h50
+8     Helena Dias           15/09/2026   3 min      -          7h47
+9     Inês Carvalho         15/09/2026   -          39 min     8h39
+11    Luís Martins          15/09/2026   -          90 min     5h30
+12    Marta Pinto           15/09/2026   -          20 min     4h20
+2     Ana Ferreira          14/09/2026   10 min     -          7h53
+3     Bruno Costa           14/09/2026   -          -          0h00
+4     Carla Mendes          14/09/2026   -          -          7h56
+5     Eduardo Lopes         14/09/2026   12 min     -          7h58
+7     Gonçalo Pires         14/09/2026   -          36 min     8h36
+8     Helena Dias           14/09/2026   -          13 min     8h13
+9     Inês Carvalho         14/09/2026   -          5 min      8h05
+11    Luís Martins          14/09/2026   -          18 min     4h18
+12    Marta Pinto           14/09/2026   -          17 min     4h17
+2     Ana Ferreira          11/09/2026   -          29 min     8h29
+3     Bruno Costa           11/09/2026   -          19 min     8h19
+4     Carla Mendes          11/09/2026   3 min      15 min     8h15
+5     Eduardo Lopes         11/09/2026   -          8 min      8h08
+7     Gonçalo Pires         11/09/2026   15 min     8 min      8h08
+8     Helena Dias           11/09/2026   12 min     -          7h27
+9     Inês Carvalho         11/09/2026   -          -          7h52
+11    Luís Martins          11/09/2026   -          21 min     4h21
+12    Marta Pinto           11/09/2026   3 min      81 min     5h21
+2     Ana Ferreira          10/09/2026   16 min     -          7h52
+3     Bruno Costa           10/09/2026   -          2 min      8h02
+4     Carla Mendes          10/09/2026   12 min     10 min     8h10
+5     Eduardo Lopes         10/09/2026   1 min      2 min      8h02
+7     Gonçalo Pires         10/09/2026   2 min      7 min      8h07
+8     Helena Dias           10/09/2026   -          -          0h00
+9     Inês Carvalho         10/09/2026   -          12 min     8h12
+11    Luís Martins          10/09/2026   3 min      45 min     4h45
+12    Marta Pinto           10/09/2026   -          4 min      4h04
+2     Ana Ferreira          09/09/2026   3 min      -          7h56
+3     Bruno Costa           09/09/2026   20 min     51 min     8h51
+4     Carla Mendes          09/09/2026   -          29 min     8h29
+5     Eduardo Lopes         09/09/2026   19 min     -          7h47
+7     Gonçalo Pires         09/09/2026   -          20 min     8h20
+8     Helena Dias           09/09/2026   2 min      -          7h54
+9     Inês Carvalho         09/09/2026   -          15 min     8h15
+11    Luís Martins          09/09/2026   -          18 min     4h18
+12    Marta Pinto           09/09/2026   19 min     -          3h26
+2     Ana Ferreira          08/09/2026   -          17 min     8h17
+3     Bruno Costa           08/09/2026   8 min      13 min     8h13
+4     Carla Mendes          08/09/2026   -          17 min     8h17
+5     Eduardo Lopes         08/09/2026   1 min      29 min     8h29
+7     Gonçalo Pires         08/09/2026   -          14 min     8h14
+8     Helena Dias           08/09/2026   -          22 min     8h22
+9     Inês Carvalho         08/09/2026   -          -          7h27
+11    Luís Martins          08/09/2026   -          53 min     4h53
+12    Marta Pinto           08/09/2026   -          13 min     4h13
+2     Ana Ferreira          07/09/2026   3 min      -          7h58
+3     Bruno Costa           07/09/2026   -          6 min      8h06
+4     Carla Mendes          07/09/2026   -          11 min     8h11
+5     Eduardo Lopes         07/09/2026   2 min      7 min      8h07
+7     Gonçalo Pires         07/09/2026   -          -          7h58
+8     Helena Dias           07/09/2026   3 min      10 min     8h10
+9     Inês Carvalho         07/09/2026   -          39 min     8h39
+11    Luís Martins          07/09/2026   -          -          0h00
+12    Marta Pinto           07/09/2026   -          -          3h59
+2     Ana Ferreira          04/09/2026   2 min      2 min      8h02
+3     Bruno Costa           04/09/2026   -          -          0h00
+5     Eduardo Lopes         04/09/2026   -          2 min      8h02
+7     Gonçalo Pires         04/09/2026   -          14 min     8h14
+8     Helena Dias           04/09/2026   5 min      -          7h59
+9     Inês Carvalho         04/09/2026   -          13 min     8h13
+11    Luís Martins          04/09/2026   -          60 min     5h00
+12    Marta Pinto           04/09/2026   -          15 min     4h15
+2     Ana Ferreira          03/09/2026   -          12 min     8h12
+3     Bruno Costa           03/09/2026   5 min      -          7h48
+5     Eduardo Lopes         03/09/2026   -          11 min     8h11
+7     Gonçalo Pires         03/09/2026   2 min      6 min      8h06
+8     Helena Dias           03/09/2026   -          -          0h00
+9     Inês Carvalho         03/09/2026   -          82 min     9h22
+11    Luís Martins          03/09/2026   -          4 min      4h04
+12    Marta Pinto           03/09/2026   5 min      -          3h57
+2     Ana Ferreira          02/09/2026   -          2 min      8h02
+3     Bruno Costa           02/09/2026   -          16 min     8h16
+5     Eduardo Lopes         02/09/2026   -          24 min     8h24
+7     Gonçalo Pires         02/09/2026   10 min     7 min      8h07
+8     Helena Dias           02/09/2026   8 min      -          7h59
+9     Inês Carvalho         02/09/2026   -          10 min     8h10
+11    Luís Martins          02/09/2026   -          14 min     4h14
+12    Marta Pinto           02/09/2026   -          16 min     4h16
+2     Ana Ferreira          01/09/2026   15 min     -          7h31
+3     Bruno Costa           01/09/2026   -          7 min      8h07
+5     Eduardo Lopes         01/09/2026   16 min     -          7h48
+7     Gonçalo Pires         01/09/2026   -          88 min     9h28
+8     Helena Dias           01/09/2026   -          20 min     9h20
+9     Inês Carvalho         01/09/2026   -          40 min     8h40
+11    Luís Martins          01/09/2026   -          24 min     4h24
+12    Marta Pinto           01/09/2026   -          17 min     4h17
+======================================================================
+Total de registos: 202
