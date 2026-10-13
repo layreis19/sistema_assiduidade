@@ -126,8 +126,8 @@ class PaginaPresencas(tk.Frame):
 
 
         # Largura das colunas
-        self.tabela_presencas.column("id_funcionario",width=60,anchor="w")
-        self.tabela_presencas.column("nome",width=250, anchor="w")
+        self.tabela_presencas.column("id_funcionario",width=60,anchor="center")
+        self.tabela_presencas.column("nome",width=250, anchor="center")
         self.tabela_presencas.column("estado",width=150,anchor="center")
 
 

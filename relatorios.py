@@ -105,7 +105,7 @@ class PaginaRelatorios(tk.Frame):
 
         # Cabeçalhos
         self.tabela_relatorios.heading("id", text="ID")
-        self.tabela_relatorios.heading("nome", text="Nome")
+        self.tabela_relatorios.heading("nome", text="Funcionário")
         self.tabela_relatorios.heading("data", text="Data")
         self.tabela_relatorios.heading("atrasos", text="Atrasos")
         self.tabela_relatorios.heading("extras", text="Horas Extras")

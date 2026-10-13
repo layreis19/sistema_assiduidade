@@ -76,6 +76,13 @@ class PaginaFuncionarios(tk.Frame):
         self.tabela.heading("tipo", text="Tipo")
         self.tabela.heading("estado", text="Estado")
         self.tabela.heading("data_adesao", text="Data de Adesão")
+
+        # Largura das colunas
+        self.tabela.column("id_funcionario",width=60,anchor="center")
+        self.tabela.column("nome",width=250, anchor="center")
+        self.tabela.column("tipo",width=150,anchor="center")
+        self.tabela.column("estado",width=150,anchor="center")
+        self.tabela.column("data_adesao",width=100,anchor="center")
  
         self.tabela.pack(fill="both", expand=True, padx=30, pady=20)
  
