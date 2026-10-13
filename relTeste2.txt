@@ -1,0 +1,92 @@
+RELATÓRIO DE ASSIDUIDADE
+=====================================================================================
+ID    NOME                  DATA         ATRASOS    EXTRAS     RESULTADO       TOTAL
+-------------------------------------------------------------------------------------
+1     admin                 12/10/2026   -          -          SEM_HORÁRIO     0h00
+2     Ana Ferreira          12/10/2026   3 min      10 min     NORMAL          8h10
+3     Bruno Costa           12/10/2026   -          -          FALTA           0h00
+4     Carla Mendes          12/10/2026   -          -          NORMAL          8h59
+5     Eduardo Lopes         12/10/2026   3 min      -          NORMAL          7h51
+6     Filipa Rocha          12/10/2026   24 min     62 min     NORMAL          9h02
+7     Gonçalo Pires         12/10/2026   -          18 min     NORMAL          8h18
+8     Helena Dias           12/10/2026   -          -          FALTA           0h00
+9     Inês Carvalho         12/10/2026   -          3 min      NORMAL          8h03
+10    Jorge Almeida         12/10/2026   -          45 min     NORMAL          8h45
+11    Luís Martins          12/10/2026   -          -          NORMAL          3h56
+12    Marta Pinto           12/10/2026   -          -          NORMAL          3h54
+2     Ana Ferreira          09/10/2026   -          -          NORMAL          7h48
+3     Bruno Costa           09/10/2026   9 min      -          NORMAL          7h57
+4     Carla Mendes          09/10/2026   -          105 min    NORMAL          9h45
+5     Eduardo Lopes         09/10/2026   -          10 min     NORMAL          8h10
+6     Filipa Rocha          09/10/2026   3 min      4 min      NORMAL          8h04
+7     Gonçalo Pires         09/10/2026   12 min     3 min      NORMAL          8h03
+8     Helena Dias           09/10/2026   6 min      -          NORMAL          7h50
+9     Inês Carvalho         09/10/2026   -          -          NORMAL          7h37
+10    Jorge Almeida         09/10/2026   -          91 min     NORMAL          9h31
+11    Luís Martins          09/10/2026   -          15 min     NORMAL          4h15
+12    Marta Pinto           09/10/2026   -          13 min     NORMAL          4h13
+2     Ana Ferreira          08/10/2026   1 min      24 min     NORMAL          8h24
+3     Bruno Costa           08/10/2026   -          26 min     NORMAL          8h26
+4     Carla Mendes          08/10/2026   5 min      -          NORMAL          8h52
+5     Eduardo Lopes         08/10/2026   3 min      12 min     NORMAL          8h12
+6     Filipa Rocha          08/10/2026   -          23 min     NORMAL          8h23
+7     Gonçalo Pires         08/10/2026   -          13 min     NORMAL          8h13
+8     Helena Dias           08/10/2026   -          81 min     NORMAL          9h21
+9     Inês Carvalho         08/10/2026   -          69 min     NORMAL          9h09
+10    Jorge Almeida         08/10/2026   -          48 min     NORMAL          8h48
+11    Luís Martins          08/10/2026   -          26 min     NORMAL          4h26
+12    Marta Pinto           08/10/2026   12 min     -          NORMAL          3h55
+2     Ana Ferreira          07/10/2026   1 min      6 min      NORMAL          8h06
+3     Bruno Costa           07/10/2026   -          20 min     NORMAL          8h20
+4     Carla Mendes          07/10/2026   3 min      21 min     NORMAL          8h21
+5     Eduardo Lopes         07/10/2026   -          -          NORMAL          7h57
+6     Filipa Rocha          07/10/2026   15 min     -          NORMAL          7h49
+7     Gonçalo Pires         07/10/2026   16 min     -          NORMAL          7h48
+8     Helena Dias           07/10/2026   -          26 min     NORMAL          8h26
+9     Inês Carvalho         07/10/2026   -          2 min      NORMAL          8h02
+10    Jorge Almeida         07/10/2026   -          6 min      NORMAL          8h06
+11    Luís Martins          07/10/2026   -          25 min     NORMAL          4h25
+12    Marta Pinto           07/10/2026   -          22 min     NORMAL          4h22
+2     Ana Ferreira          06/10/2026   -          15 min     NORMAL          8h15
+3     Bruno Costa           06/10/2026   -          -          FALTA           0h00
+4     Carla Mendes          06/10/2026   -          19 min     NORMAL          8h19
+5     Eduardo Lopes         06/10/2026   12 min     3 min      NORMAL          8h03
+6     Filipa Rocha          06/10/2026   17 min     -          NORMAL          7h56
+7     Gonçalo Pires         06/10/2026   -          16 min     NORMAL          8h16
+8     Helena Dias           06/10/2026   -          10 min     NORMAL          8h10
+9     Inês Carvalho         06/10/2026   -          37 min     NORMAL          8h37
+10    Jorge Almeida         06/10/2026   -          -          NORMAL          7h32
+11    Luís Martins          06/10/2026   4 min      -          NORMAL          3h54
+12    Marta Pinto           06/10/2026   -          2 min      NORMAL          4h02
+2     Ana Ferreira          05/10/2026   -          -          FERIADO         0h00
+3     Bruno Costa           05/10/2026   -          -          FERIADO         0h00
+4     Carla Mendes          05/10/2026   -          -          FERIADO         0h00
+5     Eduardo Lopes         05/10/2026   -          -          FERIADO         0h00
+6     Filipa Rocha          05/10/2026   -          -          FERIADO         0h00
+7     Gonçalo Pires         05/10/2026   -          -          FERIADO         0h00
+8     Helena Dias           05/10/2026   -          -          FERIADO         0h00
+9     Inês Carvalho         05/10/2026   -          -          FERIADO         0h00
+11    Luís Martins          05/10/2026   -          -          FERIADO         0h00
+12    Marta Pinto           05/10/2026   -          -          FERIADO         0h00
+2     Ana Ferreira          02/10/2026   1 min      8 min      NORMAL          8h08
+3     Bruno Costa           02/10/2026   -          39 min     NORMAL          8h39
+4     Carla Mendes          02/10/2026   -          71 min     NORMAL          9h11
+5     Eduardo Lopes         02/10/2026   -          -          INCOMPLETO      0h00
+6     Filipa Rocha          02/10/2026   -          24 min     NORMAL          8h24
+7     Gonçalo Pires         02/10/2026   -          18 min     NORMAL          8h18
+8     Helena Dias           02/10/2026   1 min      78 min     NORMAL          9h18
+9     Inês Carvalho         02/10/2026   -          37 min     NORMAL          8h37
+11    Luís Martins          02/10/2026   -          5 min      NORMAL          4h05
+12    Marta Pinto           02/10/2026   -          82 min     NORMAL          5h22
+2     Ana Ferreira          01/10/2026   12 min     12 min     NORMAL          8h12
+3     Bruno Costa           01/10/2026   3 min      5 min      NORMAL          8h05
+4     Carla Mendes          01/10/2026   -          -          NORMAL          7h50
+5     Eduardo Lopes         01/10/2026   17 min     -          NORMAL          7h38
+6     Filipa Rocha          01/10/2026   -          23 min     NORMAL          8h23
+7     Gonçalo Pires         01/10/2026   -          16 min     NORMAL          8h16
+8     Helena Dias           01/10/2026   19 min     -          NORMAL          7h56
+9     Inês Carvalho         01/10/2026   -          -          NORMAL          7h15
+11    Luís Martins          01/10/2026   -          24 min     NORMAL          4h24
+12    Marta Pinto           01/10/2026   -          13 min     NORMAL          4h13
+=====================================================================================
+Total de registos: 86
