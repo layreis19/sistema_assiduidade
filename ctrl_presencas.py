@@ -100,7 +100,7 @@ class PaginaPresencas(tk.Frame):
         frame_botoes = tk.Frame(self, background=cores.CARD)
         frame_botoes.pack(pady=10)
 
-        w.criar_botao(frame_botoes, "Pesquisar", self.atualizar_presenca).pack(side=tk.LEFT, padx=5)
+        w.criar_botao(frame_botoes, "Pesquisar", self.pesquisar_funcionario).pack(side=tk.LEFT, padx=5)
         w.criar_botao(frame_botoes,"Mostrar Todos",self.mostrar_todos).pack(side=tk.LEFT, padx=5)
 
         # FRAME TABELA
@@ -157,6 +157,32 @@ class PaginaPresencas(tk.Frame):
         # automaticamente a cada 1 minuto
         self.after(60000, self.verificar_dia)
 
+    def pesquisar_funcionario(self):
+
+        id_pesquisado = self.id_pesquisa.get().strip()
+
+        if not id_pesquisado:
+            messagebox.showwarning(
+                "ID em falta",
+                "Introduza o ID do funcionário",
+                parent=self
+            )
+
+            self.entry_id.focus()
+            return
+
+        if not id_pesquisado.isdigit():
+            messagebox.showwarning(
+                "ID inválido",
+                "O ID de funcionário contém apenas números inteiros.",
+                parent=self
+            )
+
+            self.id_pesquisa.set("")
+            self.entry_id.focus()
+            return
+
+        self.atualizar_presenca()
 
     def verificar_dia(self):
 
@@ -187,7 +213,7 @@ class PaginaPresencas(tk.Frame):
     def atualizar_presenca(self):
 
         id_pesquisado = self.id_pesquisa.get().strip()
-
+        
         agora = datetime.now()
 
         if agora.hour < 6:
