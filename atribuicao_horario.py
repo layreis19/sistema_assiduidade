@@ -32,6 +32,8 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         self.carregar_funcionarios()
         self.carregar_horarios()
 
+        self.carregar_tabela_horarios()
+
 
     # ==================================================
     # PÁGINA DE ATRIBUIÇÃO DE HORÁRIOS
@@ -257,7 +259,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         self.lista_dias_trabalho = tk.Listbox(
             frame_formulario_2, 
             selectmode=tk.MULTIPLE,
-            height=3,
+            height=4,
             width=20,
             exportselection=False)
 
@@ -327,7 +329,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             frame_tabela,
             columns=(
                 "id", "nome", "tipo", "entrada",
-                "inicio_pausa", "fim_pausa", "saida", "tolerancia"
+                "inicio_pausa", "fim_pausa", "saida", "tolerancia", "dias_trabalho"
             ),
             show="headings",
             selectmode="browse",
@@ -342,14 +344,17 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         self.tabela_horarios.heading("fim_pausa", text="Fim Pausa")
         self.tabela_horarios.heading("saida", text="Saída")
         self.tabela_horarios.heading("tolerancia", text="Tolerância")
+        self.tabela_horarios.heading("dias_trabalho", text="Dias Trabalho")
 
-        self.tabela_horarios.column("id", width=60, anchor="center")
+        self.tabela_horarios.column("id", width=40, anchor="center")
         self.tabela_horarios.column("nome", width=150, anchor="center")
         self.tabela_horarios.column("tipo", width=100, anchor="center")
-        self.tabela_horarios.column("inicio_pausa", width=120, anchor="center")
-        self.tabela_horarios.column("fim_pausa", width=120, anchor="center")
+        self.tabela_horarios.column("entrada", width=100, anchor="center")
+        self.tabela_horarios.column("inicio_pausa", width=100, anchor="center")
+        self.tabela_horarios.column("fim_pausa", width=100, anchor="center")
         self.tabela_horarios.column("saida", width=100, anchor="center")
-        self.tabela_horarios.column("tolerancia", width=100, anchor="center")
+        self.tabela_horarios.column("tolerancia", width=40, anchor="center")
+        self.tabela_horarios.column("dias_trabalho", width=150, anchor="center")
 
         scroll = ttk.Scrollbar(
             frame_tabela,
@@ -374,8 +379,12 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         tolerancia = self.entry_tolerancia.get().strip()
         saida = self.entry_saida.get().strip()
         tipo = self.entry_tipo.get()
+        dias_selecionados = self.lista_dias_trabalho.curselection()
 
-        if not nome or not entrada or not inicio_pausa or not fim_pausa or not tolerancia or not saida or not tipo:
+        dias_trabalho = ",".join(self.lista_dias_trabalho.get(i)
+                                 for i in dias_selecionados)
+
+        if not nome or not entrada or not inicio_pausa or not fim_pausa or not tolerancia or not saida or not tipo or not dias_trabalho:
             messagebox.showerror(
                 "Erro",
                 "Todos os campos são obrigatórios!"
@@ -418,13 +427,14 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             self.cursor.execute(
                 """
                 INSERT INTO HORARIO
-                (nome, entrada, inicio_almoco, fim_almoco, saida, tolerancia, tipo)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                (nome, entrada, inicio_almoco, fim_almoco, saida, tolerancia, tipo, dias_trabalho)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 """,
-                (nome, entrada, inicio_pausa, fim_pausa, saida, tolerancia, tipo,)
+                (nome, entrada, inicio_pausa, fim_pausa, saida, tolerancia, tipo, dias_trabalho)
             )
 
             conn.commit()
+            self.carregar_tabela_horarios()
 
             # limpar campos
             self.entry_nome.delete(0, tk.END)
@@ -451,6 +461,57 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             )
 
 
+    def carregar_tabela_horarios(self):
+
+        for item in self.tabela_horarios.get_children():
+            self.tabela_horarios.delete(item)
+
+        try:
+            self.cursor.execute("""
+            SELECT
+                id_horario,
+                nome,
+                tipo,
+                entrada, 
+                inicio_almoco,
+                fim_almoco,
+                saida, 
+                tolerancia,
+                dias_trabalho
+            FROM horario
+            ORDER BY id_horario
+            """
+        )
+
+            horarios = self.cursor.fetchall()
+            ordem_dias = ["SEG", "TER", "QUA", "QUI", "SEX", "SAB", "DOM"]
+            for horario in horarios:
+                horario = list(horario)
+
+                dias = horario[8]
+                if dias:
+                    dias_selecionados = str(dias).replace("{","").replace("}", "")
+                    dias_selecionados = dias_selecionados.replace('"', "").replace("'", "")
+                    dias_selecionados = [ dia.strip() for dia in dias_selecionados.split(",")]
+
+                    dias_ordenados = [ dia for dia in ordem_dias if dia in dias_selecionados]
+
+                    horario[8] = ", ".join(dias_ordenados)
+
+                else:
+                    horario[8] = ""
+                    
+                self.tabela_horarios.insert(
+                    "",
+                    tk.END,
+                    values=horario
+                )
+
+        except mysql.connector.Error as erro:
+            messagebox.showerror(
+                "Erro",
+                f"Não foi possível carregar os horários. \n{erro}",
+                parent=self)
 
     def criar_pagina_ferias(self):
         w.criar_titulo(self.pagina_ferias,
