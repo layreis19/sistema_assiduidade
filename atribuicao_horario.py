@@ -211,6 +211,14 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         self.entry_saida = w.criar_entrada(frame_formulario)
         self.entry_saida.pack(side=tk.LEFT, padx=10, pady=10)
 
+
+        w.criar_label(frame_formulario, "Tipo:"
+        ).pack(side=tk.LEFT, padx=10, pady=10)
+
+        self.entry_tipo = ttk.Combobox(frame_formulario, values=["FIXO", "TURNO"], state="readonly", width=12)
+        self.entry_tipo.pack(side=tk.LEFT, padx=10, pady=10)
+
+
         frame_formulario_2 = tk.Frame(
             self.pagina_editar_horarios,
             background=cores.CARD)
@@ -238,19 +246,34 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         self.entry_tolerancia = w.criar_entrada(frame_formulario_2)
         self.entry_tolerancia.pack(side=tk.LEFT, padx=10, pady=10)
 
-
-        w.criar_label(frame_formulario_2, "Tipo:"
-        ).pack(side=tk.LEFT, padx=10, pady=10)
-
-        self.entry_tipo = ttk.Combobox(frame_formulario_2, values=["FIXO", "TURNO"], state="readonly", width=22)
-        self.entry_tipo.pack(pady=5)
-
         frame_botoes = tk.Frame(
             self.pagina_editar_horarios,
             background=cores.CARD
         )
         frame_botoes.pack(pady=10)
 
+        w.criar_label(frame_formulario_2, "Dias de Trabalho:").pack(side=tk.LEFT, padx=10, pady=10)
+        
+        self.lista_dias_trabalho = tk.Listbox(
+            frame_formulario_2, 
+            selectmode=tk.MULTIPLE,
+            height=3,
+            width=20,
+            exportselection=False)
+
+        dias = ["SEG", "TER", "QUA", "QUI", "SEX", "SAB", "DOM"]
+
+        for dia in dias:
+            self.lista_dias_trabalho.insert(tk.END, dia)
+
+
+        # barra de scroll
+        scroll_dias = tk.Scrollbar(frame_formulario_2, orient=tk.VERTICAL, command=self.lista_dias_trabalho.yview)
+        self.lista_dias_trabalho.configure(yscrollcommand=scroll_dias.set)
+        self.lista_dias_trabalho.pack(side=tk.LEFT, padx=(10,0))
+        scroll_dias.pack(side=tk.LEFT, fill=tk.Y)   
+        
+        
         w.criar_botao(
             frame_botoes,
             "Feriados",
