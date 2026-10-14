@@ -75,6 +75,9 @@ def mostrar_pagina(pagina):
     elif pagina == pagina_picagens_admin:
         pagina_picagens_admin.carregar_funcionarios()
         pagina_picagens_admin.atualizar_tabela()
+        
+    elif pagina == PaginaRelatorios:
+        pagina_relatorios.carregar_funcionarios()
 
 def mostrar_botoes_admin(id_admin=None):
     # chamada quando o login corre bem
