@@ -311,37 +311,22 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             style="Estilo_tabela"
         )
 
-        cabecalhos = {
-            "id": "ID",
-            "nome": "Nome",
-            "tipo": "Tipo",
-            "entrada": "Entrada",
-            "inicio_pausa": "Início Pausa",
-            "fim_pausa": "Fim Pausa",
-            "saida": "Saída",
-            "tolerancia": "Tolerância"
-        }
+        self.tabela_horarios.heading("id", text="ID")
+        self.tabela_horarios.heading("nome", text="Nome")
+        self.tabela_horarios.heading("tipo", text="Tipo")
+        self.tabela_horarios.heading("entrada", text="Entrada")
+        self.tabela_horarios.heading("inicio_pausa", text="Início Pausa")
+        self.tabela_horarios.heading("fim_pausa", text="Fim Pausa")
+        self.tabela_horarios.heading("saida", text="Saída")
+        self.tabela_horarios.heading("tolerancia", text="Tolerância")
 
-        larguras = {
-            "id": 60,
-            "nome": 150,
-            "tipo": 100,
-            "entrada": 100,
-            "inicio_pausa": 120,
-            "fim_pausa": 120,
-            "saida": 100,
-            "tolerancia": 100
-        }
-
-        for coluna, titulo in cabecalhos.items():
-            self.tabela_horarios.heading(
-                coluna, text=titulo
-            )
-            self.tabela_horarios.column(
-                coluna,
-                width=larguras[coluna],
-                anchor="center"
-            )
+        self.tabela_horarios.column("id", width=60, anchor="center")
+        self.tabela_horarios.column("nome", width=150, anchor="center")
+        self.tabela_horarios.column("tipo", width=100, anchor="center")
+        self.tabela_horarios.column("inicio_pausa", width=120, anchor="center")
+        self.tabela_horarios.column("fim_pausa", width=120, anchor="center")
+        self.tabela_horarios.column("saida", width=100, anchor="center")
+        self.tabela_horarios.column("tolerancia", width=100, anchor="center")
 
         scroll = ttk.Scrollbar(
             frame_tabela,
@@ -525,38 +510,27 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             columns=("id_aus", "id_func", "nome", "inicio_ferias", "fim_ferias", "estado"),
             show="headings",
             selectmode="browse",
-            style="Estilo_tabela"
-        )
+            style="Estilo_tabela")
 
-        cabecalhos = {
-            "id_aus": "ID Ausência",
-            "id_func": "ID Funcionário",
-            "nome": "Nome",
-            "inicio_ferias": "Início Férias",
-            "fim_ferias": "Fim Férias",
-            "estado": "Estado"
-        }
 
-        larguras = {
-            "id_aus": 60,
-            "id_func": 60,
-            "nome": 150,
-            "entrada": 100,
-            "inicio_ferias": 120,
-            "fim_ferias": 120,
-            "estado": 120
-        }
+        self.tabela_ferias.heading("id_aus", text="ID Ausência")
+        self.tabela_ferias.heading("id_func", text="ID Funcionário")
+        self.tabela_ferias.heading("nome", text="Nome")
+        self.tabela_ferias.heading("inicio_ferias", text="Início Férias")
+        self.tabela_ferias.heading("fim_ferias", text="Fim Férias")
+        self.tabela_ferias.heading("estado", text="Estado")
 
-        for coluna, titulo in cabecalhos.items():
-            self.tabela_ferias.heading(
-                coluna, text=titulo
-            )
-            self.tabela_ferias.column(
-                coluna,
-                width=larguras[coluna],
-                anchor="center"
-            )
+        self.tabela_ferias.column("id_aus", width=60, anchor="center")
+        self.tabela_ferias.column("id_func", width=150, anchor="center")
+        self.tabela_ferias.column("nome", width=100, anchor="center")
+        self.tabela_ferias.column("inicio_ferias", width=120, anchor="center")
+        self.tabela_ferias.column("fim_ferias", width=120, anchor="center")
+        self.tabela_ferias.column("estado", width=100, anchor="center")
 
+         # Cores da tabela
+        self.tabela_ferias.tag_configure("CANCELADO",foreground="#d00000")
+        
+        
         scroll = ttk.Scrollbar(
             frame_tabela,
             orient="vertical",
@@ -588,7 +562,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             INNER JOIN funcionarios AS f
                 ON a.id_funcionario = f.id_funcionario
             WHERE a.tipo = "Ferias"
-            ORDER BY a.data_inicio, f.nome
+            ORDER BY a.estado, a.data_inicio
             """
             )
 
@@ -604,8 +578,8 @@ class PaginaAtribuicaoHorarios(tk.Frame):
                         nome, 
                         inicio.strftime("%d-%m-%Y"), 
                         fim.strftime("%d-%m-%Y"),
-                        estado
-                    )
+                        estado),
+                        tags=("CANCELADO",) if estado =="CANCELADO" else()
                 )
         except mysql.connector.Error as erro:
             print(erro)
@@ -927,7 +901,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
 
         entry_data = DateEntry(
             janela,
-            date_format="%Y-%m-%d",
+            date_format="%d-%m-%Y",
             width=14,
             bootstyle=cores.PRIMARY_DARK
         )

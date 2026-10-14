@@ -71,6 +71,9 @@ class PaginaFuncionarios(tk.Frame):
             selectmode="browse",
             style="Estilo_tabela"
         )
+
+        self.tabela.tag_configure("inativo", foreground="red")
+
         self.tabela.heading("id_funcionario", text="ID")
         self.tabela.heading("nome", text="Funcionário")
         self.tabela.heading("tipo", text="Tipo")
@@ -185,10 +188,20 @@ class PaginaFuncionarios(tk.Frame):
  
         # Adicionar os funcionários à tabela
         for funcionario in funcionarios:
+
+            estado = funcionario[3]
+
+            if estado.upper() == "INATIVO":
+                tag = "inativo"
+
+            else: 
+                tag = ""
+
             self.tabela.insert(
                 "",
                 "end",
-                values=funcionario
+                values=funcionario,
+                tags=(tag,)
             )
  
  
@@ -197,8 +210,15 @@ class PaginaFuncionarios(tk.Frame):
         try:
             self.cursor.execute(
                 """
-                SELECT id_funcionario, nome, tipo, estado, DATE_FORMAT(data_adesao,'%d/%m/%Y')
-                FROM funcionarios ORDER BY nome
+                SELECT 
+                    id_funcionario, nome, tipo, estado, DATE_FORMAT(data_adesao,'%d/%m/%Y')
+                FROM funcionarios 
+                ORDER BY 
+                    CASE 
+                        WHEN estado = "ATIVO" THEN 1 
+                        ELSE 2 
+                    END, 
+                    nome ASC
                 """
             )
             return self.cursor.fetchall()
@@ -341,6 +361,7 @@ class PaginaFuncionarios(tk.Frame):
                 UPDATE funcionarios
                 SET estado = %s
                 WHERE id_funcionario = %s
+                
                 """,
                 (novo_estado, id_funcionario)
             )
