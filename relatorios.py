@@ -242,7 +242,8 @@ class PaginaRelatorios(tk.Frame):
             SELECT r.id_funcionario, f.nome, r.data,
                    r.atraso_minutos, r.horas_extra_minutos, r.total_minutos_trabalhados, r.tipo
             FROM RESULTADOS r
-            JOIN FUNCIONARIOS f ON f.id_funcionario = r.id_funcionario
+            JOIN FUNCIONARIOS f 
+                ON f.id_funcionario = r.id_funcionario
             WHERE r.data BETWEEN %s AND %s
         """
         
@@ -259,10 +260,11 @@ class PaginaRelatorios(tk.Frame):
             valores.append(id_func)
             
         #mostra todos os funcionarios ativos
-        else: sql += " AND f.estado = 'ATIVO'"
+        else: 
+            sql += " AND f.estado = 'ATIVO'"
             
         #ordem
-        sql += " ORDER BY r.data DESC, f.nome"
+        sql += " ORDER BY r.data ASC"
           
             
         self.cursor.execute(sql, valores)
