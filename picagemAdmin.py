@@ -23,6 +23,7 @@ import cores
 from ligacao import conn
 from rotulos import rotulo_tipo_picagem
 from ttkbootstrap.widgets import DateEntry
+from processamento import processar_dados_funcionario 
  
 # Tipos de picagem usados pelo relogio_ponto.py
 TIPOS = ["ENTRADA", "SAIDA_ALMOCO", "VOLTA_ALMOCO", "SAIDA"]
@@ -129,7 +130,7 @@ class PaginaPicagensAdmin(tk.Frame):
  
         for id_p, id_f, nome, data, tipo, anulada, motivo in resultados:
             self.picagens[id_p] = {
-                "id": id_f,
+                "id": id_p,
                 "id_funcionario": id_f,
                 "nome": nome,
                 "data": data,
@@ -170,18 +171,19 @@ class PaginaPicagensAdmin(tk.Frame):
  
         for dia in dias:
             try:
-                calcular_e_guardar_dia(self.cursor, conn, id_funcionario, dia)
+                 processar_dados_funcionario(dia, dia, [id_funcionario])
             except Exception as erro:
                 print(erro)
  
     
-    # 1. ADICIONAR PICAGEM MANUAL
+    # 1 ADICIONAR PICAGEM MANUAL
    
     def adicionar_picagem(self):
  
         janela = tk.Toplevel(self)
         janela.title("Adicionar picagem manual")
-        janela.grab_set()
+        janela.transient(self)
+        
  
         w.criar_label( janela,"Funcionário:").pack(pady=(10,2), padx=20)
         combo_func = ttk.Combobox(janela, values=list(self.funcionarios_map.keys()), state="readonly",width=28)
@@ -202,7 +204,7 @@ class PaginaPicagensAdmin(tk.Frame):
         )
         combo_tipo.pack(padx=20)
  
-        w.criar_label(janela, "Motivo (obrigatório):").pack(pady=(10, 2), padx=20)
+        w.criar_label(janela, "Motivo (opcional):").pack(pady=(10, 2), padx=20)
         entry_motivo = w.criar_entrada(janela, largura=32)
         entry_motivo.pack(padx=20)
  
@@ -233,9 +235,7 @@ class PaginaPicagensAdmin(tk.Frame):
                 return
  
             motivo = entry_motivo.get().strip()
-            if not motivo:
-                messagebox.showerror("Erro", "O motivo é obrigatório.", parent=janela)
-                return
+        
  
             try:
                 self.cursor.execute(
@@ -295,7 +295,7 @@ class PaginaPicagensAdmin(tk.Frame):
         combo_tipo.set(rotulo_tipo_picagem(picagem["tipo"]))
         combo_tipo.pack(padx=20)
  
-        w.criar_label(janela,"Motivo da correção (obrigatório):").pack(pady=(10, 2), padx=20)
+        w.criar_label(janela,"Motivo da correção (opcional):").pack(pady=(10, 2), padx=20)
         entry_motivo = w.criar_entrada(janela, largura=32)
         entry_motivo.pack(padx=20)
  
@@ -321,9 +321,6 @@ class PaginaPicagensAdmin(tk.Frame):
                 return
  
             motivo = entry_motivo.get().strip()
-            if not motivo:
-                messagebox.showerror("Erro", "O motivo é obrigatório.", parent=janela)
-                return
  
             id_admin = self.obter_id_admin()
  
@@ -378,23 +375,29 @@ class PaginaPicagensAdmin(tk.Frame):
     def eliminar_picagem(self):
  
         picagem = self.obter_selecionada()
-        if not picagem:
+        
+        if picagem["anulada"]:
+            messagebox.showerror("Erro", "Esta picagem já está anulada.")
             return
         
-        motivo = simpledialog.askstring("Eliminar picagem", "Motivo (obrigatório):", parent=self)
-        if not motivo or not motivo.strip():
-            messagebox.showerror("Erro", "O motivo é obrigatório.")
+        motivo = simpledialog.askstring("Eliminar picagem", "Motivo (opcional):", parent=self)
+        if motivo is None:
             return
         
-        self.cursor.execute(
-            """
-            UPDATE picagem
-            SET anulada = 1, id_admin_retificacao = %s, motivo_retificacao = %s
-            WHERE id_picagem = %s
-            """,
-            (self.obter_id_admin(), motivo.strip(), picagem["id"])
+        try:
+            self.cursor.execute(
+                """
+                UPDATE picagem
+                SET anulada = 1, id_admin_retificacao = %s, motivo_retificacao = %s
+                WHERE id_picagem = %s AND anulada = 0
+                """,
+                (self.obter_id_admin(), motivo.strip(), picagem["id"])
             )
-        conn.commit()
+            conn.commit()
+        except mysql.connector.Error as erro:
+            conn.rollback()
+            messagebox.showerror("Erro", f"Erro ao eliminar picagem:\n{erro}")
+            return
         self.recalcular(picagem["id_funcionario"], picagem["data"], picagem["tipo"])
         self.atualizar_tabela()
     

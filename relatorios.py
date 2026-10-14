@@ -87,7 +87,9 @@ class PaginaRelatorios(tk.Frame):
         # FRAME TABELA 
         frame_tabela = tk.Frame(self)
         frame_tabela.pack(fill="both", expand=True, padx=30, pady=20)
-       
+         
+        w.criar_estilo_tabela()
+        
         # Tabela 
         self.tabela_relatorios = ttk.Treeview(
             frame_tabela,
@@ -133,28 +135,40 @@ class PaginaRelatorios(tk.Frame):
         self.carregar_funcionarios()
         self.filtrar_relatorio(avisar=False)
         
+        self.bind("<Map>", lambda e: self.atualizar_pagina())
         
-      #  
+        
+
     def carregar_funcionarios(self):
+        conn.commit()   # para ver os funcionários novos
         self.cursor.execute(
-            "SELECT id_funcionario, nome, estado FROM funcionarios ORDER BY nome"
+            "SELECT id_funcionario, nome, estado FROM funcionarios ORDER BY estado, id_funcionario"
         )
+
         self.funcionarios_map = {}
-        
         for id_, nome, estado in self.cursor.fetchall():
             sufixo = "" if estado == "ATIVO" else " - inativo"
             self.funcionarios_map[f"{nome} (#{id_}){sufixo}"] = id_
 
-        # novo: mostrar os nomes na lista
+        # limpa a lista (e a escolha) e volta a enchê-la
+        self.lista_funcionarios.delete(0, tk.END)
         for nome in self.funcionarios_map:
             self.lista_funcionarios.insert(tk.END, nome)
+
+
             
-            
+    def atualizar_pagina(self):
+        self.carregar_funcionarios()
+        self.filtrar_relatorio(avisar=False)    
+          
     def mostrar_todos(self):
         self.lista_funcionarios.selection_clear(0, tk.END)
         self.filtrar_relatorio()        
             
     
+    
+             
+            
     def processar_assiduidade(self):
         """Executa o processamento e atualiza o relatório."""
 
