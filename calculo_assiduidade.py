@@ -283,6 +283,43 @@ def _calcular_livre(cursor, id_funcionario, data_turno, resultado,
     return resultado
 
 
+def calcular_picagens_folga(cursor, id_funcionario, data_turno):
+    """
+    Calcula o trabalho realizado num dia de folga.
+
+    Todas as horas de períodos completos iniciados nesse dia contam como
+    horas extra. A janela inclui o dia seguinte para permitir uma saída
+    depois da meia-noite.
+    """
+    resultado = _resultado_vazio()
+
+    inicio = datetime.combine(data_turno, time.min)
+    fim = datetime.combine(data_turno + timedelta(days=2), time.min)
+    periodos = _ler_periodos(cursor, id_funcionario, inicio, fim)
+
+    # Atribui o período ao dia em que ocorreu a entrada.
+    periodos_dia = [
+        (entrada, saida)
+        for entrada, saida in periodos
+        if entrada.date() == data_turno
+    ]
+
+    resultado["periodos"] = periodos_dia
+    resultado["falta"] = False
+
+    if not periodos_dia:
+        return resultado
+
+    resultado["horas_trabalhadas"] = _horas_dos_periodos(periodos_dia)
+
+    if resultado["horas_trabalhadas"] is not None:
+        resultado["horas_extra_min"] = round(
+            resultado["horas_trabalhadas"] * 60
+        )
+
+    return resultado
+
+
 # ======================================================================
 # API PÚBLICA
 # ======================================================================
@@ -375,7 +412,9 @@ def calcular_picagens(cursor, id_funcionario, data_turno, horario):
     )
 
 
-def guardar_resultado(cursor, conn, id_funcionario, data_turno, resumo):
+def guardar_resultado(
+    cursor, conn, id_funcionario, data_turno, resumo, tipo_override=None
+):
     """Insere ou atualiza o resultado diário de assiduidade."""
 
     atraso_minutos = (
@@ -392,8 +431,11 @@ def guardar_resultado(cursor, conn, id_funcionario, data_turno, resumo):
         else 0
     )
 
-    # Distinguir uma falta de um dia com picagens incompletas.
-    if resumo["falta"]:
+    # Permite ao processamento atribuir tipos específicos, como trabalho em folga.
+    # Sem override, mantém-se a classificação normal.
+    if tipo_override is not None:
+        tipo = tipo_override
+    elif resumo["falta"]:
         tipo = "FALTA"
     elif resumo["periodos"] and horas_trabalhadas is None:
         tipo = "INCOMPLETO"

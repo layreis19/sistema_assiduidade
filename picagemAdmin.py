@@ -82,7 +82,20 @@ class PaginaPicagensAdmin(tk.Frame):
         self.tabela.tag_configure("anulada", foreground="red")
  
         self.tabela.pack(fill="both", expand=True, padx=30, pady=20)
- 
+
+        scroll = ttk.Scrollbar(
+            self.tabela,
+            orient="vertical",
+            command=self.tabela.yview
+        )
+        self.tabela.configure(
+            yscrollcommand=scroll.set
+        )
+
+        self.tabela.pack(
+            side="left", fill="both", expand=True
+        )
+        scroll.pack(side="right", fill="y")
         # reaplica o estilo sempre que a página aparece
         self.bind("<Map>", w.criar_estilo_tabela())
  
