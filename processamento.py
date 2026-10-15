@@ -119,10 +119,14 @@ def _processar_dia(cursor, id_funcionario, dia, e_dia_de_adesao,
     return ("faltas" if resultado["falta"] else None), True
 
 
-def processar_dados_funcionario(data_inicio, data_fim):
+def processar_dados_funcionario(data_inicio, data_fim, ids_funcionarios=None):
     """
     Processa a assiduidade no intervalo indicado e devolve um resumo para
     apresentar na interface. Só processa dias até ontem.
+
+    ids_funcionarios (opcional): lista de ids a processar. Sem ela, processa
+    todos os funcionários ativos. Serve para recalcular só quem foi afetado
+    por uma correção de picagens, em vez de reprocessar toda a gente.
     """
 
     data_inicio = _para_date(data_inicio)
@@ -157,15 +161,36 @@ def processar_dados_funcionario(data_inicio, data_fim):
     cursor = conn.cursor(buffered=True)
 
     try:
-        cursor.execute(
-            """
-            SELECT id_funcionario, data_adesao, horario
-            FROM FUNCIONARIOS
-            WHERE estado = 'ATIVO'
-            ORDER BY id_funcionario
-            """
-        )
-        funcionarios = cursor.fetchall()
+        if ids_funcionarios is None:
+            cursor.execute(
+                """
+                SELECT id_funcionario, data_adesao, horario
+                FROM FUNCIONARIOS
+                WHERE estado = 'ATIVO'
+                ORDER BY id_funcionario
+                """
+            )
+            funcionarios = cursor.fetchall()
+
+        else:
+            ids = list(ids_funcionarios)
+
+            if ids:
+                # um %s por id (só marcadores: os valores vão como parâmetros)
+                marcadores = ", ".join(["%s"] * len(ids))
+                cursor.execute(
+                    f"""
+                    SELECT id_funcionario, data_adesao, horario
+                    FROM FUNCIONARIOS
+                    WHERE estado = 'ATIVO'
+                      AND id_funcionario IN ({marcadores})
+                    ORDER BY id_funcionario
+                    """,
+                    ids,
+                )
+                funcionarios = cursor.fetchall()
+            else:
+                funcionarios = []
 
         cursor.execute(
             "SELECT data FROM FERIADOS WHERE data BETWEEN %s AND %s",
