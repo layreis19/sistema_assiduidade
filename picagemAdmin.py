@@ -79,7 +79,7 @@ class PaginaPicagensAdmin(tk.Frame):
         self.tabela.column("motivo", width=250, anchor="w")
 
  
-        self.tabela.tag_configure("anulada", foreground="#9aa5b1")
+        self.tabela.tag_configure("anulada", foreground="red")
  
         self.tabela.pack(fill="both", expand=True, padx=30, pady=20)
  
@@ -119,7 +119,7 @@ class PaginaPicagensAdmin(tk.Frame):
                        p.anulada, p.motivo_retificacao
                 FROM picagem p
                 JOIN funcionarios f ON f.id_funcionario = p.id_funcionario
-                ORDER BY p.data DESC
+                ORDER BY p.anulada, p.data DESC
                 """
             )
             resultados = self.cursor.fetchall()
