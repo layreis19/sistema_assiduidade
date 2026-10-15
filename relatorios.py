@@ -17,6 +17,13 @@ import widgets as w
 from processamento import processar_dados_funcionario
 
 
+
+def formatar_horas(minutos):
+    
+    minutos = minutos or 0
+    return f"{minutos // 60}h{minutos % 60:02d}"
+
+
 class PaginaRelatorios(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg=cores.CARD)
@@ -290,15 +297,15 @@ class PaginaRelatorios(tk.Frame):
         self.tabela_relatorios.delete(*self.tabela_relatorios.get_children())
 
         for id_f, nome, data, atraso, extra, total, tipo in registos:
-            total= total or 0
+            
             self.tabela_relatorios.insert("", tk.END, values=(
                 id_f,
                 nome,
                 data.strftime("%d/%m/%Y"),
-                f"{atraso} min" if atraso else "-",
-                f"{extra} min" if extra else "-",
+                formatar_horas(atraso),
+                formatar_horas(extra),
                 tipo or "-",
-                f"{total // 60}h{total % 60:02d}"
+                formatar_horas(total)
                 
             ))
 
