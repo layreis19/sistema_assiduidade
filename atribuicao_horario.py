@@ -16,6 +16,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         super().__init__(parent, bg=cores.CARD)
 
         self.id_admin = id_admin
+        self.id_horario_editar = None
         self.cursor = conn.cursor(buffered=True)
 
         w.criar_estilo_tabela()
@@ -294,11 +295,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         w.criar_botao(
             frame_botoes,
             "Editar",
-            lambda: messagebox.showinfo(
-                "Informação",
-                "A funcionalidade de edição de horários ainda não está implementada."
-            )
-        ).pack(side=tk.LEFT, padx=5)
+            self.editar_horario).pack(side=tk.LEFT, padx=5)
 
         w.criar_botao(
             frame_botoes,
@@ -1183,6 +1180,174 @@ class PaginaAtribuicaoHorarios(tk.Frame):
                 "Erro",
                 "Não foi possível atribuir o horário. Tente novamente."
             )
+
+    def editar_horario(self):
+    
+
+        item_selecionado = self.tabela_horarios.selection()
+
+        if not item_selecionado:
+            messagebox.showwarning(
+                "Erro!",
+                "Selecione um horário da tabela.",
+                parent=self
+            )
+            return
+
+        valores = self.tabela_horarios.item(item_selecionado[0], "values")
+
+        janela = tk.Toplevel(self)
+        janela.title("Editar Horário")
+        janela.geometry("500x800")
+        janela.transient(self.winfo_toplevel())
+        janela.grab_set()
+
+        id_horario = valores[0]
+
+        frame_formulario = tk.Frame(janela,background=cores.CARD)
+        frame_formulario.pack(padx=20, pady=20, fill="x")
+
+        frame_botao = tk.Frame(janela, background=cores.CARD)
+        frame_botao.pack(side="bottom", fill="x", padx=20, pady=10)
+
+        w.criar_label(frame_formulario, "Designação:").pack(anchor="w")
+        entry_nome = w.criar_entrada(frame_formulario)
+        entry_nome.pack(fill="x", pady=(0,10))
+
+        w.criar_label(frame_formulario, "Entrada (HH:MM):").pack(anchor="w")
+        entry_entrada = w.criar_entrada(frame_formulario)
+        entry_entrada.pack(fill="x", pady=(0,10))
+
+        w.criar_label(frame_formulario, "Saída (HH:MM):").pack(anchor="w")
+        entry_saida = w.criar_entrada(frame_formulario)
+        entry_saida.pack(fill="x", pady=(0,10))
+    
+
+        w.criar_label(frame_formulario, "Tipo:").pack(anchor="w")
+        entry_tipo = ttk.Combobox(frame_formulario, values=["FIXO", "TURNO"], state="readonly", width=12)
+        entry_tipo.pack(fill="x", pady=(0,10))
+
+        w.criar_label(frame_formulario, "Início Pausa (HH:MM):").pack(anchor="w")
+        entry_pausa = w.criar_entrada(frame_formulario)
+        entry_pausa.pack(fill="x", pady=(0,10))
+
+        w.criar_label(frame_formulario, "Fim Pausa (HH:MM):").pack(anchor="w")
+        entry_fim_pausa = w.criar_entrada(frame_formulario)
+        entry_fim_pausa.pack(fill="x", pady=(0,10))
+
+        w.criar_label(frame_formulario, "Tolerância (minutos):").pack(anchor="w")
+        entry_tolerancia = w.criar_entrada(frame_formulario)
+        entry_tolerancia.pack(fill="x", pady=(0,10))
+
+        w.criar_label(frame_formulario, "Dias de Trabalho").pack(anchor="w")
+        lista_dias = tk.Listbox(frame_formulario, selectmode=tk.MULTIPLE,exportselection=False, height=7)
+        lista_dias.pack(fill="x", pady=(0,10))
+
+        for dia in ["SEG", "TER", "QUA", "QUI", "SEX", "SAB", "DOM"]:
+            lista_dias.insert(tk.END, dia)
+
+        def guardar_alteracoes_horario():
+            
+            nome = entry_nome.get().strip().upper()
+            entrada = entry_entrada.get().strip()
+            saida = entry_saida.get().strip()
+            tipo = entry_tipo.get()
+            inicio_pausa = entry_pausa.get().strip()
+            fim_pausa = entry_fim_pausa.get().strip()
+            tolerancia = entry_tolerancia.get().strip()
+
+            dias_selecionados = lista_dias.curselection()
+            
+            dias_trabalho = ",".join(lista_dias.get(i)for i in dias_selecionados)
+            
+            if not nome or not entrada or not inicio_pausa or not fim_pausa or not tolerancia or not saida or not tipo or not dias_trabalho:
+                messagebox.showerror(
+                    "Erro",
+                    "Todos os campos são obrigatórios!"
+                )
+                return
+
+            if inicio_pausa <= entrada: 
+                messagebox.showerror(
+                    "Erro!",
+                    "A hora da Início de Pausa tem que ser superior à hora de Entrada!")
+                return
+
+            elif fim_pausa <= inicio_pausa:
+                messagebox.showerror(
+                    "Erro!",
+                    "A hora de Fim de Pausa tem que ser superior à hora de Início de Pausa!")
+                return
+
+            elif saida <= fim_pausa:
+                messagebox.showerror(
+                    "Erro!",
+                    "A hora de Saída tem que ser superior à hora de Fim de Pausa!")
+                return
+
+            try:
+                tolerancia = int(tolerancia)
+
+                if tolerancia <0:
+                    messagebox.showerror(
+                        "Erro", 
+                        "A tolerância não pode ser negativa!")
+                    return
+            except ValueError:
+                messagebox.showerror(
+                    "Erro",
+                    "A tolerância tem que ser um número inteiro!")
+                return
+            
+            try:
+                self.cursor.execute(
+                    """
+                    UPDATE HORARIO
+                    SET nome = %s,
+                        entrada = %s,
+                        inicio_almoco = %s,
+                        fim_almoco = %s,
+                        saida = %s,
+                        tolerancia = %s,
+                        tipo = %s,
+                        dias_trabalho = %s
+                    WHERE id_horario = %s
+                    """,
+                    (nome, entrada, inicio_pausa, fim_pausa, saida, tolerancia, tipo, dias_trabalho, id_horario)
+                )
+
+                conn.commit()
+                
+                self.carregar_tabela_horarios()
+                self.carregar_horarios()
+
+                janela.destroy()
+
+                messagebox.showinfo(
+                    "Sucesso",
+                    "Horário atualizado com sucesso!"
+                )
+                
+
+
+            except mysql.connector.Error as erro:
+                conn.rollback()
+
+                messagebox.showerror(
+                    "Erro",
+                    f"Erro ao atualizar horário: {erro}",
+                    parent=janela
+                )
+
+            pass
+
+        w.criar_botao(frame_botao, "Guardar", guardar_alteracoes_horario).pack(anchor="center", pady=5)
+            
+        
+
+         
+
+
 
     # ==================================================
     # MOSTRAR O HORÁRIO DO FUNCIONÁRIO SELECIONADO
