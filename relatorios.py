@@ -219,6 +219,7 @@ class PaginaRelatorios(tk.Frame):
                 f"Ausências: {resultado['ausencias']}\n"
                 f"Feriados: {resultado['feriados']}\n"
                 f"Dias sem horário: {resultado['dias_sem_horario']}\n"
+                f"Trabalho em dias de folga: {resultado['trabalho_em_folga']}\n"
                 f"Dias sem trabalho previsto: {resultado['dias_sem_trabalho']}"
             )
 

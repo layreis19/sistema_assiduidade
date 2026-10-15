@@ -27,6 +27,7 @@ from ligacao import conn
 from calculo_assiduidade import (
     carregar_horario,
     calcular_picagens,
+    calcular_picagens_folga,
     guardar_resultado,
 )
 
@@ -87,10 +88,30 @@ def _processar_dia(cursor, id_funcionario, dia, e_dia_de_adesao,
     Devolve (contador_do_resumo, gravou_linha).
     """
 
-    # 1. Folga semanal: a pessoa não trabalha neste dia da semana.
-    #    (Só se sabe quando há horário; sem horário, não há folgas definidas.)
+    # 1. Folga semanal: verificar se houve trabalho efetivo.
+    #    Sem picagens, grava FOLGA; com picagens, calcula o trabalho sem
+    #    comparar com o horário normal desse dia.
     if horario is not None and DIAS_SEMANA[dia.weekday()] not in dias_trabalho:
-        return "dias_sem_trabalho", False
+        resultado_folga = calcular_picagens_folga(
+            cursor, id_funcionario, dia
+        )
+
+        if not resultado_folga["periodos"]:
+            _guardar_estado(cursor, id_funcionario, dia, "FOLGA")
+            return "dias_sem_trabalho", True
+
+        tipo_resultado = (
+            "INCOMPLETO_FOLGA"
+            if resultado_folga["horas_trabalhadas"] is None
+            else "TRABALHO_FOLGA"
+        )
+
+        guardar_resultado(
+            cursor, conn, id_funcionario, dia,
+            resultado_folga,
+            tipo_override=tipo_resultado
+        )
+        return "trabalho_em_folga", True
 
     # 2. Ausências confirmadas.
     for inicio, fim, tipo in ausencias:
@@ -155,6 +176,7 @@ def processar_dados_funcionario(data_inicio, data_fim, ids_funcionarios=None):
         "feriados": 0,
         "dias_sem_horario": 0,
         "dias_sem_trabalho": 0,
+        "trabalho_em_folga": 0,
         "erros": [],
     }
 
