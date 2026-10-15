@@ -1,4 +1,3 @@
-
 """
 O QUE ESTE FICHEIRO FAZ?
 Página do administrador para corrigir picagens.
@@ -26,7 +25,7 @@ from ttkbootstrap.widgets import DateEntry
 from processamento import processar_dados_funcionario 
  
 # Tipos de picagem usados pelo relogio_ponto.py
-TIPOS = ["ENTRADA", "SAIDA_ALMOCO", "VOLTA_ALMOCO", "SAIDA"]
+TIPOS = ["ENTRADA", "SAIDA"]
 
 FORMATO_DATA = "%d/%m/%Y"
 FORMATO_HORA = "%H:%M"
@@ -161,6 +160,40 @@ class PaginaPicagensAdmin(tk.Frame):
         return self.picagens.get(int(sel[0]))
  
 
+    # RECUSAR PICAGENS ANTERIORES À DATA DE ADESÃO
+
+    def validar_adesao(self, id_funcionario, data_hora, janela):
+        """
+        Devolve True se a picagem pode ser registada. Se for de um dia
+        anterior ao dia de adesão do funcionário, mostra o erro e devolve
+        False: o processamento ignora esses dias, por isso a picagem nunca
+        seria contada.
+
+        Compara só o DIA (como o processamento): no próprio dia de adesão
+        aceita-se qualquer hora.
+        """
+        self.cursor.execute(
+            "SELECT data_adesao FROM funcionarios WHERE id_funcionario = %s",
+            (id_funcionario,)
+        )
+        linha = self.cursor.fetchone()
+        if linha is None:
+            return True  # funcionário inexistente: o INSERT falha com o seu próprio erro
+
+        data_adesao = linha[0].date() if isinstance(linha[0], datetime) else linha[0]
+
+        if data_hora.date() < data_adesao:
+            messagebox.showerror(
+                "Erro",
+                "Não é possível registar uma picagem anterior à data de adesão "
+                f"do funcionário ({data_adesao.strftime(FORMATO_DATA)}).",
+                parent=janela
+            )
+            return False
+
+        return True
+
+
     # RECALCULAR OS RESULTADOS (atrasos/horas extra) DO DIA AFETADO
     
     def recalcular(self, id_funcionario, data_hora, tipo):
@@ -168,14 +201,29 @@ class PaginaPicagensAdmin(tk.Frame):
         # se não for ENTRADA, pode pertencer a um turno começado na véspera
         if tipo != "ENTRADA":
             dias.add(data_hora.date() - timedelta(days=1))
- 
-        for dia in dias:
+
+        # o processamento só trata dias que já terminaram (até ontem);
+        # hoje ainda está a decorrer, por isso não há nada a recalcular
+        ontem = datetime.now().date() - timedelta(days=1)
+
+        problemas = []
+
+        for dia in sorted(d for d in dias if d <= ontem):
             try:
-                 processar_dados_funcionario(dia, dia, [id_funcionario])
+                resumo = processar_dados_funcionario(dia, dia, [id_funcionario])
+                # o processamento não levanta erro por dia: devolve-os no resumo
+                problemas.extend(resumo["erros"])
             except Exception as erro:
                 print(erro)
- 
-    
+                problemas.append(f"{dia.strftime(FORMATO_DATA)}: {erro}")
+
+        if problemas:
+            messagebox.showwarning(
+                "Aviso",
+                "A picagem foi guardada, mas não foi possível recalcular "
+                "os resultados:\n\n" + "\n".join(problemas[:5])
+            )
+
     # 1 ADICIONAR PICAGEM MANUAL
    
     def adicionar_picagem(self):
@@ -227,6 +275,9 @@ class PaginaPicagensAdmin(tk.Frame):
  
             if data_hora > datetime.now():
                 messagebox.showerror("Erro", "Não é possível registar uma picagem no futuro.", parent=janela)
+                return
+ 
+            if not self.validar_adesao(id_funcionario, data_hora, janela):
                 return
  
             tipo = self.rotulo_para_tipo.get(combo_tipo.get())
@@ -315,6 +366,9 @@ class PaginaPicagensAdmin(tk.Frame):
                 messagebox.showerror("Erro", "Não é possível registar uma picagem no futuro.", parent=janela)
                 return
  
+            if not self.validar_adesao(picagem["id_funcionario"], nova_data, janela):
+                return
+ 
             novo_tipo = self.rotulo_para_tipo.get(combo_tipo.get())
             if novo_tipo is None:
                 messagebox.showerror("Erro", "Selecione o tipo de picagem.", parent=janela)
@@ -375,6 +429,8 @@ class PaginaPicagensAdmin(tk.Frame):
     def eliminar_picagem(self):
  
         picagem = self.obter_selecionada()
+        if not picagem:
+            return
         
         if picagem["anulada"]:
             messagebox.showerror("Erro", "Esta picagem já está anulada.")
@@ -400,4 +456,3 @@ class PaginaPicagensAdmin(tk.Frame):
             return
         self.recalcular(picagem["id_funcionario"], picagem["data"], picagem["tipo"])
         self.atualizar_tabela()
-    
