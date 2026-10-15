@@ -300,11 +300,8 @@ class PaginaAtribuicaoHorarios(tk.Frame):
         w.criar_botao(
             frame_botoes,
             "Eliminar",
-            lambda: messagebox.showinfo(
-                "Informação",
-                "A funcionalidade de eliminação de horários ainda não está implementada."
-            )
-        ).pack(side=tk.LEFT, padx=5)
+            self.eliminar_horario
+            ).pack(side=tk.LEFT, padx=5)
 
         w.criar_botao(
             self.pagina_editar_horarios,
@@ -1342,11 +1339,57 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             pass
 
         w.criar_botao(frame_botao, "Guardar", guardar_alteracoes_horario).pack(anchor="center", pady=5)
-            
-        
 
-         
+    def eliminar_horario(self):
 
+        item_selecionado = self.tabela_horarios.selection()
+
+        if not item_selecionado:
+            messagebox.showwarning(
+                "Erro!",
+                "Selecione um horário da tabela.",
+                parent=self
+            )
+            return
+
+        valores = self.tabela_horarios.item(item_selecionado[0], "values")
+        id_horario = valores[0]
+        nome_horario = valores[1]
+
+        confirmar = messagebox.askyesno(
+            "Confirmar eliminação",
+            f"Deseja eliminar PERMANENTEMENTE o horário {nome_horario}?",
+            parent=self
+        )
+        if not confirmar: 
+            return
+
+        try:
+            self.cursor.execute("""
+            DELETE FROM HORARIO
+            WHERE id_horario = %s""",
+            (id_horario,)
+            )
+
+            conn.commit()
+
+            self.carregar_tabela_horarios()
+            self.carregar_horarios()
+
+            messagebox.showinfo(
+                "Sucesso",
+                "Horário eliminado com sucesso!",
+                parent=self
+            )
+
+        except mysql.connector.Error as erro:
+            conn.rollback()
+
+            messagebox.showerror(
+                "Erro",
+                f"Não foi possível eliminar o horário: \n{erro}",
+                parent=self
+            )
 
 
     # ==================================================
