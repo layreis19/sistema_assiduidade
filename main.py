@@ -18,6 +18,8 @@ from relatorios import PaginaRelatorios
 from atribuicao_horario import PaginaAtribuicaoHorarios
 from picagemAdmin import PaginaPicagensAdmin
 from ligacao import conn
+from dashboard import PaginaDashboard
+
 
 janela = tk.Tk()
 janela.title("Gestão de Assiduidade")
@@ -38,13 +40,9 @@ pagina_ponto = PaginaPonto(conteudo)
 pagina_funcionarios = PaginaFuncionarios(conteudo)
 pagina_presencas = PaginaPresencas(conteudo)
 pagina_relatorios = PaginaRelatorios(conteudo)
-pagina_atribuicao_horarios = PaginaAtribuicaoHorarios(
-    conteudo, lambda: getattr(pagina_administrador, "id_admin", None))
-pagina_picagens_admin = PaginaPicagensAdmin(
-    conteudo,
-    lambda: getattr(pagina_administrador, "id_admin_logado", None)
-)
-
+pagina_atribuicao_horarios = PaginaAtribuicaoHorarios(conteudo, lambda: getattr(pagina_administrador, "id_admin", None))
+pagina_picagens_admin = PaginaPicagensAdmin(conteudo, lambda: getattr(pagina_administrador, "id_admin_logado", None))
+pagina_dashboard = PaginaDashboard(conteudo)
 
 
 def mostrar_pagina(pagina):
@@ -56,6 +54,7 @@ def mostrar_pagina(pagina):
     pagina_atribuicao_horarios.pack_forget()
     pagina_funcionarios.pack_forget()
     pagina_picagens_admin.pack_forget()
+    pagina_dashboard.pack_forget()
 
     # mostrar a página escolhida
     pagina.pack(fill="both", expand=True)
@@ -79,6 +78,7 @@ def mostrar_pagina(pagina):
     elif pagina == PaginaRelatorios:
         pagina_relatorios.carregar_funcionarios()
 
+
 def mostrar_botoes_admin(id_admin=None):
     # chamada quando o login corre bem
     btn_administrador.pack_forget()
@@ -87,6 +87,7 @@ def mostrar_botoes_admin(id_admin=None):
     btn_horarios.pack(side="left", padx=10, pady=10)
     btn_relatorios.pack(side="left", padx=10, pady=10)
     btn_Picagens.pack(side="left", padx=10, pady=10)
+    btn_dashboard.pack(side="left", padx=10, pady=10)
     btn_sair.pack(side="left", padx=10, pady=10)
    
 
@@ -99,6 +100,7 @@ def sair_admin():
     btn_horarios.pack_forget()
     btn_relatorios.pack_forget()
     btn_Picagens.pack_forget()
+    btn_dashboard.pack_forget()
     btn_sair.pack_forget()
 
     # voltar a mostrar o botão Administrador
@@ -153,6 +155,11 @@ btn_Picagens = tk.Button(
     command=lambda:mostrar_pagina(pagina_picagens_admin)
     
 )
+
+btn_dashboard = tk.Button(
+    menu,
+    text="Dashboard",
+    command=lambda: mostrar_pagina(pagina_dashboard))
 
 btn_sair = tk.Button(
     menu,
