@@ -38,7 +38,8 @@ FONTE_TITULO = ("Arial", 24)
 FONTE_LABEL = ("Arial", 12)
 FONTE_BOTAO = ("Arial", 11)
 FONTE_ENTRADA = ("Arial", 11)
-
+FONTE_TITULO_DASH = ("Arial", 30, "bold")
+FONTE_SUBTITULO_DASH = ("Arial", 16)
 
 def _fundo_de(pai):
     """Fundo do pai, para o label ficar com a mesma cor à volta."""
@@ -50,8 +51,8 @@ def _fundo_de(pai):
 
 def criar_titulo(pai, texto, **extra):
     """Título grande. Ex: criar_titulo(self, "RELATÓRIOS").pack(pady=(30, 20))"""
-    return tk.Label(pai, text=texto, font=FONTE_TITULO,
-                    bg=_fundo_de(pai), fg=COR_TEXTO, **extra)
+    return tk.Label(pai, text=texto, font=extra.pop("font", FONTE_TITULO),
+                    bg=extra.pop("bg", _fundo_de(pai)), fg=extra.pop("fg", COR_TEXTO), **extra)
 
 
 def criar_label(pai, texto="", negrito=False, cor=None, **extra):
@@ -60,8 +61,8 @@ def criar_label(pai, texto="", negrito=False, cor=None, **extra):
     `extra` aceita qualquer opção do tk.Label (anchor, justify, ...).
     """
     fonte = FONTE_LABEL + ("bold",) if negrito else FONTE_LABEL
-    return tk.Label(pai, text=texto, font=fonte,
-                    bg=_fundo_de(pai), fg=cor or COR_TEXTO, **extra)
+    return tk.Label(pai, text=texto, font=extra.pop("font",FONTE_LABEL),
+                    bg=extra.pop("bg" , _fundo_de(pai)), fg=extra.pop("fg", cor or COR_TEXTO), **extra)
 
 
 def criar_botao(pai, texto, comando, largura=None, **extra):
@@ -70,8 +71,8 @@ def criar_botao(pai, texto, comando, largura=None, **extra):
         extra["width"] = largura
     return tk.Button(
         pai, text=texto, command=comando, font=FONTE_BOTAO,
-        bg=COR_BOTAO, fg=COR_BRANCO,
-        activebackground=COR_BOTAO_ESCURO, activeforeground=COR_BRANCO,
+        bg=extra.pop("bg", COR_BOTAO), fg= extra.pop("fg", COR_BRANCO),
+        activebackground=extra.pop("activebackground", COR_BOTAO_ESCURO), activeforeground=extra.pop("activeforeground", COR_BRANCO),
         bd=0, relief="flat", cursor="hand2", padx=14, pady=6, **extra)
 
 
