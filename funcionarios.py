@@ -13,6 +13,7 @@ import mysql.connector
 from ligacao import conn
 import cores
 import widgets as w
+from tkcalendar import DateEntry
  
  
 class PaginaFuncionarios(tk.Frame):
@@ -66,7 +67,7 @@ class PaginaFuncionarios(tk.Frame):
         # Tabela para exibir os funcionários
         self.tabela = ttk.Treeview(
             self,
-            columns=("id_funcionario", "nome", "tipo", "estado", "data_adesao"),
+            columns=("id_funcionario", "nome", "tipo", "estado", "data_adesao","data_demissao"),
             show="headings",
             selectmode="browse",
             style="Estilo_tabela"
@@ -79,6 +80,7 @@ class PaginaFuncionarios(tk.Frame):
         self.tabela.heading("tipo", text="Tipo")
         self.tabela.heading("estado", text="Estado")
         self.tabela.heading("data_adesao", text="Data de Adesão")
+        self.tabela.heading("data_demissao", text="Data de Demissão")
 
         # Largura das colunas
         self.tabela.column("id_funcionario",width=60,anchor="center")
@@ -86,6 +88,7 @@ class PaginaFuncionarios(tk.Frame):
         self.tabela.column("tipo",width=150,anchor="center")
         self.tabela.column("estado",width=150,anchor="center")
         self.tabela.column("data_adesao",width=100,anchor="center")
+        self.tabela.column("data_demissao",width=100,anchor="center")
  
         self.tabela.pack(fill="both", expand=True, padx=30, pady=20)
  
@@ -211,7 +214,7 @@ class PaginaFuncionarios(tk.Frame):
             self.cursor.execute(
                 """
                 SELECT 
-                    id_funcionario, nome, tipo, estado, DATE_FORMAT(data_adesao,'%d/%m/%Y')
+                    id_funcionario, nome, tipo, estado, DATE_FORMAT(data_adesao,'%d/%m/%Y'), IFNULL(DATE_FORMAT(data_demissao,'%d/%m/%Y'), '-')
                 FROM funcionarios 
                 ORDER BY 
                     CASE 
@@ -248,6 +251,8 @@ class PaginaFuncionarios(tk.Frame):
         self.id_funcionario_alterar = item["values"][0]
         nome_atual = item["values"][1]
         tipo_atual = item["values"][2]
+        data_adesao_atual = item["values"][4]
+        
  
         # Criar uma nova janela para alterar os dados do funcionário
         self.janela_alterar = tk.Toplevel(self)
@@ -265,7 +270,27 @@ class PaginaFuncionarios(tk.Frame):
         # a tabela mostra ADMIN/COLABORADOR; o combobox usa Admin/Colaborador
         self.combo_tipo_alterar.set(str(tipo_atual).capitalize())
         self.combo_tipo_alterar.pack(pady=5)
- 
+        
+        #data de adesao
+        w.criar_label(self.janela_alterar, "Data de Adesão:").pack(pady=(5,0))
+        self.calendario_adesao = DateEntry(
+            self.janela_alterar, width=20, bootstyle=cores.PRIMARY_DARK, date_pattern="yyy-mm-dd"
+        )
+        
+        
+        
+        
+        try:
+            from datetime import datetime
+            data_obj = datetime.strptime(data_adesao_atual, "%d/%m/%Y")
+            self.calendario_adesao.set_date(data_obj)
+        except Exception:
+            
+            pass  #se falhar assume a data de hj
+        
+        self.calendario_adesao.pack(pady=5)
+        
+    
         # Senha
         w.criar_label(self.janela_alterar,"Senha:").pack(pady=5)
         self.entry_senha_alterar = w.criar_entrada(self.janela_alterar,largura=25, senha=True)
@@ -280,12 +305,16 @@ class PaginaFuncionarios(tk.Frame):
  
         novo_nome = self.entry_nome_alterar.get().strip().capitalize()
         novo_tipo = self.combo_tipo_alterar.get().strip().upper()
+        data_selecionada = self.calendario_adesao.get_date().strftime('%Y-%m-%d')
         nova_senha = self.entry_senha_alterar.get().strip()
+       
+        nova_data_adesao = f"{data_selecionada} 00:00:00"
+        
  
-        if not novo_nome or not novo_tipo or not nova_senha:
+        if not novo_nome or not novo_tipo  or not nova_data_adesao or not nova_senha:
             messagebox.showerror(
                 "Erro",
-                "Nome, Tipo e Senha são obrigatórios!"
+                "Nome, Tipo, Data de Adesão e Senha são obrigatórios!"
             )
             return
  
@@ -301,12 +330,14 @@ class PaginaFuncionarios(tk.Frame):
                 UPDATE funcionarios
                 SET nome = %s,
                     tipo = %s,
+                    data_adesao= %s,
                     senha = %s
                 WHERE id_funcionario = %s
                 """,
                 (
                     novo_nome,
                     novo_tipo,
+                    nova_data_adesao,
                     senha_hash,
                     self.id_funcionario_alterar
                 )
@@ -348,30 +379,29 @@ class PaginaFuncionarios(tk.Frame):
         id_funcionario = item["values"][0]
         nome = item["values"][1]
         estado_atual = item["values"][3]
- 
+        
+        if estado_atual.upper() == "ATIVO":
+            self.pedir_data_demissao(id_funcionario,nome)
+            return
+        
+         #reativa e apaga a data de demissao
         try:
- 
-            if estado_atual.upper() == "ATIVO":
-                novo_estado = "INATIVO"
-            else:
-                novo_estado = "ATIVO"
- 
+            
             self.cursor.execute(
                 """
                 UPDATE funcionarios
-                SET estado = %s
+                SET estado = 'ATIVO',
+                    data_demissao= NULL
                 WHERE id_funcionario = %s
                 
                 """,
-                (novo_estado, id_funcionario)
+                ( id_funcionario,)
             )
  
             conn.commit()
  
-            messagebox.showinfo(
-                "Sucesso",
-                f"Funcionário '{nome}' ficou {novo_estado}."
-            )
+            messagebox.showinfo("Sucesso", f"Funcionário '{nome}' ficou ATIVO.")
+            self.atualizar_funcionarios()
  
             self.atualizar_funcionarios()
  
@@ -380,4 +410,51 @@ class PaginaFuncionarios(tk.Frame):
                 "Erro",
                 f"Erro ao ativar/desativar funcionário: {err}"
             )
+    
+    def pedir_data_demissao(self, id_funcionario, nome):
+        janela= tk.Toplevel(self)
+        janela.title("Data de Demissão")
+        janela.grab_set()
+        
+        
+        w.criar_label(janela,f"Data de Saída de {nome}:").pack(padx=20, pady=(15,5))
+        
+        calendario= DateEntry(janela, width=20, date_pattern= "yyy-mm-dd")
+        calendario.pack(pady=5)
+        
+        def confirmar():
+            data_demissao = calendario.get_date()
+            
+            try:
+            
+                self.cursor.execute(
+                    """
+                    UPDATE funcionarios
+                    SET estado= 'INATIVO',
+                    data_demissao=%s
+                    WHERE id_funcionario =%s
+                    """,
+                    (data_demissao,id_funcionario)
+                    
+                )
+                conn.commit()
+                messagebox.showinfo("Sucesso", f"Funcionário '{nome}' ficou INATIVO.")
+                janela.destroy()
+                self.atualizar_funcionarios()
+
+            except mysql.connector.Error as erro:
+                conn.rollback()
+                messagebox.showerror("Erro", f"Erro ao desativar funcionário: {erro}")
+
+        w.criar_botao(janela, "Confirmar", confirmar).pack(pady=15)
+            
+        
+        
+        
+        
+        
+        
+        
+        
+        
  

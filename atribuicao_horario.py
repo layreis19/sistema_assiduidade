@@ -1,13 +1,13 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from datetime import datetime
-
+from datetime import datetime, timedelta
 import mysql.connector
 from ttkbootstrap.widgets import DateEntry
-
 from ligacao import conn
 import cores
 import widgets as w
+from collections import defaultdict
+from tkcalendar import Calendar
 
 
 class PaginaAtribuicaoHorarios(tk.Frame):
@@ -528,46 +528,17 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             width=20)
 
         self.combo_funcionario_ferias.grid(row=0, column=1, padx=(0,20), pady=10)
-
-        self.combo_funcionario_ferias.bind(
-            "<<ComboboxSelected>>",
-            lambda funcionario: self.atualizar_lista_atribuicoes())
-
-        w.criar_label(frame_formulario, "Data de Início:").grid(row=0, column=2, padx=(0,5), pady=10, sticky="e")
-        self.entry_inicio = DateEntry(
-            frame_formulario,
-            date_format="%d-%m-%Y",
-            width=14,
-            bootstyle=cores.PRIMARY_DARK
+        
+        self.lbl_periodo = w.criar_label(
+            frame_formulario, "Período: (clique no calendário)"
         )
-        self.entry_inicio.grid(row=0, column=3, padx=(0,20), pady=10, sticky="w")
+        self.lbl_periodo.grid(row=0, column=2, padx=(10, 0), pady=10)
+        
 
-
-        w.criar_label(frame_formulario, "Data de fim:").grid(row=0, column=4, padx=(0,5), pady=10, sticky="e")
-        self.entry_fim = DateEntry(
-            frame_formulario,
-            date_format="%d-%m-%Y",
-            width=14,
-            bootstyle=cores.PRIMARY_DARK
-        )
-        self.entry_fim.grid(row=0, column=5, padx=(0,10), pady=10, sticky="w")
-
-        w.criar_botao(
-            frame_botoes,
-            "Guardar",
-            lambda: (
-                messagebox.showwarning(
-                    "Funcionário não selecionado",
-                    "Por favor, selecione um funcionário.",
-                    parent=self)
-                if not self.combo_funcionario_ferias.get().strip()
-                else self.guardar_ferias(
-                    self.combo_funcionario_ferias.get().strip(),
-                    self.entry_inicio.entry.get().strip(),
-                    self.entry_fim.entry.get().strip(),
-                    self.pagina_ferias)
-            )).pack(side=tk.LEFT, padx=5)
-
+        w.criar_botao(frame_botoes,
+                      "Guardar",
+                      self.guardar_ferias_do_calendario).pack(side=tk.LEFT, padx=5)
+        
         w.criar_botao(frame_botoes,
                       "Alterar",
                       self.alterar_ferias).pack(side=tk.LEFT, padx=5)
@@ -580,9 +551,57 @@ class PaginaAtribuicaoHorarios(tk.Frame):
                       "Voltar",
                       self.mostrar_pagina1).pack(side="bottom", anchor="w", padx=30, pady=15)
 
-        frame_tabela = tk.Frame(self.pagina_ferias,background=cores.CARD)
-        frame_tabela.pack(fill="both", expand=True, padx=30, pady=20)
+        
+        frame_corpo = tk.Frame(self.pagina_ferias, background=cores.CARD)
+        frame_corpo.pack(fill="both", expand= True, padx=30, pady=20)
+        
+        frame_corpo.columnconfigure(0, weight=1, uniform="metade")
+        frame_corpo.columnconfigure(1, weight=1, uniform="metade")
+        frame_corpo.rowconfigure(0, weight=1)
+        
+        
+        frame_tabela = tk.Frame(frame_corpo,background=cores.CARD)
+        frame_tabela.grid(row=0, column=0, sticky="nsew")
+        
+        frame_calendario= tk.Frame(frame_corpo, background= cores.CARD)
+        frame_calendario.grid(row=0, column=1, sticky="nsew", padx=(20,0))
+        
+        
+        self.calendario= Calendar(
+            frame_calendario, selectmode="day",
+            date_pattern= "dd-mm-yyyy",
+            locale="pt_PT",                  
+            firstweekday="monday",
+            showweeknumbers=False,           
+            font=("Segoe UI", 12),           
 
+            background="#3B8DBF",
+            foreground="white",
+            headersbackground="#D6EAF3",
+            headersforeground="#1F3B57",
+            normalbackground="white",
+            normalforeground="#1F3B57",
+            weekendbackground="#EEF3F7",
+            weekendforeground="#6B7C8C",
+            selectbackground="#3B8DBF",
+            selectforeground="white",
+            bordercolor="#D6EAF3"
+        )
+        self.calendario.pack(fill="both", expand=True)
+        #cores: verde,ferias guardadas. azul, periodo q esta a escolher
+        self.calendario.tag_config("ferias",  background="green",   foreground="white")
+        self.calendario.tag_config("selecao", background="#1F6FB2", foreground="white")
+        self.combo_funcionario_ferias.bind("<<ComboboxSelected>>", self.escolheu_funcionario)
+        
+        
+        
+        self.data_inicio_sel= None
+        self.data_fim_sel = None
+        self.clique_seguinte = "inicio"
+        
+        self.calendario.bind("<<CalendarSelected>>", self.clicar_no_dia)
+            
+        #tabela
         self.tabela_ferias= ttk.Treeview(
             frame_tabela,
             columns=("id_aus", "id_func", "nome", "inicio_ferias", "fim_ferias", "estado"),
@@ -622,6 +641,149 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             side="left", fill="both", expand=True
         )
         scroll.pack(side="right", fill="y")
+        
+        self.tabela_ferias.bind("<<TreeviewSelect>>", self.mostrar_ferias_calendario)
+        
+        
+    def clicar_no_dia(self,evento):
+            dia = self.calendario.selection_get()
+            
+            if self.clique_seguinte ==  "inicio" or dia < self.data_inicio_sel:
+                self.data_inicio_sel = dia
+                self.data_fim_sel = dia
+                self.clique_seguinte = "fim"
+            
+            else:
+                self.data_fim_sel = dia
+                self.clique_seguinte = "inicio"
+                
+            self.pintar_selecao()
+            
+    def pintar_selecao(self):
+        
+        #apaga a selecao anterior
+        self.calendario.calevent_remove(tag="selecao")
+        
+        if self.data_inicio_sel is None:
+            self.lbl_periodo.config(text= "Período: (clique no calendário)")
+            return
+         
+        # pinta de azul os dias selecionada
+        
+        dia= self.data_inicio_sel
+        while dia <= self.data_fim_sel:
+            self.calendario.calevent_create(dia, "Período selecionado", "selecao")
+            dia += timedelta(days=1)
+
+        self.lbl_periodo.config(
+            text=f"Período: {self.data_inicio_sel.strftime('%d-%m-%Y')} a "
+                f"{self.data_fim_sel.strftime('%d-%m-%Y')}"
+        ) 
+        
+    
+        
+    def limpar_selecao(self):
+        self.data_inicio_sel = None
+        self.data_fim_sel = None
+        self.clique_seguinte = "inicio"
+        self.pintar_selecao()
+    
+
+    def guardar_ferias_do_calendario(self):
+        funcionario = self.combo_funcionario_ferias.get().strip()
+
+        if not funcionario:
+            messagebox.showwarning(
+                "Funcionário não selecionado",
+                "Por favor, selecione um funcionário.",
+                parent=self
+            )
+            return
+
+        if self.data_inicio_sel is None:
+            messagebox.showwarning(
+                "Datas em falta",
+                "Clique no calendário no primeiro e no último dia das férias.",
+                parent=self
+            )
+            return
+
+        
+        guardou = self.guardar_ferias(
+            funcionario,
+            self.data_inicio_sel.strftime("%d-%m-%Y"),
+            self.data_fim_sel.strftime("%d-%m-%Y"),
+            self.pagina_ferias
+        )
+
+        if guardou:
+            self.limpar_selecao()
+            self.pintar_ferias_do_funcionario()     
+
+    def mostrar_ferias_calendario(self, evento):
+        
+       # escolheste uma linha da tabela
+        item_selecionado = self.tabela_ferias.selection()
+        if not item_selecionado:
+            return
+
+        valores = self.tabela_ferias.item(item_selecionado[0], "values")
+
+        # coloca o funcionário na lista
+        for texto, id_f in self.funcionarios_map.items():
+            if id_f == int(valores[1]):
+                self.combo_funcionario_ferias.set(texto)
+
+        # tira o azul
+        self.limpar_selecao()
+
+        # mostra a verde as férias guardadas desse funcionário
+        self.pintar_ferias_do_funcionario()
+
+        # leva o calendário ao mês dessas férias
+        if valores[-1] != "CANCELADO":
+            inicio = datetime.strptime(valores[3], "%d-%m-%Y").date()
+            self.calendario.selection_set(inicio)     # salta para o mês das ferias
+            self.calendario.selection_clear()         
+        
+        
+        
+    def escolheu_funcionario(self, evento):
+        self.limpar_selecao()
+        self.pintar_ferias_do_funcionario()  
+        
+        
+    def pintar_ferias_do_funcionario(self):
+        self.calendario.calevent_remove(tag="ferias")     
+
+        id_funcionario = self.funcionarios_map.get(
+            self.combo_funcionario_ferias.get().strip()
+        )
+        
+        if id_funcionario is None:
+            return
+
+        self.cursor.execute(
+            """
+            SELECT data_inicio, data_fim
+            FROM AUSENCIAS
+            WHERE id_funcionario = %s
+              AND tipo = 'FERIAS'
+              AND (estado IS NULL OR estado <> 'CANCELADO')
+            """,
+            (id_funcionario,)
+        )
+
+        # pinta de verde todos os dias de cada férias
+        for inicio, fim in self.cursor.fetchall():
+            dia = inicio
+            while dia <= fim:
+                self.calendario.calevent_create(dia, "Férias marcadas", "ferias")
+                dia += timedelta(days=1)
+
+        # volta a pintar o azul por cima 
+        self.pintar_selecao()  
+        
 
     def carregar_ferias(self):
         for item in self.tabela_ferias.get_children():
@@ -671,14 +833,15 @@ class PaginaAtribuicaoHorarios(tk.Frame):
 
     def alterar_ferias(self):
         item_selecionado = self.tabela_ferias.selection()
+        
         if not item_selecionado:
             messagebox.showerror(
                 "Erro",
-                "Selecione um funcionário para alterar!"
+                "Selecione um funcionário para alterar!",
+                parent=self
             )
             return
-        
-                
+             
         # obter os dados da linha selecionada
         valores = self.tabela_ferias.item(item_selecionado[0], "values")
 
@@ -686,82 +849,55 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             messagebox.showwarning("AVISO!", "Não pode alterar férias canceladas!", parent = self)
             return
         
-        inicio = datetime.strptime(valores[3], "%d-%m-%Y").date()
-        fim = datetime.strptime(valores[4], "%d-%m-%Y").date()
-        
-        self.janela_alterar = tk.Toplevel(self)
-        self.janela_alterar.title("Alterar Férias")
-
-        w.criar_label(self.janela_alterar, "Data de Início:").pack(padx=10, pady=(10,0))
-        # dias 
-        self.entry_inicio_alterar = DateEntry(
-            self.janela_alterar,
-            date_format="%d-%m-%Y",
-            first_weekday=0,
-            bootstyle=cores.PRIMARY_DARK)
-
-        self.entry_inicio_alterar.pack(padx=10, pady=10)
-
-        self.entry_inicio_alterar.set_date(inicio)
-
-
-        w.criar_label(self.janela_alterar, "Data de Fim:").pack(padx=10, pady=(10,0))
-        self.entry_fim_alterar = DateEntry(
-            self.janela_alterar,
-            date_format="%d-%m-%Y",
-            first_weekday=0,
-            bootstyle=cores.PRIMARY_DARK)
-
-        self.entry_fim_alterar.pack(padx=10, pady=10)
-        self.entry_fim_alterar.set_date(fim)
-
-        w.criar_botao(
-            self.janela_alterar,
-            "Guardar alterações",
-            self.guardar_alteracoes_ferias).pack(padx=10, pady=10)
-
-    def guardar_alteracoes_ferias(self):
-        item_selecionado = self.tabela_ferias.selection()
-
-        if not item_selecionado:
+        if self.data_inicio_sel is None:
+            messagebox.showwarning(
+                "Datas em falta",
+                "Clique no calendário no novo primeiro e no novo último dia das férias.",
+                parent=self
+            )
             return
-
-       
-        valores = self.tabela_ferias.item(item_selecionado[0], "values")
-
         id_ausencia = valores[0]
-
-        inicio = self.entry_inicio_alterar.entry.get().strip()
-        fim = self.entry_fim_alterar.entry.get().strip()
+        id_funcionario = valores[1]
+        inicio = self.data_inicio_sel
+        fim = self.data_fim_sel
 
         try:
-            data_inicio = datetime.strptime(inicio, "%d-%m-%Y").date()
-            data_fim = datetime.strptime(fim, "%d-%m-%Y").date()
+            # as novas datas não podem bater com OUTRAS férias do mesmo funcionário
+            self.cursor.execute(
+                """
+                SELECT 1
+                FROM AUSENCIAS
+                WHERE id_funcionario = %s
+                  AND id <> %s
+                  AND data_inicio <= %s
+                  AND data_fim >= %s
+                  AND (estado IS NULL OR estado <> 'CANCELADO')
+                """,
+                (id_funcionario, id_ausencia, fim, inicio)
+            )
 
-            if data_fim < data_inicio:
-                messagebox.showerror(
-                    "Erro",
-                    "A data de fim não pode ser anterior à data de início!",
-                    parent = self.janela_alterar
+            if self.cursor.fetchone():
+                messagebox.showwarning(
+                    "Ausência já registada",
+                    "Este funcionário já tem outra ausência neste período.",
+                    parent=self
                 )
                 return
 
-            self.cursor.execute("""
-            UPDATE AUSENCIAS
-            SET 
-                data_inicio = %s,
-                data_fim = %s
-            WHERE id = %s
-            """, (
-                data_inicio,
-                data_fim,
-                id_ausencia
-            ))
-
+            self.cursor.execute(
+                """
+                UPDATE AUSENCIAS
+                SET data_inicio = %s,
+                    data_fim = %s
+                WHERE id = %s
+                """,
+                (inicio, fim, id_ausencia)
+            )
             conn.commit()
-            self.janela_alterar.destroy()
 
-            self.carregar_ferias()
+            self.carregar_ferias()                  
+            self.limpar_selecao()                  
+            self.pintar_ferias_do_funcionario()     
 
             messagebox.showinfo(
                 "Sucesso!",
@@ -769,21 +905,16 @@ class PaginaAtribuicaoHorarios(tk.Frame):
                 parent=self
             )
 
-        except ValueError:
-            messagebox.showerror(
-                "Erro",
-                "As datas introduzidas são inválidas.",
-                parent=self.janela_alterar
-        )
-
         except mysql.connector.Error as erro:
             conn.rollback()
             messagebox.showerror(
                 "Erro",
                 f"Não foi possível alterar as férias. \n{erro}",
-                parent=self.janela_alterar
+                parent=self
             )
+        
 
+    
     def mostrar_pagina_ferias(self):
         self.pagina_atribuir_horarios.pack_forget()
         self.pagina_editar_horarios.pack_forget()
@@ -852,14 +983,20 @@ class PaginaAtribuicaoHorarios(tk.Frame):
                 WHERE id_funcionario = %s
                   AND data_inicio <= %s
                   AND data_fim >= %s
+                  AND (estado IS NULL OR estado <> 'CANCELADO')
+                  LIMIT 1
                 """,
                 (id_funcionario, fim, inicio)
             )
+            conflito = self.cursor.fetchone()
 
-            if self.cursor.fetchone():
+            if conflito:
                 messagebox.showwarning(
                     "Ausência já registada",
-                    "Este funcionário já tem uma ausência neste período.",
+                    f"Este funcionário já tem uma ausência de "
+                    f"{conflito[0].strftime('%d-%m-%Y')} a "
+                    f"{conflito[1].strftime('%d-%m-%Y')} dentro deste período.\n\n"
+                    f"Para alargar essas férias, selecione-as na tabela e carregue em Alterar.",
                     parent=janela
                 )
                 return
@@ -900,6 +1037,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
                 "Férias guardadas com sucesso!",
                 parent=self
             )
+            return True
 
         except ValueError:
             messagebox.showerror(
@@ -947,6 +1085,7 @@ class PaginaAtribuicaoHorarios(tk.Frame):
             
             
                 self.carregar_ferias()
+                self.pintar_ferias_do_funcionario()
 
                 messagebox.showinfo(
                     "Sucesso!",
@@ -1242,6 +1381,33 @@ class PaginaAtribuicaoHorarios(tk.Frame):
 
         for dia in ["SEG", "TER", "QUA", "QUI", "SEX", "SAB", "DOM"]:
             lista_dias.insert(tk.END, dia)
+            
+        
+           #formulario  pre-preenchido 
+        entry_nome.insert(0,valores[1])
+        entry_tolerancia.insert(0,str(valores[7]))
+        
+        def hhmm(texto):
+            texto = str(texto)
+            if texto in ("", "None"):
+                return ""
+            horas, minutos = texto.split(":")[:2]
+            return f"{int(horas):02d}:{minutos}"
+        
+        entry_entrada.insert(0,hhmm(valores[3]))
+        entry_pausa.insert(0,hhmm(valores[4]))
+        entry_fim_pausa.insert(0,hhmm(valores[5]))
+        entry_saida.insert(0,hhmm(valores[6]))
+        
+        entry_tipo.set(valores[2])
+
+        dias_do_horario = [d.strip() for d in str(valores[8]).split(",")]
+        for posicao, dia in enumerate(["SEG", "TER", "QUA", "QUI", "SEX", "SAB", "DOM"]):
+            if dia in dias_do_horario:
+                lista_dias.selection_set(posicao)
+        
+            
+            
 
         def guardar_alteracoes_horario():
             
