@@ -192,14 +192,20 @@ def _calcular_fixo_ou_turno(cursor, id_funcionario, data_turno, resultado,
             return 0
         return round(diferenca_min)
 
-    resultado["atraso_entrada_min"] = minutos_de_atraso(
-        entrada_real, entrada_esperada, tolerancia or 0)
-
-    # se ultrapassar a tolerância na entrada é considerado falta
+    # Só se contabiliza atraso quando a entrada ocorre depois da hora
+    # prevista, mas dentro da tolerância (inclusive). Ultrapassada a
+    # tolerância, a entrada passa a ser classificada como falta da manhã,
+    # sem acumular também minutos de atraso.
     atraso_real_min = (entrada_real - entrada_esperada).total_seconds() / 60
+    tolerancia_min = tolerancia or 0
 
-    if atraso_real_min > (tolerancia or 0):
+    if atraso_real_min > tolerancia_min:
         resultado["falta"] = True
+        resultado["atraso_entrada_min"] = 0
+    else:
+        resultado["atraso_entrada_min"] = minutos_de_atraso(
+            entrada_real, entrada_esperada, tolerancia_min
+        )
     # Pausa de almoço: as pausas são os intervalos entre períodos
     # (SAIDA de um, ENTRADA do seguinte). Se houver mais do que uma
     # (ex: almoço e um café), a do almoço é a que começou mais perto da
@@ -415,7 +421,8 @@ def calcular_picagens(cursor, id_funcionario, data_turno, horario):
     return _calcular_fixo_ou_turno(
         cursor, id_funcionario, data_turno, resultado,
         horario["entrada"], horario["saida"],
-        horario["inicio_almoco"], horario["fim_almoco"], horario["tolerancia"]
+        horario["inicio_almoco"], horario["fim_almoco"],
+        horario["tolerancia"], horario["horas_diarias_exigidas"]
     )
 
 
