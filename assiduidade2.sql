@@ -37,18 +37,19 @@ CREATE TABLE HORARIO (
     dias_trabalho SET('SEG','TER','QUA','QUI','SEX','SAB','DOM') NOT NULL DEFAULT 'SEG,TER,QUA,QUI,SEX'
 );
 
-INSERT INTO horario (nome, tipo, entrada, saida, inicio_almoco, fim_almoco, tolerancia) VALUES 
-('FIXO PADRÃO', 'FIXO', '08:30:00', '17:30:00', '12:30:00', '13:30:00', 5),
-('TURNO MANHÃ', 'TURNO', '06:00:00', '15:00:00', '10:00:00', '11:00:00', 5),
-('TURNO TARDE', 'TURNO', '14:00:00', '23:00:00', '18:00:00', '19:00:00', 5),
-('TURNO NOITE', 'TURNO', '22:00:00', '07:00:00', '02:00:00', '03:00:00', 5);
+INSERT INTO horario (nome, tipo, entrada, saida, inicio_almoco, fim_almoco, tolerancia, horas_diarias_exigidas) VALUES 
+('FIXO PADRÃO', 'FIXO', '08:30:00', '17:30:00', '12:30:00', '13:30:00', 5, 8.00),
+('TURNO MANHÃ', 'TURNO', '06:00:00', '15:00:00', '10:00:00', '11:00:00', 5, 8.00),
+('TURNO TARDE', 'TURNO', '14:00:00', '23:00:00', '18:00:00', '19:00:00', 5, 8.00),
+('TURNO NOITE', 'TURNO', '22:00:00', '07:00:00', '02:00:00', '03:00:00', 5, 8.00);
+
 
 INSERT INTO horario (nome, tipo, tolerancia, janela_inicio, janela_fim, horas_diarias_exigidas) VALUES
-('LIVRE PADRÃO', 'LIVRE', 5, '09:00:00', '20:00:00', 8.0);
+('LIVRE PADRÃO', 'LIVRE', 5, '09:00:00', '20:00:00', 8.00);
 
 INSERT INTO horario (nome, tipo, entrada, saida, tolerancia) VALUES
-('MEIO DIA TARDE', 'TURNO', '13:30:00', '17:30:00', 5),
-('MEIO DIA MANHÃ', 'TURNO', '08:30:00', '12:30:00', 5);
+('MEIO DIA TARDE', 'TURNO', '13:30:00', '17:30:00', 5, 8.00),
+('MEIO DIA MANHÃ', 'TURNO', '08:30:00', '12:30:00', 5, 8.00);
 
 -- ============================================================
 -- FUNCIONARIOS
@@ -167,7 +168,7 @@ CREATE TABLE RESULTADOS (
     horas_extra_minutos INT NOT NULL DEFAULT 0,
     total_minutos_trabalhados INT NOT NULL DEFAULT 0,
     calculado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    tipo VARCHAR(20) NOT NULL, -- NORMAL, FERIADO, FOLGA, AUSENCIA
+    tipo VARCHAR(20) NOT NULL, -- NORMAL, FERIADO, FOLGA, AUSENCIA , 
     FOREIGN KEY (id_funcionario)
         REFERENCES FUNCIONARIOS(id_funcionario)
         ON DELETE CASCADE,
