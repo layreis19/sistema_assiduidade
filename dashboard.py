@@ -6,8 +6,11 @@ from datetime import datetime, time, timedelta
 import widgets as w
 from tkinter import ttk
 from ttkbootstrap.widgets import DateEntry
-
-
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from tkinter import messagebox
+import matplotlib
+matplotlib.use("TkAgg")
 
 def converter_horas_segundos(hora):
 
@@ -35,8 +38,51 @@ class PaginaDashboard(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg=cores.BLUE_VERY_LIGHT)
 
-        # criar a pagina
-        self.pagina_dashboard = tk.Frame(self, background=cores.BLUE_VERY_LIGHT)
+        # Criar a página canva para o scroll na página completa
+        self.canva_pagina = tk.Canvas(self, bg=cores.BLUE_VERY_LIGHT, highlightthickness=0)
+        self.canva_pagina.pack(side="left", fill="both", expand=True)
+
+        # criar a barra de scroll vertical d página 
+        self.scroll_pagina = ttk.Scrollbar(self, orient="vertical", command=self.canva_pagina.yview)
+        self.scroll_pagina.pack(side="right", fill="y")
+
+        # ligar o canva à barra do scroll
+        self.canva_pagina.configure(yscrollcommand=self.scroll_pagina.set)
+
+        # criar o frame que contém todo o dashboard 
+        self.pagina_dashboard = tk.Frame(self.canva_pagina, background=cores.BLUE_VERY_LIGHT)
+
+        # colocar o dashboard dentro do canvas
+        self.janela_pagina = self.canva_pagina.create_window(
+            (0,0), 
+            window=self.pagina_dashboard,
+            anchor="nw")
+
+        # atualizar a área percorróvel quando o conteúdo muda 
+        self.pagina_dashboard.bind(
+            "<Configure>",
+            lambda i: self.canva_pagina.configure(scrollregion=self.canva_pagina.bbox("all"))
+        )
+
+        # ajustar a largura da dashboard disponível 
+        self.canva_pagina.bind(
+            "<Configure>",
+            lambda i: self.canva_pagina.itemconfigure(
+                self.janela_pagina,
+                width=i.width))
+
+
+        def scroll_pagina(evento):
+            widget = evento.widget
+            
+            while widget is not None:
+                if widget == self.canva_pagina:
+                    self.canva_pagina.yview_scroll(int(-evento.delta), "units")
+
+                return
+            widget = getattr(widget, "master", None)  
+            self.bind_all("<MouseWheel>", scroll_pagina)      
+
         self.pagina_dashboard.pack(fill="both", expand=True, padx=15, pady=10)
 
         # título 
@@ -51,12 +97,19 @@ class PaginaDashboard(tk.Frame):
         self.frame_filtro.pack(fill="x", padx= 10, pady=(0,12))
 
         self.filtro_ano = ttk.Combobox(self.frame_filtro, 
-                                       values=["2024", "2025", "2026"],
+                                       values=["2022", "2023", "2024", "2025", "2026", "2027"],
                                        state="readonly",
                                         width=8)
         self.filtro_ano.set("2026")
         self.filtro_ano.pack(side="right", padx=(0,10), anchor="e")
 
+        # atualizar a box funcionários 
+        self.filtro_ano.bind(
+            "<<ComboboxSelected>>",
+            lambda ano:( self.atualizar_funcionarios(),
+            self.atualizar_faltas_medicas()))
+
+        
         w.criar_label(self.frame_filtro,
                       "Ano:",
                       bg=cores.BLUE_VERY_LIGHT,
@@ -121,6 +174,7 @@ class PaginaDashboard(tk.Frame):
             fg=cores.PRIMARY_DARK)
         self.label_funcionarios.pack(anchor="center", pady=(8,0))
 
+        
         # adicionar faltas
         w.criar_label(self.kpi_faltas,
                     "TEMPO MÉDIO FALTAS",
@@ -220,16 +274,20 @@ class PaginaDashboard(tk.Frame):
         w.criar_botao(
             self.frame_datas_inner,
             "Filtrar", 
-            None,
+            self.relatorio_horas_extra,
             bg=cores.PRIMARY,
             fg=cores.CARD,
             activebackground=cores.PRIMARY_DARK,
             activeforeground=cores.CARD).grid(row=1, column=4, padx=(0,0))
-        
 
-        # criar frame gráficos
-        self.frame_graficos = tk.Frame(self.pagina_dashboard, bg=cores.BLUE_VERY_LIGHT)
-        self.frame_graficos.pack(fill="both", expand=True, pady=(0,10))
+        # aréa dos gráficos com scroll
+
+        self.area_graficos = tk.Frame(self.pagina_dashboard, bg=cores.BLUE_VERY_LIGHT)
+        self.area_graficos.pack(fill="both", expand=True, pady=(0,10))
+
+
+        self.frame_graficos = tk.Frame(self.area_graficos, bg=cores.BLUE_VERY_LIGHT)
+        self.frame_graficos.pack(fill="both", expand=True)
 
         # configurar as duas colunas
         self.frame_graficos.grid_columnconfigure((0,1),weight=1, uniform="graficos")
@@ -277,3 +335,138 @@ class PaginaDashboard(tk.Frame):
                     font=w.FONTE_SUBTITULO_DASH,
                     bg=cores.CARD,
                     fg=cores.PRIMARY_DARK).pack(pady=12)
+
+        self.elemento_relatorio= None
+        self.elemento_relatorio = tk.Label(
+            self.frame_grafico3,
+            text="Selecione o período que pretende visualizar no gráfico.",
+            bg=cores.CARD,
+            fg=cores.PRIMARY_DARK,
+            font=("Arial", 12),
+            wraplength=500)
+
+        self.elemento_relatorio.pack(expand=True,pady=30)
+
+        self.atualizar_funcionarios()
+        self.atualizar_faltas_medicas()
+
+
+    def atualizar_funcionarios(self):
+
+        ano = self.filtro_ano.get() # .get buscar o ano que está selecionado na combobox
+
+        consulta = """
+            SELECT COUNT(*)
+            FROM FUNCIONARIOS
+            WHERE YEAR(data_adesao) = %s
+            AND estado = "ATIVO"
+        """
+
+        total_funcionarios = pd.read_sql(
+            consulta,
+            conn,
+            params=(ano,)
+        ).iloc[0, 0]
+
+        self.label_funcionarios.config(text=str(total_funcionarios))
+
+
+    def atualizar_faltas_medicas(self):
+
+        ano = self.filtro_ano.get()
+
+        consulta = """
+            SELECT COUNT(*)
+            FROM AUSENCIAS 
+            WHERE tipo = %s
+            AND YEAR(data_inicio) = %s
+        """
+
+        total_faltas_medicas = pd.read_sql(
+            consulta,
+            conn,
+            params=("BAIXA_MEDICA", ano)
+        ).iloc[0,0]
+
+        self.label_faltas_medicas.config(text=str(total_faltas_medicas))
+
+
+    def relatorio_horas_extra(self):
+
+        data_inicio = self.entry_data_inicio.get_date()
+        data_fim = self.entry_data_fim.get_date()
+
+        if data_inicio > data_fim:
+            messagebox.showerror(
+            "Erro",
+            "A data de fim não pode ser inferior à data de início")
+            return
+
+        consulta = """
+            SELECT 
+                f.nome,
+                SUM(horas_extra_minutos) AS total_minutos
+            FROM RESULTADOS r
+            INNER JOIN FUNCIONARIOS f
+                ON r.id_funcionario = f.id_funcionario
+            WHERE data BETWEEN %s AND %s
+                AND horas_extra_minutos > 0
+            GROUP BY f.id_funcionario, f.nome
+            ORDER BY total_minutos DESC
+            LIMIT 10
+        """
+
+        dados = pd.read_sql(
+            consulta, 
+            conn,
+            params=(data_inicio, data_fim)
+        )
+
+        if self.elemento_relatorio is not None:
+            self.elemento_relatorio.destroy()
+            self.elemento_relatorio = None
+
+        if dados.empty:
+            self.elemento_relatorio = tk.Label(
+                self.frame_grafico3,
+                text= "Não existe horas extra neste intervalo de datas.",
+                bg=cores.CARD,
+                fg=cores.PRIMARY_DARK,
+                font=("Arial", 11)
+            )
+            self.elemento_relatorio.pack(pady=30)
+            return
+
+        dados["total_horas"] = dados["total_minutos"] / 60
+
+        imagem = Figure(figsize=(7, 2.5), dpi = 80)
+        eixo = imagem.add_subplot(111)
+
+        eixo.bar(
+            dados["nome"],
+            dados["total_horas"],
+            color= "#3478B8")
+        
+        eixo.set_xlabel("Nome", color="#3478B8")
+        eixo.set_ylabel("Total Horas Extra", color="#3478B8")
+        eixo.grid(axis="y", linestyle="--", alpha=0.3)
+
+        eixo.tick_params(axis="x", colors="#3478B8")
+        eixo.tick_params(axis="y", colors="#3478B8")
+
+
+        imagem.tight_layout()
+
+
+        grafico = FigureCanvasTkAgg(
+            imagem,
+            master=self.frame_grafico3
+        )
+
+        grafico.draw()
+
+        self.elemento_relatorio = grafico.get_tk_widget()
+        self.elemento_relatorio.pack(fill="both", expand=True, padx=10, pady=(0,10))
+
+
+

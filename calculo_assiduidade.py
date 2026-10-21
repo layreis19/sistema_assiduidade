@@ -149,7 +149,7 @@ def _horas_dos_periodos(periodos, limite_inicio=None, limite_fim=None):
 
 
 def _calcular_fixo_ou_turno(cursor, id_funcionario, data_turno, resultado,
-                             entrada_h, saida_h, inicio_almoco_h, fim_almoco_h, tolerancia):
+                             entrada_h, saida_h, inicio_almoco_h, fim_almoco_h, tolerancia, horas_diarias_exigidas):
     """
     Cálculo para FIXO/TURNO: horário com hora de entrada fixa, eventual
     pausa de almoço, e turno que pode atravessar a meia-noite.
@@ -188,14 +188,18 @@ def _calcular_fixo_ou_turno(cursor, id_funcionario, data_turno, resultado,
         if real is None or esperado is None:
             return None
         diferenca_min = (real - esperado).total_seconds() / 60
-        if diferenca_min <= tolerancia_min:
+        if diferenca_min <= 0:
             return 0
-        return round(diferenca_min - tolerancia_min)
+        return round(diferenca_min)
 
     resultado["atraso_entrada_min"] = minutos_de_atraso(
-        entrada_real, entrada_esperada, tolerancia or 0
-    )
+        entrada_real, entrada_esperada, tolerancia or 0)
 
+    # se ultrapassar a tolerância na entrada é considerado falta
+    atraso_real_min = (entrada_real - entrada_esperada).total_seconds() / 60
+
+    if atraso_real_min > (tolerancia or 0):
+        resultado["falta"] = True
     # Pausa de almoço: as pausas são os intervalos entre períodos
     # (SAIDA de um, ENTRADA do seguinte). Se houver mais do que uma
     # (ex: almoço e um café), a do almoço é a que começou mais perto da
@@ -222,6 +226,9 @@ def _calcular_fixo_ou_turno(cursor, id_funcionario, data_turno, resultado,
 
     # Horas trabalhadas: soma dos períodos (a pausa fica de fora sozinha).
     resultado["horas_trabalhadas"] = _horas_dos_periodos(periodos)
+
+    # horas exigidas e tempo em falta
+    resultado["minutos_em_falta"] = None
 
     # Horas extra: excesso face à duração esperada do turno. O almoço só
     # é descontado à duração esperada se houve uma pausa registada; se o
@@ -439,6 +446,8 @@ def guardar_resultado(
         tipo = "FALTA"
     elif resumo["periodos"] and horas_trabalhadas is None:
         tipo = "INCOMPLETO"
+    elif atraso_minutos >0:
+        tipo = "ATRASO"
     else:
         tipo = "NORMAL"
 
