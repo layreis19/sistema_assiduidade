@@ -130,9 +130,14 @@ def _processar_dia(cursor, id_funcionario, dia, e_dia_de_adesao,
         return "dias_sem_horario", True
 
     # 5. Dia de trabalho: comparar as picagens com o horário.
+    # `dia` representa a data de início do turno. Em turnos noturnos,
+    # calcular_picagens consulta também o dia seguinte, mas o resultado é
+    # sempre guardado sob a data de início do turno.
     resultado = calcular_picagens(cursor, id_funcionario, dia, horario)
 
-    if resultado["falta"] and e_dia_de_adesao:
+    # No dia de adesão, só se ignora o resultado quando não houve qualquer
+    # picagem. Uma falta parcial por ultrapassar a tolerância continua válida.
+    if not resultado["periodos"] and e_dia_de_adesao:
         return None, False
 
     guardar_resultado(cursor, conn, id_funcionario, dia, resultado)
