@@ -358,7 +358,7 @@ class PaginaDashboard(tk.Frame):
         # definir os títulos da coluna 
         self.tabela_faltas.heading("id", text="ID")
         self.tabela_faltas.heading("nome", text="Funcionário")
-        self.tabela_faltas.heading("numero", text="Nº Atrasos")
+        self.tabela_faltas.heading("numero", text="Nº Faltas")
         self.tabela_faltas.heading("tempo", text="Tempo Total")
 
         self.tabela_faltas.column("id", width=100, anchor="center")
@@ -405,7 +405,7 @@ class PaginaDashboard(tk.Frame):
         # definir os títulos da coluna 
         self.tabela_extra.heading("id", text="ID")
         self.tabela_extra.heading("nome", text="Funcionário")
-        self.tabela_extra.heading("numero", text="Nº Atrasos")
+        self.tabela_extra.heading("numero", text="Nº Horas Extra")
         self.tabela_extra.heading("tempo", text="Tempo Total")
 
         self.tabela_extra.column("id", width=100, anchor="center")
@@ -546,3 +546,11 @@ class PaginaDashboard(tk.Frame):
                         f'{int(linha["tempo"])} min'
                     )
                 )
+
+    def atualizar_media_atrasos(self):
+
+         ano = int(self.filtro_ano.get())
+
+         consulta = """
+            SELECT AVG(atraso_minutos)
+            FROM"""

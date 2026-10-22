@@ -317,35 +317,39 @@ def _calcular_fixo_ou_turno(cursor, id_funcionario, data_turno, resultado,
     # horas exigidas e tempo em falta
     resultado["minutos_em_falta"] = None
 
-    # Horas extra são calculadas apenas sobre as horas válidas. Quando existe
-    # falta parcial, a duração esperada também é reduzida ao período válido,
-    # para que as horas de um período em falta não gerem nem escondam horas extra.
-    if resultado["horas_trabalhadas"] is not None and saida_esperada is not None:
-        duracao_esperada_min = (saida_esperada - entrada_esperada).total_seconds() / 60
-        duracao_almoco_min = 0
-        if tem_almoco:
-            duracao_almoco_min = (
-                (fim_almoco_esperado - inicio_almoco_esperado).total_seconds() / 60
-            )
+    # Horas extra: trabalho antes da entrada prevista e depois da saída
+    # prevista, descontando a tolerância em cada extremidade. Não se usa
+    # o total de horas do dia para calcular o extra, pois isso poderia
+    # compensar atrasos ou pausas com trabalho fora do horário.
+    # Um período marcado como falta parcial não pode gerar horas extra.
+    if saida_esperada is not None:
+        tolerancia_extra = max(0, int(tolerancia or 0))
+        horas_extra_min = 0
 
-        if houve_pausa:
-            duracao_esperada_min -= duracao_almoco_min
-
+        primeiro_periodo_valido = 1 not in resultado["periodos_falta"]
+        ultimo_periodo_valido = 2 not in resultado["periodos_falta"]
         if len(resultado["periodos_falta"]) >= 2:
-            duracao_esperada_min = 0
-        elif 1 in resultado["periodos_falta"]:
-            duracao_esperada_min = (
-                (saida_esperada - fim_almoco_esperado).total_seconds() / 60
-                if tem_almoco else 0
-            )
-        elif 2 in resultado["periodos_falta"]:
-            duracao_esperada_min = (
-                (inicio_almoco_esperado - entrada_esperada).total_seconds() / 60
-                if tem_almoco else 0
-            )
+            primeiro_periodo_valido = False
+            ultimo_periodo_valido = False
+        elif not tem_almoco and resultado["periodos_falta"]:
+            # Sem pausa não é possível separar com segurança os períodos.
+            primeiro_periodo_valido = False
+            ultimo_periodo_valido = False
 
-        excesso_min = round(resultado["horas_trabalhadas"] * 60 - duracao_esperada_min)
-        resultado["horas_extra_min"] = max(0, excesso_min)
+        if periodos and primeiro_periodo_valido:
+            primeira_entrada = periodos[0][0]
+            minutos_antecipados = (entrada_esperada - primeira_entrada).total_seconds() / 60
+            if minutos_antecipados > tolerancia_extra:
+                horas_extra_min += round(minutos_antecipados - tolerancia_extra)
+
+        if periodos and ultimo_periodo_valido:
+            ultima_saida = periodos[-1][1]
+            if ultima_saida is not None:
+                minutos_tardios = (ultima_saida - saida_esperada).total_seconds() / 60
+                if minutos_tardios > tolerancia_extra:
+                    horas_extra_min += round(minutos_tardios - tolerancia_extra)
+
+        resultado["horas_extra_min"] = horas_extra_min
 
     return resultado
 
