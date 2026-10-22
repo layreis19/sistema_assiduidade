@@ -23,7 +23,7 @@ from dashboard import PaginaDashboard
 
 janela = tk.Tk()
 janela.title("Gestão de Assiduidade")
-janela.geometry("900x600")
+janela.state("zoomed")
 
 
 # MENU

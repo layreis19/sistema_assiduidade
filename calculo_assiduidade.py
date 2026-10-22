@@ -72,6 +72,9 @@ def combinar_data_hora(data_base, hora, hora_entrada):
 def _resultado_vazio():
     return {
         "falta": None,
+        # Informação interna do cálculo; não exige coluna adicional na BD.
+        "periodos_falta": set(),
+        "tipo_falta": None,
         "atraso_entrada_min": None,
         "atraso_volta_almoco_min": None,
         "horas_trabalhadas": None,
@@ -167,22 +170,36 @@ def _calcular_fixo_ou_turno(cursor, id_funcionario, data_turno, resultado,
         inicio_almoco_esperado = None
         fim_almoco_esperado = None
 
-    # Janela generosa à volta da entrada esperada, em vez de filtrar por
-    # DATE(data) = data_turno: cobre turnos noturnos (a saída cai no dia
-    # civil seguinte) sem depender de nenhuma outra lógica auxiliar.
+    # Ler picagens numa janela que cobre entradas antecipadas e a saída
+    # de um turno noturno. A janela de leitura não define, por si só, a que
+    # turno pertence cada período: é necessário filtrar as entradas pela
+    # hora prevista deste turno, para não reutilizar picagens de outro dia.
     janela_inicio = entrada_esperada - timedelta(hours=4)
-    janela_fim = entrada_esperada + timedelta(hours=20)
+    janela_fim = entrada_esperada + timedelta(hours=12)
 
-    periodos = _ler_periodos(cursor, id_funcionario, janela_inicio, janela_fim)
+    periodos_lidos = _ler_periodos(
+        cursor, id_funcionario, janela_inicio, janela_fim
+    )
+
+    # O turno é identificado pela sua data/hora de início. Aceita-se uma
+    # entrada até 4 horas antes ou até 8 horas depois da hora prevista;
+    # isto inclui entradas tardias, mas exclui períodos de um turno vizinho.
+    limite_entrada_inicio = entrada_esperada - timedelta(hours=4)
+    limite_entrada_fim = entrada_esperada + timedelta(hours=8)
+    periodos = [
+        (entrada, saida)
+        for entrada, saida in periodos_lidos
+        if limite_entrada_inicio <= entrada <= limite_entrada_fim
+    ]
     resultado["periodos"] = periodos
 
     resultado["falta"] = not periodos
-
     if not periodos:
-        # Sem nenhuma picagem, não há mais nada a calcular.
+        # Sem qualquer picagem, considera-se falta do dia/turno completo.
+        resultado["tipo_falta"] = "FALTA"
         return resultado
 
-    entrada_real = periodos[0][0]  # a primeira ENTRADA do dia
+    entrada_real = periodos[0][0]  # primeira entrada do turno selecionado
 
     def minutos_de_atraso(real, esperado, tolerancia_min):
         if real is None or esperado is None:
@@ -194,12 +211,13 @@ def _calcular_fixo_ou_turno(cursor, id_funcionario, data_turno, resultado,
 
     # Só se contabiliza atraso quando a entrada ocorre depois da hora
     # prevista, mas dentro da tolerância (inclusive). Ultrapassada a
-    # tolerância, a entrada passa a ser classificada como falta da manhã,
-    # sem acumular também minutos de atraso.
+    # tolerância, marca-se falta no primeiro período, sem acumular também
+    # minutos de atraso.
     atraso_real_min = (entrada_real - entrada_esperada).total_seconds() / 60
     tolerancia_min = tolerancia or 0
 
     if atraso_real_min > tolerancia_min:
+        resultado["periodos_falta"].add(1)
         resultado["falta"] = True
         resultado["atraso_entrada_min"] = 0
     else:
@@ -211,42 +229,120 @@ def _calcular_fixo_ou_turno(cursor, id_funcionario, data_turno, resultado,
     # (ex: almoço e um café), a do almoço é a que começou mais perto da
     # hora de início de almoço esperada.
     houve_pausa = False
+    indice_pausa_almoco = None
 
     if tem_almoco:
+        # Guardar também o índice da pausa escolhida, para identificar quais
+        # períodos de trabalho pertencem à manhã/1.º período e à tarde/2.º.
         pausas = [
-            (periodos[i][1], periodos[i + 1][0])
+            (i, periodos[i][1], periodos[i + 1][0])
             for i in range(len(periodos) - 1)
         ]
 
         if pausas:
             houve_pausa = True
-
-            _, volta_almoco_real = min(
+            indice_pausa_almoco, _, volta_almoco_real = min(
                 pausas,
-                key=lambda p: abs((p[0] - inicio_almoco_esperado).total_seconds())
+                key=lambda p: abs((p[1] - inicio_almoco_esperado).total_seconds())
             )
 
-            resultado["atraso_volta_almoco_min"] = minutos_de_atraso(
-                volta_almoco_real, fim_almoco_esperado, tolerancia or 0
+            atraso_volta_real_min = (
+                (volta_almoco_real - fim_almoco_esperado).total_seconds() / 60
             )
+            tolerancia_min = tolerancia or 0
 
-    # Horas trabalhadas: soma dos períodos (a pausa fica de fora sozinha).
-    resultado["horas_trabalhadas"] = _horas_dos_periodos(periodos)
+            # Aplica a mesma regra da entrada da manhã:
+            # até à tolerância, conta os minutos reais de atraso;
+            # acima da tolerância, marca falta no segundo período e não
+            # acumula minutos de atraso para esse regresso.
+            if atraso_volta_real_min > tolerancia_min:
+                resultado["periodos_falta"].add(2)
+                resultado["falta"] = True
+                resultado["atraso_volta_almoco_min"] = 0
+            else:
+                resultado["atraso_volta_almoco_min"] = minutos_de_atraso(
+                    volta_almoco_real, fim_almoco_esperado, tolerancia_min
+                )
+
+    # Classifica a falta sem precisar de uma coluna extra na tabela RESULTADOS.
+    # Duas faltas de período equivalem a falta do dia/turno inteiro.
+    faltas_periodos = resultado["periodos_falta"]
+    if len(faltas_periodos) >= 2:
+        resultado["tipo_falta"] = "FALTA"
+    elif faltas_periodos:
+        periodo = next(iter(faltas_periodos))
+        turno_noturno = (
+            entrada_h.hour >= 18 or entrada_h.hour < 6
+            or (saida_h is not None and saida_h < entrada_h)
+        )
+        if turno_noturno:
+            resultado["tipo_falta"] = (
+                "FALTA 1º PERÍODO" if periodo == 1 else "FALTA 2º PERÍODO"
+            )
+        elif periodo == 1:
+            resultado["tipo_falta"] = (
+                "FALTA MANHÃ" if entrada_h.hour < 12 else "FALTA TARDE"
+            )
+        else:
+            hora_retorno = fim_almoco_h or entrada_h
+            resultado["tipo_falta"] = (
+                "FALTA MANHÃ" if hora_retorno.hour < 12 else "FALTA TARDE"
+            )
+    else:
+        resultado["tipo_falta"] = None
+
+    # Desconsiderar integralmente as horas dos períodos marcados como falta.
+    # O índice da pausa do almoço separa os períodos anteriores e posteriores.
+    periodos_contabilizados = list(periodos)
+    if faltas_periodos := resultado["periodos_falta"]:
+        if len(faltas_periodos) >= 2:
+            periodos_contabilizados = []
+        elif indice_pausa_almoco is not None:
+            if 1 in faltas_periodos:
+                # Falta no 1.º período: só contam os períodos após a pausa.
+                periodos_contabilizados = periodos[indice_pausa_almoco + 1:]
+            elif 2 in faltas_periodos:
+                # Falta no 2.º período: só contam os períodos até à pausa.
+                periodos_contabilizados = periodos[:indice_pausa_almoco + 1]
+        elif 1 in faltas_periodos:
+            # Sem pausa identificada não é possível separar os períodos:
+            # não contabilizar horas que possam pertencer ao período em falta.
+            periodos_contabilizados = []
+
+    if not periodos_contabilizados:
+        resultado["horas_trabalhadas"] = 0.0
+    else:
+        resultado["horas_trabalhadas"] = _horas_dos_periodos(periodos_contabilizados)
 
     # horas exigidas e tempo em falta
     resultado["minutos_em_falta"] = None
 
-    # Horas extra: excesso face à duração esperada do turno. O almoço só
-    # é descontado à duração esperada se houve uma pausa registada; se o
-    # funcionário não picou o almoço, o dia é um único período contínuo e
-    # compara-se com o turno inteiro (senão a hora de almoço apareceria
-    # como hora extra). Só é possível calcular com o turno completo.
+    # Horas extra são calculadas apenas sobre as horas válidas. Quando existe
+    # falta parcial, a duração esperada também é reduzida ao período válido,
+    # para que as horas de um período em falta não gerem nem escondam horas extra.
     if resultado["horas_trabalhadas"] is not None and saida_esperada is not None:
         duracao_esperada_min = (saida_esperada - entrada_esperada).total_seconds() / 60
+        duracao_almoco_min = 0
+        if tem_almoco:
+            duracao_almoco_min = (
+                (fim_almoco_esperado - inicio_almoco_esperado).total_seconds() / 60
+            )
 
         if houve_pausa:
-            duracao_almoco_min = (fim_almoco_esperado - inicio_almoco_esperado).total_seconds() / 60
             duracao_esperada_min -= duracao_almoco_min
+
+        if len(resultado["periodos_falta"]) >= 2:
+            duracao_esperada_min = 0
+        elif 1 in resultado["periodos_falta"]:
+            duracao_esperada_min = (
+                (saida_esperada - fim_almoco_esperado).total_seconds() / 60
+                if tem_almoco else 0
+            )
+        elif 2 in resultado["periodos_falta"]:
+            duracao_esperada_min = (
+                (inicio_almoco_esperado - entrada_esperada).total_seconds() / 60
+                if tem_almoco else 0
+            )
 
         excesso_min = round(resultado["horas_trabalhadas"] * 60 - duracao_esperada_min)
         resultado["horas_extra_min"] = max(0, excesso_min)
@@ -276,6 +372,7 @@ def _calcular_livre(cursor, id_funcionario, data_turno, resultado,
     resultado["periodos"] = periodos
 
     resultado["falta"] = not periodos
+    resultado["tipo_falta"] = "FALTA" if not periodos else None
 
     if not periodos:
         return resultado
@@ -319,6 +416,7 @@ def calcular_picagens_folga(cursor, id_funcionario, data_turno):
 
     resultado["periodos"] = periodos_dia
     resultado["falta"] = False
+    resultado["tipo_falta"] = None
 
     if not periodos_dia:
         return resultado
@@ -388,7 +486,9 @@ def calcular_picagens(cursor, id_funcionario, data_turno, horario):
 
     Devolve um dicionário:
     {
-        "falta": bool (True = não picou nada nesse turno),
+        "falta": bool (inclui falta parcial ou falta do turno inteiro),
+        "tipo_falta": classificação da falta, se aplicável,
+        "periodos_falta": conjunto interno de períodos afetados (1 e/ou 2),
         "atraso_entrada_min": int ou None,
         "atraso_volta_almoco_min": int ou None,
         "horas_trabalhadas": float ou None (horas, 2 casas; None se algum
@@ -449,6 +549,8 @@ def guardar_resultado(
     # Sem override, mantém-se a classificação normal.
     if tipo_override is not None:
         tipo = tipo_override
+    elif resumo.get("tipo_falta"):
+        tipo = resumo["tipo_falta"]
     elif resumo["falta"]:
         tipo = "FALTA"
     elif resumo["periodos"] and horas_trabalhadas is None:

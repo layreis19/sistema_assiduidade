@@ -274,7 +274,7 @@ class PaginaDashboard(tk.Frame):
         w.criar_botao(
             self.frame_datas_inner,
             "Filtrar", 
-            self.relatorio_horas_extra,
+            self.filtrar_tabelas,
             bg=cores.PRIMARY,
             fg=cores.CARD,
             activebackground=cores.PRIMARY_DARK,
@@ -296,7 +296,6 @@ class PaginaDashboard(tk.Frame):
         # gráfico 1
         self.frame_grafico1 = tk.Frame(
             self.frame_graficos,
-            bg=cores.CARD,
             highlightbackground="#D6E3F0",
             highlightthickness=1)
         self.frame_grafico1.grid(row=0, column=0, sticky="nsew", padx=5, pady=5) # nsew estica o gráfico para todo o espaço disponível
@@ -304,13 +303,43 @@ class PaginaDashboard(tk.Frame):
         w.criar_titulo(self.frame_grafico1,
                     "Funcionários com mais Atrasos",
                     font=w.FONTE_SUBTITULO_DASH,
-                    bg=cores.CARD,
                     fg=cores.PRIMARY_DARK).pack(pady=12)
+
+        self.tabela_atrasos = ttk.Treeview(self.frame_grafico1,
+                                           columns=("id", "nome", "numero", "tempo"),
+                                           show="headings",
+                                           height=8)
+
+        # definir os títulos da coluna 
+        self.tabela_atrasos.heading("id", text="ID")
+        self.tabela_atrasos.heading("nome", text="Funcionário")
+        self.tabela_atrasos.heading("numero", text="Nº Atrasos")
+        self.tabela_atrasos.heading("tempo", text="Tempo Total")
+
+        self.tabela_atrasos.column("id", width=100, anchor="center")
+        self.tabela_atrasos.column("nome", width=180, anchor="center")
+        self.tabela_atrasos.column("numero", width=100, anchor="center")
+        self.tabela_atrasos.column("tempo", width=120, anchor="center")
         
-        
+        self.tabela_atrasos.pack(
+            fill="both",
+            expand=True,
+            padx=10,
+            pady=(0,10)
+        )
+
+        self.tabela_atrasos.pack_forget()
+
+        # Mensagem inicial da tabela de atrasos
+        self.mensagem_atrasos = tk.Label(
+            self.frame_grafico1,
+            text="Por favor, selecione o intervalo de datas que quer visualizar.",
+            fg=cores.PRIMARY_DARK,
+            font=("Arial", 11),
+            wraplength=350
+        )
         # gráfico 2
         self.frame_grafico2 = tk.Frame(self.frame_graficos,
-                                       bg= cores.CARD,
                                         highlightbackground= "#D6E3F0",
                                         highlightthickness=1)
         self.frame_grafico2.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
@@ -318,13 +347,46 @@ class PaginaDashboard(tk.Frame):
         w.criar_titulo(self.frame_grafico2,
                     "Funcionários com mais Faltas",
                     font=w.FONTE_SUBTITULO_DASH,
-                    bg=cores.CARD,
                     fg=cores.PRIMARY_DARK).pack(pady=12)
+
+
+        self.tabela_faltas = ttk.Treeview(self.frame_grafico2,
+                                            columns=("id", "nome", "numero", "tempo"),
+                                            show="headings",
+                                            height=8)
+
+        # definir os títulos da coluna 
+        self.tabela_faltas.heading("id", text="ID")
+        self.tabela_faltas.heading("nome", text="Funcionário")
+        self.tabela_faltas.heading("numero", text="Nº Atrasos")
+        self.tabela_faltas.heading("tempo", text="Tempo Total")
+
+        self.tabela_faltas.column("id", width=100, anchor="center")
+        self.tabela_faltas.column("nome", width=180, anchor="center")
+        self.tabela_faltas.column("numero", width=100, anchor="center")
+        self.tabela_faltas.column("tempo", width=120, anchor="center")
+        
+        self.tabela_faltas.pack(
+            fill="both",
+            expand=True,
+            padx=10,
+            pady=(0,10)
+        )
+
+        self.tabela_faltas.pack_forget()
+
+        # Mensagem inicial da tabela de faltas
+        self.mensagem_faltas = tk.Label(
+            self.frame_grafico2,
+            text="Por favor, selecione o intervalo de datas que quer visualizar.",
+            fg=cores.PRIMARY_DARK,
+            font=("Arial", 11),
+            wraplength=350
+        )
 
        # gráfico 3  
         self.frame_grafico3 = tk.Frame(
             self.frame_graficos,
-            bg=cores.CARD,
             highlightbackground="#D6E3F0",
             highlightthickness=1)
         
@@ -333,19 +395,45 @@ class PaginaDashboard(tk.Frame):
         w.criar_titulo(self.frame_grafico3,
                     "Funcionários com mais Horas Extra",
                     font=w.FONTE_SUBTITULO_DASH,
-                    bg=cores.CARD,
                     fg=cores.PRIMARY_DARK).pack(pady=12)
 
-        self.elemento_relatorio= None
-        self.elemento_relatorio = tk.Label(
-            self.frame_grafico3,
-            text="Selecione o período que pretende visualizar no gráfico.",
-            bg=cores.CARD,
-            fg=cores.PRIMARY_DARK,
-            font=("Arial", 12),
-            wraplength=500)
+        self.tabela_extra = ttk.Treeview(self.frame_grafico3,
+                                        columns=("id", "nome", "numero", "tempo"),
+                                        show="headings",
+                                        height=8)
+        
+        # definir os títulos da coluna 
+        self.tabela_extra.heading("id", text="ID")
+        self.tabela_extra.heading("nome", text="Funcionário")
+        self.tabela_extra.heading("numero", text="Nº Atrasos")
+        self.tabela_extra.heading("tempo", text="Tempo Total")
 
-        self.elemento_relatorio.pack(expand=True,pady=30)
+        self.tabela_extra.column("id", width=100, anchor="center")
+        self.tabela_extra.column("nome", width=180, anchor="center")
+        self.tabela_extra.column("numero", width=100, anchor="center")
+        self.tabela_extra.column("tempo", width=120, anchor="center")
+        
+        self.tabela_extra.pack(
+            fill="both",
+            expand=True,
+            padx=10,
+            pady=(0,10)
+        )
+        self.tabela_extra.pack_forget()
+
+        # Mensagem inicial da tabela de horas extra
+        self.mensagem_extra = tk.Label(
+            self.frame_grafico3,
+            text="Selecione o intervalo de datas que pretende visualizar no gráfico.",
+            fg=cores.PRIMARY_DARK,
+            font=("Arial", 11),
+            wraplength=500
+        )
+
+        # mostrar as mensagem 
+        self.mensagem_atrasos.pack(expand=True, pady=20)
+        self.mensagem_faltas.pack(expand=True, pady=20)
+        self.mensagem_extra.pack(expand=True, pady=20)
 
         self.atualizar_funcionarios()
         self.atualizar_faltas_medicas()
@@ -390,83 +478,71 @@ class PaginaDashboard(tk.Frame):
 
         self.label_faltas_medicas.config(text=str(total_faltas_medicas))
 
-
-    def relatorio_horas_extra(self):
+    def filtrar_tabelas(self):
 
         data_inicio = self.entry_data_inicio.get_date()
         data_fim = self.entry_data_fim.get_date()
 
         if data_inicio > data_fim:
-            messagebox.showerror(
-            "Erro",
-            "A data de fim não pode ser inferior à data de início")
-            return
+                    messagebox.showerror(
+                    "Erro",
+                    "A data de fim não pode ser inferior à data de início")
+                    return
 
-        consulta = """
-            SELECT 
-                f.nome,
-                SUM(horas_extra_minutos) AS total_minutos
-            FROM RESULTADOS r
-            INNER JOIN FUNCIONARIOS f
-                ON r.id_funcionario = f.id_funcionario
-            WHERE data BETWEEN %s AND %s
-                AND horas_extra_minutos > 0
-            GROUP BY f.id_funcionario, f.nome
-            ORDER BY total_minutos DESC
-            LIMIT 10
-        """
+         # Esconder as mensagens iniciais
+        self.mensagem_atrasos.pack_forget()
+        self.mensagem_faltas.pack_forget()
+        self.mensagem_extra.pack_forget()
 
-        dados = pd.read_sql(
-            consulta, 
-            conn,
-            params=(data_inicio, data_fim)
-        )
+        # mostrar as tabelas
+        self.tabela_atrasos.pack(fill="both", expand=True, padx=10, pady=(0,10))
+        self.tabela_faltas.pack(fill="both", expand=True, padx=10, pady=(0,10))
+        self.tabela_extra.pack(fill="both", expand=True, padx=10, pady=(0,10))
 
-        if self.elemento_relatorio is not None:
-            self.elemento_relatorio.destroy()
-            self.elemento_relatorio = None
 
-        if dados.empty:
-            self.elemento_relatorio = tk.Label(
-                self.frame_grafico3,
-                text= "Não existe horas extra neste intervalo de datas.",
-                bg=cores.CARD,
-                fg=cores.PRIMARY_DARK,
-                font=("Arial", 11)
+        # limpar os resultados anteriores 
+
+        for tabela in (self.tabela_atrasos, self.tabela_faltas, self.tabela_extra):
+             for resultado in tabela.get_children():
+                  tabela.delete(resultado)
+
+
+        # funcionários com mais atrasos 
+
+        consulta_atrasos = """
+                SELECT 
+                    f.id_funcionario As id,
+                    f.nome,
+                    COUNT(*) AS numero, 
+                    SUM(r.atraso_minutos) AS tempo
+                FROM RESULTADOS r
+                INNER JOIN FUNCIONARIOS f
+                    on r.id_funcionario = f.id_funcionario
+                WHERE r.data BETWEEN %s AND %s
+                    AND r.atraso_minutos > 0 
+                GROUP BY f.id_funcionario, f.nome
+                ORDER BY numero DESC, tempo DESC
+                LIMIT 5
+            """
+
+        dados_atrasos = pd.read_sql(consulta_atrasos, conn,
+                                    params=(data_inicio, data_fim))
+
+        if dados_atrasos.empty:
+            self.mensagem_atrasos.config(
+                text="Não existem atrasos neste intervalo de datas."
             )
-            self.elemento_relatorio.pack(pady=30)
-            return
+            self.mensagem_atrasos.pack(expand=True, pady=20)
+            self.tabela_atrasos.pack_forget()
 
-        dados["total_horas"] = dados["total_minutos"] / 60
-
-        imagem = Figure(figsize=(7, 2.5), dpi = 80)
-        eixo = imagem.add_subplot(111)
-
-        eixo.bar(
-            dados["nome"],
-            dados["total_horas"],
-            color= "#3478B8")
-        
-        eixo.set_xlabel("Nome", color="#3478B8")
-        eixo.set_ylabel("Total Horas Extra", color="#3478B8")
-        eixo.grid(axis="y", linestyle="--", alpha=0.3)
-
-        eixo.tick_params(axis="x", colors="#3478B8")
-        eixo.tick_params(axis="y", colors="#3478B8")
-
-
-        imagem.tight_layout()
-
-
-        grafico = FigureCanvasTkAgg(
-            imagem,
-            master=self.frame_grafico3
-        )
-
-        grafico.draw()
-
-        self.elemento_relatorio = grafico.get_tk_widget()
-        self.elemento_relatorio.pack(fill="both", expand=True, padx=10, pady=(0,10))
-
-
-
+        else:
+            for _, linha in dados_atrasos.iterrows():
+                self.tabela_atrasos.insert(
+                    "", "end",
+                    values=(
+                        linha["id"],
+                        linha["nome"],
+                        int(linha["numero"]),
+                        f'{int(linha["tempo"])} min'
+                    )
+                )
