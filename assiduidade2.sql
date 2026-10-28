@@ -176,6 +176,8 @@ CREATE TABLE RESULTADOS (
     UNIQUE (id_funcionario, data)
 );
 
+ALTER TABLE funcionarios ADD COLUMN data_demissao DATE NULL
+
 -- ============================================================
 -- ÍNDICES ADICIONAIS ÚTEIS
 -- Aceleram as consultas mais frequentes do dia a dia da aplicação.
