@@ -176,6 +176,20 @@ CREATE TABLE RESULTADOS (
     UNIQUE (id_funcionario, data)
 );
 
+ALTER TABLE funcionarios ADD COLUMN data_demissao DATE NULL
+
+
+CREATE TABLE pedidos_ferias(
+id INT AUTO_INCREMENT PRIMARY KEY,
+id_funcionario INT NOT NULL,
+data_inicio DATE NOT NULL,
+data_fim DATE NOT NULL,
+estado ENUM ('PENDENTE', 'APROVADO','REJEITADO', 'CANCELADO') NOT NULL DEFAULT 'PENDENTE',
+motivo_rejeicao VARCHAR(255) NULL,
+ 
+FOREIGN KEY (id_funcionario) REFERENCES funcionarios(id_funcionario) ON DELETE CASCADE
+);
+
 -- ============================================================
 -- ÍNDICES ADICIONAIS ÚTEIS
 -- Aceleram as consultas mais frequentes do dia a dia da aplicação.
